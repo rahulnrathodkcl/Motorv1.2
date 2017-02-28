@@ -137,7 +137,7 @@ void S_EEPROM::saveAlterNumberSetting(bool temp)
 
 void S_EEPROM::saveAutoStartSettings(bool temp)
 {  
-  AUTOSTART=temp;
+  AUTOSTART=(byte)temp;
   EEPROM.put(autoStartAddress,AUTOSTART);
 }
 
@@ -146,6 +146,19 @@ void S_EEPROM::saveAutoStartTimeSettings(unsigned short int temp)
   AUTOSTARTTIME=temp;
   EEPROM.put(autoStartTimeAddress,AUTOSTARTTIME);
 }
+
+void S_EEPROM::saveDNDSettings(bool temp)
+{  
+  DND=(byte)temp;
+  EEPROM.put(dndAddress,DND);
+}
+
+void S_EEPROM::saveResponseSettings(char temp)
+{  
+  RESPONSE=temp;
+  EEPROM.put(responseAddress,RESPONSE);
+}
+
 
 void S_EEPROM::saveTempSettings(unsigned short int temp)
 {
@@ -174,6 +187,21 @@ void S_EEPROM::loadAutoStartTimeSettings()
     saveAutoStartTimeSettings(1);
 }
 
+void S_EEPROM::loadDNDSettings()
+{
+  EEPROM.get(dndAddress,DND);
+  if(DND==0xFF)
+    saveDNDSettings(false);
+}
+
+void S_EEPROM::loadResponseSettings()
+{
+  EEPROM.get(responseAddress,RESPONSE);
+  if((byte)RESPONSE==0xFF)
+    saveResponseSettings('C');
+}
+
+
 void S_EEPROM::loadAlterNumberSettings()
 {
   EEPROM.get(alterNumberSettingAddress,alterNumberSetting);
@@ -197,6 +225,8 @@ void S_EEPROM::loadAllData()
   loadTempSettings();
   loadAutoStartSettings();
   loadAutoStartTimeSettings();
+  loadDNDSettings();
+  loadResponseSettings();
   loadNumbers();
   loadAlterNumberSettings();
   loadAlterNumber();

@@ -2,16 +2,8 @@
 #define S_EEPROM_h
 
 #include <Arduino.h>
-//#include <String.h>
 #include <EEPROM.h>
 #include "Definitions.h"
-//
-//#define RPMAddress 0
-//#define numbersCountAddress 4
-//#define mobileNumberAddress 8
-//
-//#define EEPROM_MIN_ADDR 0
-//#define EEPROM_MAX_ADDR 1023
 
 class S_EEPROM
 {
@@ -19,6 +11,8 @@ class S_EEPROM
     void loadTempSettings();
     void loadAutoStartSettings();
     void loadAutoStartTimeSettings();
+    void loadDNDSettings();
+    void loadResponseSettings();
     void loadAlterNumber();
     void loadAlterNumberSettings();
     void clearLoadedNumbers();
@@ -45,6 +39,9 @@ class S_EEPROM
     unsigned short int HIGHTEMP;
     byte AUTOSTART;
     unsigned short int AUTOSTARTTIME;
+    
+    byte DND;
+    char RESPONSE;
 
     S_EEPROM();
 
@@ -53,6 +50,8 @@ class S_EEPROM
     void saveTempSettings(unsigned short int temp);
     void saveAutoStartSettings(bool);
     void saveAutoStartTimeSettings(unsigned short int);
+    void saveDNDSettings(bool);
+    void saveResponseSettings(char);
     void loadAllData();
     bool addNumber(String number);
     bool addAlternateNumber(String number);

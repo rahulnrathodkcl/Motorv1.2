@@ -26,6 +26,7 @@
 void BATTERY_MGR::anotherConstructor(SIM* s1,S_EEPROM* e1)
 {
 	pinMode(PIN_BAT_SENSOR_PWR,OUTPUT);
+	pinMode(PIN_BAT_CHARGE,OUTPUT);
 	stopCharging();
 	readingWaitTime=250;
 	signalState=false;
@@ -62,7 +63,11 @@ float BATTERY_MGR::detectBatLevel()
 	float data=analogRead(PIN_BAT_SENSOR);
 	turnBatSignalOff();
 	data=data*VOLTAGERATIO;
-	data=data*5.0/1024;
+	data=data*4.0/1024;
+	#ifndef disable_debug
+		_NSerial->print("BAT VOLT:");
+		_NSerial->println(data);
+	#endif
 	return data;
 }
 
@@ -71,8 +76,13 @@ bool BATTERY_MGR::startCharging()
 	initiateCharging=true;
 	if(eeprom1->ACPowerState())		//AC power On
 	{
-		digitalWrite(PIN_BAT_SENSOR_PWR,HIGH);
+		digitalWrite(PIN_BAT_CHARGE,HIGH);
 		chargeState=true;
+
+		#ifndef disable_debug
+			_NSerial->print("Started ");
+			_NSerial->println("Charging");
+		#endif
 	}
 	else							//AC power off
 		chargeState=false;
@@ -82,14 +92,18 @@ bool BATTERY_MGR::startCharging()
 
 void BATTERY_MGR::stopCharging()
 {
-	digitalWrite(PIN_BAT_SENSOR_PWR,LOW);
+	digitalWrite(PIN_BAT_CHARGE,LOW);
 	chargeState=false;
 	initiateCharging=false;
+	#ifndef disable_debug
+		_NSerial->print("Stopped ");
+		_NSerial->println("Charging");
+	#endif
 }
 
 void BATTERY_MGR::reportLowBattery()
 {
-	reportedLowBattery=sim1->registerEvent('B',true,false);
+	reportedLowBattery=sim1->registerEvent('B');
 }
 
 void BATTERY_MGR::actOnBatLevel(float batLevel)
@@ -102,13 +116,19 @@ void BATTERY_MGR::actOnBatLevel(float batLevel)
 				return;
 			if(!lowBattery && batLevel<=6.20)
 			{
+				#ifndef disable_debug
+					_NSerial->println("LOW BAT");
+				#endif
 				reportedLowBattery=false;
 				lowBattery=true;
 			}
-			else if(batLevel>=6.25)
+			else if(lowBattery && batLevel>=6.35)
 			{
 				lowBattery=false;
 				reportedLowBattery=false;
+				#ifndef disable_debug
+					_NSerial->println("BAT>=6.35");
+				#endif
 			}
 		}
 	}
@@ -129,6 +149,10 @@ void BATTERY_MGR::actOnBatLevel(float batLevel)
 
 void BATTERY_MGR::gotACPower()
 {
+	#ifndef disable_debug
+		_NSerial->print("got ");
+		_NSerial->println("AC power");
+	#endif
 	if(initiateCharging && !chargeState)
 	{
 		startCharging();
@@ -137,6 +161,11 @@ void BATTERY_MGR::gotACPower()
 
 void BATTERY_MGR::lostACPower()
 {
+	#ifndef disable_debug
+	_NSerial->print("lost ");
+	_NSerial->println("AC power");
+	#endif
+	
 	if(chargeState)	
 	{
 		stopCharging();

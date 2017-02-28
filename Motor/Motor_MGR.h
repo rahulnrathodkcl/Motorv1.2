@@ -3,6 +3,8 @@
 // Also report the status of motor, using (B Y) and (R B) phase lines.
 // Also report single phase failure, and all out AC failure.
 
+
+
 #ifndef Motor_MGR_h
 #define Motor_MGR_h
 
@@ -22,9 +24,10 @@ class Motor_MGR
 	SIM* sim1;
 
 	bool simEventTemp[9];
+	char simEvent[9];
 
 	bool gotOffCommand;
-	bool waitingForResponse;
+	bool gotOnCommand;
 
 	bool phase1;
 	bool phase2;
@@ -32,15 +35,18 @@ class Motor_MGR
 
 	bool startTimerOn;
 	unsigned long int tempStartTimer;
-	//unsigned int startTimerTime; //instead using eeprom1->AUTOSTARTTIME
 
 	bool stopTimerOn;
 	unsigned long int tempStopTimer;
-	unsigned int stopTimerTime;
+	unsigned int stopTimerTime;	
 	
+	bool waitCheckACTimerOn;
+	unsigned long tempWaitCheckACTimer;
+	byte waitCheckACTime;
+
 	bool singlePhasingTimerOn;
 	unsigned long int tempSinglePhasingTimer;
-	int singlePhasingTime;
+	byte singlePhasingTime;
 
 	bool startSequenceOn;
 	unsigned long int tempStartSequenceTimer;
@@ -51,7 +57,6 @@ class Motor_MGR
 	byte stopSequenceTimerTime;
 
 	void anotherConstructor(SIM* sim1,S_EEPROM* eeprom1,BATTERY_MGR* battery1);
-	bool getMotorState();
 	void readSensorState(bool &p1,bool &p2,bool &p3);
 	void updateSensorState(bool &p1,bool &p2,bool &p3);	
 	void operateOnEvent();
@@ -62,6 +67,8 @@ class Motor_MGR
 
 	bool singlePhasingTimerOver();
 	void operateOnSinglePhasing();
+	bool waitCheckACTimerOver();
+	void unknownMotorOff();
 
 	void terminateStopRelay();
 	void terminateStartRelay();
@@ -89,9 +96,10 @@ public:
 
 	bool eventOccured;
 
-	void startMotor();
+	bool getMotorState();
+	void startMotor(bool commanded=false);
 	void stopMotor(bool commanded=false);
-	void setImmediateResponse(bool);
+	void statusOnCall();
 	void update();
 };
 #endif

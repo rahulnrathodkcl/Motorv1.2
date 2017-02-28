@@ -4,41 +4,54 @@
 #include <SoftwareSerial.h>
 #include <HardwareSerial.h>
 
-//#define disable_debug
-//#define software_SIM
-#ifdef disable_debug
-	#undef software_SIM
-#endif
-
-#define PIN_BAT_SENSOR_PWR A0
-#define PIN_BAT_SENSOR A1
-#define PIN_BAT_CHARGE 7
-#define VOLTAGERATIO 3
-
-#define PIN_START 4
-#define PIN_STOP 5
+// #define disable_debug
+ #define software_SIM
+// #ifdef disable_debug
+	// #undef software_SIM
+// #endif
 
 
-#define PIN_PHASE1 11
+
+#define PIN_STOP A5
+#define PIN_START A4
+#define PIN_BAT_CHARGE A3
+
+#define PIN_BAT_SENSOR_PWR A1				//not needed
+#define PIN_BAT_SENSOR A2
+#define VOLTAGERATIO 2						//2
+
+#define PIN_PHASE1 9
 #define PIN_PHASE2 10
-#define PIN_ACPHASE 9
+#define PIN_ACPHASE 11
 
-#define PIN_DTR 5
+#define PIN_DTR 3
+#define PIN_RING 2
 
 //EEPROM 
 #define autoStartAddress 0
-#define autoStartTimeAddress 2
-#define highTempAddress 6
+#define autoStartTimeAddress 4
+#define highTempAddress 8
 
-#define numbersCountAddress 10
-#define mobileNumberAddress 14
+#define numbersCountAddress 12
+#define mobileNumberAddress 16
 
-#define alterNumberPresentAddress 108
-#define alterNumberSettingAddress 112
-#define alterNumberAddress 116
+#define alterNumberPresentAddress 110
+#define alterNumberSettingAddress 114
+#define alterNumberAddress 118
+#define dndAddress 122
+#define responseAddress 124
+
+
+
 
 #define EEPROM_MIN_ADDR 0
 #define EEPROM_MAX_ADDR 1023
+
+
+
+#define STR_MOTOR "MOTOR "
+#define STR_ON "ON"
+#define STR_OFF "OFF"
 
 //____________________
 #endif

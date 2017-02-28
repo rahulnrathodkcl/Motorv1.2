@@ -19,24 +19,22 @@ class SIM
     S_EEPROM* eeprom1;
     Motor_MGR* motor1;
 
-    // float data;
-    // byte lastSettingByte;
-    // bool sendAgain;
-
     bool responseToAction;
     String adminNumber;
-    byte soundPlayNumber;
     byte soundWaitTime; //x100 = mSec
-    byte soundPlayedNumber;
     unsigned long soundWait;
     bool bplaySound;
     char playFile;
 
-    bool starPresent;
-    byte DTMFCommandPresent;
+    //bool starPresent;
 
     unsigned short int callCutWaitTime;  //x100 = mSec
     unsigned long callCutWait;
+
+    byte attemptsToCall;
+    bool callDialled;
+    bool sendCSQResponse;
+    bool sendCUSDResponse;
 
     bool commandsAccepted;
     byte acceptCommandsTime;
@@ -46,7 +44,6 @@ class SIM
     char currentCallStatus;
 
     byte nr;
-    char responseSetting;
     bool callAccepted;
 
     bool makeResponse;
@@ -54,27 +51,9 @@ class SIM
 
     bool freezeIncomingCalls;
 
-    bool immediateEvent;
-    bool sendImmediateResponse;
-
     char currentOperation;
-    // char motorStatus;
-    // bool checkMotorStatus;
-    // bool checkSelfStatus;
-    // char selfStatus;
-
     bool obtainNewEvent;
     unsigned long obtainEventTimer;
-
-    // bool triggerASKRPM;
-    // unsigned short int rpmSensorData;
-    // bool rpmSensorDataReceived;
-
-    // void (*f1)(byte);
-    // void (*f2)(byte);
-    // void (*f3)(bool);
-    // void (*f4)(bool);
-    // void (*immediateFeedback)(bool);
 
     void anotherConstructor();
    
@@ -111,25 +90,19 @@ class SIM
     void acceptCall();
     void sendSMS(String,bool);
     void operateDTMF(String str);
+    inline void subDTMF();
     void operateRing();
     bool playSoundElligible();
     void triggerPlaySound();
     void playSoundAgain(String);
-    void playSound(char c,bool x=false,bool newAction=true);
+    void playSound(char c,bool x=true);
     void stopSound();
     bool callTimerExpire();
-    bool responseActionElligible();
     void makeResponseAction();
-    void sendImmediateFeedback(bool);
     bool rejectCommandsElligible();
     void checkNetwork(String);//(String str);
     void networkCounterMeasures();
 
-    // void operateOnMotorResponse();
-    // void operateOnSelfResponse();
-    // void operateOnRPMSensorData();
-
-    // void sendSettingsAgain();
     void setObtainEvent();
 
         #ifndef disable_debug
@@ -141,15 +114,17 @@ class SIM
                 HardwareSerial* _SSerial;
             #endif
         #else
-            HardwareSerial* _SSerial;
+                #ifdef software_SIM
+                    SoftwareSerial* _SSerial;
+                #else
+                    HardwareSerial* _SSerial;
+                #endif
         #endif
 
 
   public:
 
     bool initialized;
-    String bReadString;
-    bool readBefore;
 
         #ifndef disable_debug
             #ifdef software_SIM
@@ -158,18 +133,20 @@ class SIM
                 SIM(SoftwareSerial* serial, HardwareSerial* serial1);
             #endif
         #else
-            SIM(HardwareSerial* serial);
+            #ifdef software_SIM
+                SIM(SoftwareSerial* serial);
+            #else
+                SIM(HardwareSerial* serial);
+            #endif
         #endif    
 
     void setClassReference(S_EEPROM* e1,Motor_MGR* m1);
     bool initialize();
 
-    bool registerEvent(char eventType, bool immediate,bool getResponse);
+    bool registerEvent(char eventType);
 
     void operateOnMsg(String str,bool admin);
-
-    void clearBRead();
-    void bRead();
+    bool isCUSD(String &str);
     void setCallBackFunctions(void (*ImdEvent)(bool));
 
     void setMotorMGRResponse(char status);
