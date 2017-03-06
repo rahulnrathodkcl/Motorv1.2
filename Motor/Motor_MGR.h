@@ -56,12 +56,19 @@ class Motor_MGR
 	unsigned long int tempStopSequenceTimer;
 	byte stopSequenceTimerTime;
 
+	bool waitStableLineOn;
+	unsigned long int waitStableLineTimer;
+	byte waitStableLineTime;
+
 	void anotherConstructor(SIM* sim1,S_EEPROM* eeprom1,BATTERY_MGR* battery1);
 	void readSensorState(bool &p1,bool &p2,bool &p3);
 	void updateSensorState(bool &p1,bool &p2,bool &p3);	
 	void operateOnEvent();
 	bool startMotorTimerOver();
 	bool stopMotorTimerOver();
+	
+	bool waitStableLineOver();
+	void operateOnStableLine();
 	
 	void setACPowerState(bool b);
 
@@ -96,6 +103,8 @@ public:
 
 	bool eventOccured;
 
+	bool getChargeState();			//used by SIM
+	unsigned short int getBatVolt();				//used by SIM
 	bool getMotorState();
 	void startMotor(bool commanded=false);
 	void stopMotor(bool commanded=false);

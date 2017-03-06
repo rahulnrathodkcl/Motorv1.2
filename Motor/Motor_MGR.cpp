@@ -72,6 +72,13 @@ void Motor_MGR::anotherConstructor(SIM* sim1,S_EEPROM* eeprom1, BATTERY_MGR* bat
 	stopSequenceTimerTime=20;
 	stopSequenceOn=false;
 
+	waitStableLineTime=50;
+	waitStableLineOn=false;
+
+	phase1=false;
+	phase2=false;
+	phaseAC=false;
+
 	for(byte i=0;i<9;i++)
 		simEventTemp[i]=true;
 
@@ -86,6 +93,15 @@ void Motor_MGR::anotherConstructor(SIM* sim1,S_EEPROM* eeprom1, BATTERY_MGR* bat
 	simEvent[8]='O';	
 }
 
+bool Motor_MGR::getChargeState()
+{
+	return battery1->getChargeState();
+}
+
+unsigned short int Motor_MGR::getBatVolt()
+{
+	return battery1->detectBatLevel();
+}
 
 bool Motor_MGR::getMotorState()
 {
@@ -145,12 +161,15 @@ void Motor_MGR::operateOnEvent()
 			//report To SIM Motor Off due to POWER CUT OFF
 			setACPowerState(false);
 		}
-		else if((tac && phaseAC) &&
-			(!tp1 && phase1)  && 
-			(!tp2 && phase2))		//motor switched off due to any reason
+		else if((tac && phaseAC) && 
+			(!tp1) && (!tp2))		//motor switched off due to any reason
 		{
 			tempWaitCheckACTimer=millis();
-			waitCheckACTimerOn=true;			//report to SIM Motor Off due to Unknown Reason
+			waitCheckACTimerOn=true;
+			#ifndef disable_debug
+				_NSerial->println("Got U");
+			#endif
+			//report to SIM Motor Off due to Unknown Reason
 			// simEventTemp[2]=sim1->registerEvent('U');
 			// stopMotor();
 		}
@@ -160,6 +179,9 @@ void Motor_MGR::operateOnEvent()
 		{
 			tempSinglePhasingTimer=millis();
 			singlePhasingTimerOn=true;
+			#ifndef disable_debug
+				_NSerial->println("Got F");
+			#endif
 			if(!tac && phaseAC)			// if AC phase got off then
 			{
 				setACPowerState(false);
@@ -187,41 +209,61 @@ void Motor_MGR::operateOnEvent()
 		else if(tac && !phaseAC)					//Got AC Power
 		{
 			setACPowerState(true);
-				#ifndef disable_debug
-					_NSerial->print("Auto Start:");
-					_NSerial->println(eeprom1->AUTOSTART);
-					_NSerial->print("TIME:");
-					_NSerial->println(eeprom1->AUTOSTARTTIME);
-				#endif
-			if(eeprom1->AUTOSTART)			//startMotor if autoStart=ON
-			{
-				if(eeprom1->AUTOSTARTTIME==0)
-					startMotor();
-				else
-				{
-					startTimerOn=true;
-					tempStartTimer=millis();
-				}
-			}
-			else
-			{
-				if(!eeprom1->DND)	//if DND off then
-					simEventTemp[4]= sim1->registerEvent('G');
-				// ;//register TO SIM AC power ON				
-			}
-				
+			waitStableLineOn=true;
+			waitStableLineTimer=millis();
 		}
 		else if(!tac && phaseAC) 			//lostACPower();
 		{
 			setACPowerState(false);
-			if(!eeprom1->DND)		//if DND off
-				simEventTemp[5]= sim1->registerEvent('L');
-			//register To SIM AC Power OFF
+			waitStableLineOn=true;
+			waitStableLineTimer=millis();
+
 		}
 	}
 	updateSensorState(tp1,tp2,tac);
 }
 
+bool Motor_MGR::waitStableLineOver()
+{
+	return(waitStableLineOn && millis()-waitStableLineTimer>=(waitStableLineTime*100));
+}
+
+void Motor_MGR::operateOnStableLine()
+{
+	waitStableLineOn=false;
+	
+	if(eeprom1->ACPowerState())									//AC Power is ON
+	{
+		#ifndef disable_debug
+			_NSerial->print("Auto Start:");
+			_NSerial->println(eeprom1->AUTOSTART);
+			_NSerial->print("TIME:");
+			_NSerial->println(eeprom1->AUTOSTARTTIME);
+		#endif
+		if(eeprom1->AUTOSTART)			//startMotor if autoStart=ON
+		{
+			if(eeprom1->AUTOSTARTTIME==0)
+				startMotor();
+			else
+			{
+				startTimerOn=true;
+				tempStartTimer=millis();
+			}
+		}
+		else
+		{
+			if(!eeprom1->DND)	//if DND off then
+				simEventTemp[4]= sim1->registerEvent('G');
+			// ;//register TO SIM AC power ON				
+		}
+	}			
+	else														//AC power is Off
+	{
+		if(!eeprom1->DND)		//if DND off
+			simEventTemp[5]= sim1->registerEvent('L');
+		//register To SIM AC Power OFF
+	}
+}
 
 bool Motor_MGR::startMotorTimerOver()
 {
@@ -267,8 +309,6 @@ bool Motor_MGR::singlePhasingTimerOver()
 
 void Motor_MGR::operateOnSinglePhasing()
 {
-	// stopMotor();
-
 	stopMotor();
 	simEventTemp[3] = sim1->registerEvent('F');
 	//reportSinglePhasing TO SIM..
@@ -308,10 +348,10 @@ void Motor_MGR::stopMotor(bool commanded)
 	#endif
 	if(eeprom1->motorState())
 	{
+		startTimerOn=false;
 		singlePhasingTimerOn=false;
 		digitalWrite(PIN_STOP,LOW);
 		tempStopSequenceTimer=millis();
-		startTimerOn=false;
 		stopSequenceOn=true;
 		eeprom1->motorState(false);
 		gotOffCommand=commanded;		
@@ -453,9 +493,13 @@ void Motor_MGR::update()
 	if(!startSequenceOn && !stopSequenceOn && eventOccured)
 		operateOnEvent();
 
+	if(waitStableLineOn)
+		if(waitStableLineOver())
+			operateOnStableLine();
+
 	if(waitCheckACTimerOn)
 		if(waitCheckACTimerOver())
-			unknownMotorOff();	
+			unknownMotorOff();
 
 	if(singlePhasingTimerOn)
 		if(singlePhasingTimerOver())
