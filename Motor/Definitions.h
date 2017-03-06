@@ -4,8 +4,8 @@
 #include <SoftwareSerial.h>
 #include <HardwareSerial.h>
 
-// #define disable_debug
- #define software_SIM
+#define disable_debug
+#define software_SIM
 // #ifdef disable_debug
 	// #undef software_SIM
 // #endif
@@ -31,23 +31,21 @@
 #define autoStartAddress 0
 #define autoStartTimeAddress 4
 #define highTempAddress 8
+#define dndAddress 12
+#define responseAddress 14
+#define startVoltageAddress 16
+#define stopVoltageAddress 20
 
-#define numbersCountAddress 12
-#define mobileNumberAddress 16
+#define numbersCountAddress 24
+#define mobileNumberAddress 28
 
-#define alterNumberPresentAddress 110
-#define alterNumberSettingAddress 114
-#define alterNumberAddress 118
-#define dndAddress 122
-#define responseAddress 124
-
-
+#define alterNumberPresentAddress 122
+#define alterNumberSettingAddress 126
+#define alterNumberAddress 130
 
 
 #define EEPROM_MIN_ADDR 0
 #define EEPROM_MAX_ADDR 1023
-
-
 
 #define STR_MOTOR "MOTOR "
 #define STR_ON "ON"
