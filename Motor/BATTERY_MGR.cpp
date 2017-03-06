@@ -56,7 +56,12 @@ bool BATTERY_MGR::readingElligible()
 	return(!signalState && millis()-readingWaitTemp>=(readingWaitTime*100));
 }
 
-float BATTERY_MGR::detectBatLevel()
+bool BATTERY_MGR::getChargeState()
+{
+	return chargeState;
+}
+
+unsigned short int BATTERY_MGR::detectBatLevel()
 {
 	turnBatSignalOn();
 	analogRead(PIN_BAT_SENSOR);
@@ -64,6 +69,7 @@ float BATTERY_MGR::detectBatLevel()
 	turnBatSignalOff();
 	data=data*VOLTAGERATIO;
 	data=data*4.0/1024;
+	data=data*100;
 	#ifndef disable_debug
 		_NSerial->print("BAT VOLT:");
 		_NSerial->println(data);
@@ -106,15 +112,24 @@ void BATTERY_MGR::reportLowBattery()
 	reportedLowBattery=sim1->registerEvent('B');
 }
 
-void BATTERY_MGR::actOnBatLevel(float batLevel)
+void BATTERY_MGR::actOnBatLevel(unsigned short int batLevel)
 {
+	if(eeprom1->resetBattery)
+	{
+		stopCharging();
+		lowBattery=false;
+		reportedLowBattery=false;
+		eeprom1->resetBattery=false;
+	}
+
+	//int batLevel = temp*100;
 	if(!chargeState)	//not charging
 	{
-		if(batLevel<=6.40)
+		if(batLevel<=eeprom1->STARTVOLTAGE)
 		{
 			if(startCharging())
 				return;
-			if(!lowBattery && batLevel<=6.20)
+			if(!lowBattery && batLevel<=(eeprom1->STARTVOLTAGE-15))
 			{
 				#ifndef disable_debug
 					_NSerial->println("LOW BAT");
@@ -122,12 +137,12 @@ void BATTERY_MGR::actOnBatLevel(float batLevel)
 				reportedLowBattery=false;
 				lowBattery=true;
 			}
-			else if(lowBattery && batLevel>=6.35)
+			else if(lowBattery && batLevel>=(eeprom1->STARTVOLTAGE-5))
 			{
 				lowBattery=false;
 				reportedLowBattery=false;
 				#ifndef disable_debug
-					_NSerial->println("BAT>=6.35");
+					_NSerial->println("BAT>=615");
 				#endif
 			}
 		}
@@ -140,7 +155,7 @@ void BATTERY_MGR::actOnBatLevel(float batLevel)
 			reportedLowBattery=false;
 		}
 
-		if(batLevel>=7.10)
+		if(batLevel>=eeprom1->STOPVOLTAGE)
 		{
 			stopCharging();
 		}
@@ -178,6 +193,9 @@ void BATTERY_MGR::update()
 	if(lowBattery && !reportedLowBattery)
 		reportLowBattery();
 
-	if(readingElligible())
-		actOnBatLevel(detectBatLevel());
+	if(!eeprom1->inCall())
+	{
+		if(readingElligible())
+			actOnBatLevel(detectBatLevel());
+	}
 }

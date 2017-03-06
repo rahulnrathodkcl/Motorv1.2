@@ -28,11 +28,10 @@ class BATTERY_MGR
 	void turnBatSignalOn();
 	void turnBatSignalOff();
 	bool readingElligible();
-	float detectBatLevel();
 	bool startCharging();
 	void stopCharging();
 	void reportLowBattery();
-	void actOnBatLevel(float batLevel);
+	void actOnBatLevel(unsigned short int batLevel);
 
 	#ifndef disable_debug
   		#ifdef software_SIM
@@ -54,7 +53,8 @@ public:
 		BATTERY_MGR(SIM* s1,S_EEPROM* eeprom1);
 	#endif
 
-
+	bool getChargeState();			// used by Motor MGR for SIM
+	unsigned short int detectBatLevel();
 	void gotACPower();
 	void lostACPower();
 	void update();
