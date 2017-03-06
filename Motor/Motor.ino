@@ -79,6 +79,12 @@ ISR(BADISR_vect)
 void printData()
 {
   #ifndef disable_debug
+    USART1->print("START V:");
+    USART1->println(eeprom1.STARTVOLTAGE);
+
+    USART1->print("STOP V:");
+    USART1->println(eeprom1.STOPVOLTAGE);
+
     USART1->print("DND :");
     USART1->println(eeprom1.DND);
 
@@ -117,13 +123,14 @@ void loop() {
     if(millis()>=10000)
     {
 
-      motor1.getMotorState();
       if (!sim1.initialize())
       {
         #ifndef disable_debug
           USART1->println("NOT INIT SIM");
         #endif
       }
+      motor1.eventOccured=true;
+      // motor1.getMotorState();
       
       PCICR |= (1 << PCIE0);   // set PCIE0 to enable PCMSK0 scan
       PCMSK0 |= (1 << PCINT1); // set PCINT1 to trigger an interrupt on state change
