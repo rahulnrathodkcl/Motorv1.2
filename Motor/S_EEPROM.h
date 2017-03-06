@@ -13,6 +13,8 @@ class S_EEPROM
     void loadAutoStartTimeSettings();
     void loadDNDSettings();
     void loadResponseSettings();
+    void loadStartVoltageSettings();
+    void loadStopVoltageSettings();
     void loadAlterNumber();
     void loadAlterNumberSettings();
     void clearLoadedNumbers();
@@ -29,6 +31,7 @@ class S_EEPROM
     byte numbersCount;
     bool varMotorState;
     bool varACPowerState;
+    bool varInCall;
 
     String primaryNumber;
     String secondary[4];
@@ -37,6 +40,10 @@ class S_EEPROM
     byte alterNumberSetting;
     byte alterNumberPresent;
     unsigned short int HIGHTEMP;
+    unsigned short int STARTVOLTAGE;
+    unsigned short int STOPVOLTAGE;
+    bool resetBattery;
+    
     byte AUTOSTART;
     unsigned short int AUTOSTARTTIME;
     
@@ -52,6 +59,9 @@ class S_EEPROM
     void saveAutoStartTimeSettings(unsigned short int);
     void saveDNDSettings(bool);
     void saveResponseSettings(char);
+    void saveStopVoltageSettings(unsigned short int,bool a=false);
+    void saveStartVoltageSettings(unsigned short int,bool a=false);
+    
     void loadAllData();
     bool addNumber(String number);
     bool addAlternateNumber(String number);
@@ -63,5 +73,9 @@ class S_EEPROM
 
     bool ACPowerState();
     void ACPowerState(bool);
+
+    bool inCall();
+    void inCall(bool);
+      
 };
 #endif

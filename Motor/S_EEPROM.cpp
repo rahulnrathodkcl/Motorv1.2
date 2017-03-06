@@ -6,22 +6,24 @@
 S_EEPROM::S_EEPROM()
 {
   numbersCount = 0;
+  resetBattery=false;
+  varMotorState=false;
+  varACPowerState=false;
 }
 
 byte S_EEPROM::checkExists(String number)
 {
   if (numbersCount > 0)
   {
-    if(!alterNumberSetting)
-    {
-      if (primaryNumber == number)
-        return 0;
-    }
-    else
+    if(alterNumberSetting)
     {
       if(alterNumber==number)
       return 0;
     }
+
+    if (primaryNumber == number)
+      return 0;
+
 
     for (byte i = 0; i < numbersCount - 1; i++)
     {
@@ -159,6 +161,25 @@ void S_EEPROM::saveResponseSettings(char temp)
   EEPROM.put(responseAddress,RESPONSE);
 }
 
+void S_EEPROM::saveStartVoltageSettings(unsigned short int temp,bool admin)
+{  
+  if(admin || (temp>=615 && temp<STOPVOLTAGE))
+  {
+    STARTVOLTAGE=temp;
+    EEPROM.put(startVoltageAddress,STARTVOLTAGE);
+    resetBattery=true;
+  }
+}
+
+void S_EEPROM::saveStopVoltageSettings(unsigned short int temp,bool admin)
+{  
+  if(admin || (temp>STARTVOLTAGE && temp<711))
+  {
+    STOPVOLTAGE=temp;
+    EEPROM.put(stopVoltageAddress,STOPVOLTAGE);
+    resetBattery=true;
+  }
+}
 
 void S_EEPROM::saveTempSettings(unsigned short int temp)
 {
@@ -184,7 +205,7 @@ void S_EEPROM::loadAutoStartTimeSettings()
 {
   EEPROM.get(autoStartTimeAddress,AUTOSTARTTIME);
   if(AUTOSTARTTIME==0xFFFF)
-    saveAutoStartTimeSettings(1);
+    saveAutoStartTimeSettings(30);
 }
 
 void S_EEPROM::loadDNDSettings()
@@ -201,6 +222,19 @@ void S_EEPROM::loadResponseSettings()
     saveResponseSettings('C');
 }
 
+void S_EEPROM::loadStartVoltageSettings()
+{
+  EEPROM.get(startVoltageAddress,STARTVOLTAGE);
+  if(STARTVOLTAGE==0xFFFF)
+    saveStartVoltageSettings(620,true);
+}
+
+void S_EEPROM::loadStopVoltageSettings()
+{
+  EEPROM.get(stopVoltageAddress,STOPVOLTAGE);
+  if(STOPVOLTAGE==0xFFFF)
+    saveStopVoltageSettings(690,true);
+}
 
 void S_EEPROM::loadAlterNumberSettings()
 {
@@ -227,6 +261,8 @@ void S_EEPROM::loadAllData()
   loadAutoStartTimeSettings();
   loadDNDSettings();
   loadResponseSettings();
+  loadStartVoltageSettings();
+  loadStopVoltageSettings();
   loadNumbers();
   loadAlterNumberSettings();
   loadAlterNumber();
@@ -239,25 +275,36 @@ void S_EEPROM::clearNumbers(bool admin = false)
   if (!admin)
   {
     i = mobileNumberAddress + 11;
-    temp = 44;
+    temp = i + 44;
     numbersCount = 1;
   }
   else
   {
     i = mobileNumberAddress;
-    temp = 55;
+    temp = i + 55;
     numbersCount = 0;
     primaryNumber = "";
   }
-  for (int i = 0; i < 4; i++)
-    secondary[i] = "";
+  for (int t = 0; t < 4; t++)
+    secondary[t] = "";
 
   for (; i <= temp; i++)
   {
     EEPROM.write(i, 0xFF);
   }
+
+  i=alterNumberAddress;
+  temp = alterNumberAddress + 11;
+  for (; i <= temp; i++)
+  {
+    EEPROM.write(i, 0xFF);
+  }
+
   EEPROM.put(numbersCountAddress, numbersCount);
-  //EEPROM_MAX_ADDR 1023
+
+  saveAlterNumberSetting(false);
+  alterNumberPresent=false;
+  EEPROM.put(alterNumberPresentAddress, alterNumberPresent);
 }
 
 bool S_EEPROM::write_StringEE(int Addr, String input)
@@ -361,4 +408,14 @@ bool S_EEPROM::ACPowerState()
 void S_EEPROM::ACPowerState(bool b)
 {
   varACPowerState=b;
+}
+
+bool S_EEPROM::inCall()
+{
+  return varInCall;
+}
+
+void S_EEPROM::inCall(bool b)
+{
+  varInCall=b;
 }
