@@ -11,7 +11,7 @@ S_EEPROM::S_EEPROM()
   varACPowerState=false;
 }
 
-byte S_EEPROM::checkExists(String number)
+byte S_EEPROM::checkExists(String &number)
 {
   if (numbersCount > 0)
   {
@@ -34,7 +34,7 @@ byte S_EEPROM::checkExists(String number)
   return 0xFF;
 }
 
-bool S_EEPROM::addNumber(String number)
+bool S_EEPROM::addNumber(String &number)
 {
     if (numbersCount == 5)
       return false;
@@ -55,7 +55,7 @@ bool S_EEPROM::addNumber(String number)
   return false;
 }
 
-bool S_EEPROM::addAlternateNumber(String number)
+bool S_EEPROM::addAlternateNumber(String &number)
 {
     if(numbersCount>0)
     {
@@ -68,7 +68,7 @@ bool S_EEPROM::addAlternateNumber(String number)
     return false;
 }
 
-bool S_EEPROM::removeNumber(String number)
+bool S_EEPROM::removeNumber(String &number)
 {
     if (numbersCount < 2)
       return false;
@@ -270,7 +270,7 @@ void S_EEPROM::loadAllData()
 
 void S_EEPROM::clearNumbers(bool admin = false)
 {
-  word i;
+  unsigned short int i;
   byte temp;
   if (!admin)
   {

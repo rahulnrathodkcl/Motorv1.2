@@ -52,7 +52,7 @@ class S_EEPROM
 
     S_EEPROM();
 
-    byte checkExists(String number);
+    byte checkExists(String &number);
     void saveAlterNumberSetting(bool);
     void saveTempSettings(unsigned short int temp);
     void saveAutoStartSettings(bool);
@@ -63,9 +63,9 @@ class S_EEPROM
     void saveStartVoltageSettings(unsigned short int,bool a=false);
     
     void loadAllData();
-    bool addNumber(String number);
-    bool addAlternateNumber(String number);
-    bool removeNumber(String number);
+    bool addNumber(String &number);
+    bool addAlternateNumber(String &number);
+    bool removeNumber(String &number);
     void clearNumbers(bool admin);
     
     bool motorState();
