@@ -78,7 +78,7 @@ class SIM
     bool sendBlockingATCommand(String);
     String readString();
     bool matchString(String, String);
-    bool stringContains(String &sstr, String mstr, int sstart, int sstop);
+    bool stringContains(String &sstr, String mstr, byte sstart, byte sstop);
     bool isRinging(String);
     bool isDTMF(String &str);
     bool isCut(String);

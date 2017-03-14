@@ -52,13 +52,12 @@
 
 void SIM::anotherConstructor()
 {
-  adminNumber="7698439201";
+  adminNumber="7041196959";
   initialized=false;
 
   acceptCommandsTime=200;
   commandsAccepted=false;
  
-  //  starPresent=false;
   // pinMode(PIN_RING,INPUT);
   pinMode(PIN_DTR,OUTPUT);
   rejectCommands();
@@ -105,7 +104,7 @@ void SIM::operateOnMsg(String str,bool admin=false)
     }
     else
     {
-      int data;
+      unsigned short int data;
       if(stringContains(str,"TEMP",4,str.length()-1))
       {
         if(isNumeric(str))
@@ -153,11 +152,11 @@ void SIM::operateOnMsg(String str,bool admin=false)
           String resp;
           resp = "AC:";
           resp = resp + (t3?" ON\n":" OFF\n");
-          resp = resp + "CHARGING:";
+          resp = resp + "C:";
           resp = resp + (t4?" ON\n":" OFF\n");
-          resp = resp + "MOTOR:";
+          resp = resp + "M:";
           resp = resp + (t5?" ON\n":" OFF\n");          
-          resp = resp + "BATTERY:";
+          resp = resp + "BAT:";
           resp = resp + t7;
           resp = resp + ".";
           t7 = ((t6-t7)*100);
@@ -182,10 +181,8 @@ void SIM::operateOnMsg(String str,bool admin=false)
       else if(stringContains(str,"BAL",3,str.length()-1))
       {
         String s2;
-        s2="AT+CUSD=1";
-        sendCommand(s2,true);
-
-        s2.concat(",\"");
+        s2="AT+CUSD=1,\"";
+        // s2.concat(",\"");
         s2.concat(str);
         s2.concat("\"");
         sendCUSDResponse=true;
@@ -198,7 +195,7 @@ void SIM::operateOnMsg(String str,bool admin=false)
         {
           bool t=eeprom1->removeNumber(str);
           #ifndef disable_debug
-            _NSerial->print("Remove:");
+            _NSerial->print("Rem:");
             _NSerial->println((bool)t);
           #endif
         }
@@ -287,7 +284,7 @@ void SIM::gotMsgBody(String &str)
   {
     str=readString();//_SSerial->readStringUntil('\n');
     #ifndef disable_debug
-      _NSerial->print("MSGRCV:");
+      _NSerial->print("MSG:");
       _NSerial->println(str);
     #endif
     operateOnMsg(str,admin);
@@ -297,7 +294,6 @@ void SIM::gotMsgBody(String &str)
 
 bool SIM::isNewMsg(String &str)
 {
-  //+CMTI: "SM",1
   return stringContains(str,"+CMTI:",12,str.length()-1);
 }
 
@@ -331,7 +327,7 @@ bool SIM::initialize()
     goto try_again;  
   }
   #ifndef disable_debug
-    _NSerial->println("INIT UNSUCCESSFULL");
+    _NSerial->println("INIT UNSUCCESS");
   #endif
   return false;
 }
@@ -456,7 +452,7 @@ bool SIM::matchString(String m1, String m2)
   return (m1 == m2);
 }
 
-bool SIM::stringContains(String &sstr, String mstr, int sstart, int sstop)
+bool SIM::stringContains(String &sstr, String mstr, byte sstart, byte sstop)
 {
   if (sstr.startsWith(mstr))
   {   
@@ -634,7 +630,7 @@ void SIM::sendSMS(String msg="",bool predefMsg=false)
     responseString=msg;
 
   #ifndef disable_debug
-  _NSerial->println("SMS..");
+  _NSerial->println("SMS");
   #endif
     String command;
     command="AT+CMGS=\"+91";
@@ -655,24 +651,13 @@ void SIM::sendSMS(String msg="",bool predefMsg=false)
     _SSerial->flush();
     sendCommand((char)26,true);
     _SSerial->flush();    
+    temp=millis();
+    while(millis()-temp<1000)
+    {}
 }
 
 void SIM::operateDTMF(String str)
 {
-//      // if(starPresent)
-      // {
-      //   byte temp = str.toInt();
-      //   if(temp==9)
-      //   {
-//      //     starPresent=false;
-      //     callCutWait=millis();
-      //     stopSound();
-      //     playSound('M');
-      //     return;
-      //   }
-      //   return;
-      // }
-
       if (str == "1") //Motor On
       {
           currentOperation='S';
@@ -810,7 +795,7 @@ bool SIM::registerEvent(char eventType)
       acceptCommands();
 
       #ifndef disable_debug
-      _NSerial->print("Imm event:");
+      _NSerial->print("Imm:");
       _NSerial->print(eventType);
       #endif
       
@@ -917,7 +902,7 @@ void SIM::update()
         if(t4<2)
         {
           #ifndef disable_debug
-            _NSerial->println("RE REG EVENT");
+            _NSerial->println("RE REG");
           #endif
           attemptsToCall=t4;
           registerEvent(t1);
@@ -944,6 +929,7 @@ void SIM::update()
       {
         sendCUSDResponse=false;
         sendSMS(str,true);
+        sendCommand("AT+CUSD=0",true);
       }
       else if(isCSQ(str) && sendCSQResponse)
       {
@@ -1015,7 +1001,7 @@ void SIM::update()
       else if (callState(str) == 'I') //else if (stringContains(str, "+CLCC: 1,0,0", 11, 12) == true)
       {
         #ifndef disable_debug
-        _NSerial->println("Call Accepted");
+        _NSerial->println("Call Accept");
         #endif
         callCutWait = millis();
         currentStatus = 'I';
