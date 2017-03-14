@@ -107,7 +107,7 @@ public:
 	unsigned short int getBatVolt();				//used by SIM
 	bool getMotorState();
 	void startMotor(bool commanded=false);
-	void stopMotor(bool commanded=false);
+	void stopMotor(bool commanded=false,bool forceStop=false);
 	void statusOnCall();
 	void update();
 };
