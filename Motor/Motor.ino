@@ -79,28 +79,28 @@ ISR(BADISR_vect)
 void printData()
 {
   #ifndef disable_debug
-    USART1->print("START V:");
+    USART1->print("START:");
     USART1->println(eeprom1.STARTVOLTAGE);
 
-    USART1->print("STOP V:");
+    USART1->print("STOP:");
     USART1->println(eeprom1.STOPVOLTAGE);
 
-    USART1->print("DND :");
+    USART1->print("DND:");
     USART1->println(eeprom1.DND);
 
-    USART1->print("RESPONSE :");
+    USART1->print("RESP:");
     USART1->println(eeprom1.RESPONSE);
  
-    USART1->print("AUTO :");
+    USART1->print("AUTO:");
     USART1->println(eeprom1.AUTOSTART);
 
-    USART1->print("TIME :");
+    USART1->print("TIME:");
     USART1->println(eeprom1.AUTOSTARTTIME);
 
-    USART1->print("TEMP :");
+    USART1->print("TEMP:");
     USART1->println(eeprom1.HIGHTEMP);
     
-    USART1->print("nos :");
+    USART1->print("nos:");
     USART1->println(eeprom1.numbersCount);
     for(byte i = 0;i<eeprom1.numbersCount;i++)
     {
@@ -120,7 +120,7 @@ void loop() {
 
   if(!initialized)
   {
-    if(millis()>=10000)
+    if(millis()>=25000)
     {
 
       if (!sim1.initialize())

@@ -11,7 +11,6 @@
 // #endif
 
 
-
 #define PIN_STOP A5
 #define PIN_START A4
 #define PIN_BAT_CHARGE A3
@@ -50,6 +49,8 @@
 #define STR_MOTOR "MOTOR "
 #define STR_ON "ON"
 #define STR_OFF "OFF"
+
+
 
 //____________________
 #endif
