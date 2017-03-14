@@ -71,7 +71,7 @@ unsigned short int BATTERY_MGR::detectBatLevel()
 	data=data*4.0/1024;
 	data=data*100;
 	#ifndef disable_debug
-		_NSerial->print("BAT VOLT:");
+		_NSerial->print("V:");
 		_NSerial->println(data);
 	#endif
 	return data;
@@ -86,8 +86,8 @@ bool BATTERY_MGR::startCharging()
 		chargeState=true;
 
 		#ifndef disable_debug
-			_NSerial->print("Started ");
-			_NSerial->println("Charging");
+			_NSerial->print("Start");
+			_NSerial->println("C");
 		#endif
 	}
 	else							//AC power off
@@ -102,8 +102,8 @@ void BATTERY_MGR::stopCharging()
 	chargeState=false;
 	initiateCharging=false;
 	#ifndef disable_debug
-		_NSerial->print("Stopped ");
-		_NSerial->println("Charging");
+		_NSerial->print("Stop");
+		_NSerial->println("C");
 	#endif
 }
 
@@ -125,14 +125,14 @@ void BATTERY_MGR::actOnBatLevel(unsigned short int batLevel)
 	//int batLevel = temp*100;
 	if(!chargeState)	//not charging
 	{
-		if(batLevel<=eeprom1->STARTVOLTAGE)
+		if(batLevel> 300 && batLevel<=eeprom1->STARTVOLTAGE)
 		{
 			if(startCharging())
 				return;
 			if(!lowBattery && batLevel<=(eeprom1->STARTVOLTAGE-15))
 			{
 				#ifndef disable_debug
-					_NSerial->println("LOW BAT");
+					_NSerial->println("<BAT");
 				#endif
 				reportedLowBattery=false;
 				lowBattery=true;
@@ -142,7 +142,7 @@ void BATTERY_MGR::actOnBatLevel(unsigned short int batLevel)
 				lowBattery=false;
 				reportedLowBattery=false;
 				#ifndef disable_debug
-					_NSerial->println("BAT>=615");
+					_NSerial->println("BAT>");
 				#endif
 			}
 		}
