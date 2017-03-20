@@ -141,6 +141,7 @@ void S_EEPROM::saveAutoStartSettings(bool temp)
 {  
   AUTOSTART=(byte)temp;
   EEPROM.put(autoStartAddress,AUTOSTART);
+ 
 }
 
 void S_EEPROM::saveAutoStartTimeSettings(unsigned short int temp)
@@ -205,7 +206,7 @@ void S_EEPROM::loadAutoStartTimeSettings()
 {
   EEPROM.get(autoStartTimeAddress,AUTOSTARTTIME);
   if(AUTOSTARTTIME==0xFFFF)
-    saveAutoStartTimeSettings(30);
+    saveAutoStartTimeSettings(50);
 }
 
 void S_EEPROM::loadDNDSettings()
@@ -226,14 +227,14 @@ void S_EEPROM::loadStartVoltageSettings()
 {
   EEPROM.get(startVoltageAddress,STARTVOLTAGE);
   if(STARTVOLTAGE==0xFFFF)
-    saveStartVoltageSettings(620,true);
+    saveStartVoltageSettings(625,true);
 }
 
 void S_EEPROM::loadStopVoltageSettings()
 {
   EEPROM.get(stopVoltageAddress,STOPVOLTAGE);
   if(STOPVOLTAGE==0xFFFF)
-    saveStopVoltageSettings(690,true);
+    saveStopVoltageSettings(660,true);
 }
 
 void S_EEPROM::loadAlterNumberSettings()
