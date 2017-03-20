@@ -120,14 +120,20 @@ void SIM::operateOnMsg(String str,bool admin=false)
           eeprom1->saveAutoStartSettings(true);
           eeprom1->saveDNDSettings(false);
           eeprom1->saveResponseSettings('C');
-          eeprom1->saveStartVoltageSettings(620);
-          eeprom1->saveStopVoltageSettings(690);  
-          eeprom1->saveAutoStartTimeSettings(30);  
+          eeprom1->saveStartVoltageSettings(625);
+          eeprom1->saveStopVoltageSettings(660);  
+          eeprom1->saveAutoStartTimeSettings(50);  
       }
       else if(stringContains(str,"AUTOON",6,str.length()-1))
+      {
           eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM            
+          motor1->resetAutoStart(true);
+      }
       else if(stringContains(str,"AUTOOFF",7,str.length()-1))
+      {
           eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
+          motor1->resetAutoStart(true);
+      }   
       else if(stringContains(str,"DNDON",5,str.length()-1))
           eeprom1->saveDNDSettings(true);  //set DND to true in EEPROM
       else if(stringContains(str,"DNDOFF",6,str.length()-1))
@@ -156,7 +162,11 @@ void SIM::operateOnMsg(String str,bool admin=false)
           resp = resp + (t4?" ON\n":" OFF\n");
           resp = resp + "M:";
           resp = resp + (t5?" ON\n":" OFF\n");          
-          resp = resp + "BAT:";
+          if(eeprom1->AUTOSTART)
+            resp=resp+"AUTOON";
+          else 
+            resp=resp+"AUTOOFF";
+          resp = resp + "\nBAT:";
           resp = resp + t7;
           resp = resp + ".";
           t7 = ((t6-t7)*100);
@@ -168,12 +178,12 @@ void SIM::operateOnMsg(String str,bool admin=false)
         if(isNumeric(str))
         {
             data=str.toInt();
-            if(data<0) data=0;
+            if(data<50) data=50;
             if(data>480) data=480;
             eeprom1->saveAutoStartTimeSettings(data);  //Store in EEPROM the AUTO START TIME
         }
       }
-      else if(stringContains(str,"AT+CSQ",6,str.length()-1))
+      else if(stringContains(str,"NET",3,str.length()-1))
       {
         sendCommand("AT+CSQ",true);
         sendCSQResponse=true;
@@ -619,6 +629,7 @@ void SIM::sendSMS(String msg="",bool predefMsg=false)
         break;
       case 'O':
       case 'U':
+      case 'C':
         responseString = STR_MOTOR;
         responseString += STR_OFF;
         break;
@@ -676,6 +687,10 @@ void SIM::operateDTMF(String str)
           subDTMF();
           motor1->statusOnCall();
       }
+      // else if (str == "4") //Set AUTOTIMER ON
+          // eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM            
+      // else if (str == "5") //Set AUTOTIMER OFF
+          // eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
 }
 
 inline void SIM::subDTMF()
@@ -872,6 +887,11 @@ void SIM::setMotorMGRResponse(char response)
   }
 }
 
+inline void SIM::isCallReady(String str)
+{
+  return matchString(str,"CALL READY\r");
+}
+
 void SIM::update()
 {
   if(rejectCommandsElligible())
@@ -948,33 +968,41 @@ void SIM::update()
       {
         gotMsgBody(str);
       }
+      else if(isCallReady(str))
+      {
+        initialized=true;        
+      }
       else
         checkNetwork(str);
 
     if (!freezeIncomingCalls &&  (currentStatus == 'N' || currentStatus == 'R') && (currentCallStatus == 'N' || currentCallStatus == 'I')) //Ringing Incoming Call
     {
-      if (isRinging(str) == true) //  chk_ringing(str) == true)
+      if (isRinging(str)) //  chk_ringing(str) == true)
       {
         eeprom1->inCall(true);
         currentStatus = 'R';
         currentCallStatus = 'I';
         operateRing(); 
       }
-    }
-    else if (!freezeIncomingCalls && currentStatus == 'I' && currentCallStatus == 'I') //IN CALL INCOMING CALL
-    {
-      if (isCut(str) == true ) //chk_cut(str) == true)
+      else if(isCut(str))
       {
         endCall();
       }
-      else if (isDTMF(str) == true) //chk_DTMF(str) == true)
+    }
+    else if (!freezeIncomingCalls && currentStatus == 'I' && currentCallStatus == 'I') //IN CALL INCOMING CALL
+    {
+      if (isCut(str)) //chk_cut(str) == true)
+      {
+        endCall();
+      }
+      else if (isDTMF(str)) //chk_DTMF(str) == true)
       {
         operateDTMF(str);
       }
-      else
-      {
-        // playSoundAgain(str);
-      }
+      // else
+      // {
+      //   // playSoundAgain(str);
+      // }
     }
     else if ((currentStatus == 'N' || currentStatus == 'R') && currentCallStatus == 'O')
     {
