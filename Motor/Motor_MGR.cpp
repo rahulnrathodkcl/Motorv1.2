@@ -44,8 +44,23 @@ void Motor_MGR::anotherConstructor(SIM* sim1,S_EEPROM* eeprom1, BATTERY_MGR* bat
 	pinMode(PIN_START,OUTPUT);
 	digitalWrite(PIN_START,HIGH);
 	pinMode(PIN_STOP,OUTPUT);
-	digitalWrite(PIN_STOP,HIGH);
+	digitalWrite(PIN_STOP,HIGH);					// to connect stop Relay output to the NC , relay is OFF
 
+	//STOP RELAY NORMAL CONNECTION, C TO NC.
+	// if((bool)eeprom1->AUTOSTART)
+	// {
+	// 	#ifndef disable_debug
+	// 		_NSerial->println("AUTO ON");
+	// 	#endif
+	// 	digitalWrite(PIN_STOP,HIGH);					// to connect stop Relay output to the NC , relay is OFF
+	// }
+	// else
+	// {
+	// 	#ifndef disable_debug
+	// 		_NSerial->println("AUTO OFF");
+	// 	#endif
+	// 	digitalWrite(PIN_STOP,LOW);					// to connect stop Relay output to the NO ,relay is ON
+	// }
 
 	pinMode(PIN_PHASE1,INPUT_PULLUP);
 	pinMode(PIN_PHASE2,INPUT_PULLUP);
@@ -91,6 +106,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1,S_EEPROM* eeprom1, BATTERY_MGR* bat
 	simEvent[6]='C';
 	simEvent[7]='S';
 	simEvent[8]='O';	
+	resetAutoStart();
 }
 
 bool Motor_MGR::getChargeState()
@@ -144,6 +160,40 @@ void Motor_MGR::updateSensorState(bool &p1,bool &p2,bool &p3)
 	phase1=p1;
 	phase2=p2;
 	phaseAC=p3;
+
+	if(!(bool)eeprom1->AUTOSTART)
+	{
+		if(phaseAC)
+		{
+			#ifndef disable_debug
+				_NSerial->println("AC ON");
+			#endif
+			if(!eeprom1->motorState())
+			{
+				#ifndef disable_debug
+					_NSerial->println("M OFF");
+				#endif
+				digitalWrite(PIN_STOP,LOW);
+			}
+		}
+		else
+		{
+				#ifndef disable_debug
+					_NSerial->println("ON BAT");
+				#endif		
+			digitalWrite(PIN_STOP,HIGH);
+		}
+	}
+}
+
+void Motor_MGR::resetAutoStart(bool setChange)
+{
+	if(!(bool)eeprom1->AUTOSTART && !eeprom1->motorState() && eeprom1->ACPowerState())
+    	digitalWrite(PIN_STOP,LOW);
+  	else if ((bool)eeprom1->AUTOSTART && !stopSequenceOn)
+  	{
+    	digitalWrite(PIN_STOP,HIGH);
+  	}
 }
 
 void Motor_MGR::operateOnEvent()
@@ -205,6 +255,8 @@ void Motor_MGR::operateOnEvent()
 		{
 			eeprom1->motorState(true);	
 			setACPowerState(true);
+			if(startTimerOn)
+				startTimerOn=false;
 			simEventTemp[7] = sim1->registerEvent('S');// ;//register To SIM Motor has started
 		}
 		else if(tac && !phaseAC)					//Got AC Power
@@ -217,8 +269,8 @@ void Motor_MGR::operateOnEvent()
 		{
 			setACPowerState(false);
 			waitStableLineOn=true;
+			startTimerOn=false;
 			waitStableLineTimer=millis();
-
 		}
 	}
 	updateSensorState(tp1,tp2,tac);
@@ -324,6 +376,8 @@ void Motor_MGR::startMotor(bool commanded)
 	if(!eeprom1->motorState())
 	{
 		startTimerOn=false;
+		if(!(bool)eeprom1->AUTOSTART)
+			digitalWrite(PIN_STOP,HIGH);
 		digitalWrite(PIN_START,LOW);
 		tempStartSequenceTimer=millis();
 		startSequenceOn=true;
@@ -372,7 +426,9 @@ void Motor_MGR::terminateStopRelay()
 {
 	if(stopSequenceOn && millis() - tempStopSequenceTimer > (stopSequenceTimerTime*100))	
 	{
-		digitalWrite(PIN_STOP,HIGH);
+		if((bool)eeprom1->AUTOSTART || !eeprom1->ACPowerState())
+			digitalWrite(PIN_STOP,HIGH);
+		
 		stopSequenceOn=false;
 
 		#ifndef disable_debug
