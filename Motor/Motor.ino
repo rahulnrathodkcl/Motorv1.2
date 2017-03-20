@@ -130,6 +130,7 @@ void loop() {
         #endif
       }
       motor1.eventOccured=true;
+      motor1.resetAutoStart();
       // motor1.getMotorState();
       
       PCICR |= (1 << PCIE0);   // set PCIE0 to enable PCMSK0 scan

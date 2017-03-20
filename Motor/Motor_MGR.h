@@ -103,6 +103,7 @@ public:
 
 	bool eventOccured;
 
+	void resetAutoStart(bool setChange=false);
 	bool getChargeState();			//used by SIM
 	unsigned short int getBatVolt();				//used by SIM
 	bool getMotorState();
