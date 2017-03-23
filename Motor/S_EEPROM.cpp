@@ -168,7 +168,7 @@ void S_EEPROM::saveStartVoltageSettings(unsigned short int temp,bool admin)
   {
     STARTVOLTAGE=temp;
     EEPROM.put(startVoltageAddress,STARTVOLTAGE);
-    resetBattery=true;
+    // resetBattery=true;
   }
 }
 
@@ -234,7 +234,7 @@ void S_EEPROM::loadStopVoltageSettings()
 {
   EEPROM.get(stopVoltageAddress,STOPVOLTAGE);
   if(STOPVOLTAGE==0xFFFF)
-    saveStopVoltageSettings(660,true);
+    saveStopVoltageSettings(675,true);
 }
 
 void S_EEPROM::loadAlterNumberSettings()
