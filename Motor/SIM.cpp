@@ -66,7 +66,7 @@ void SIM::anotherConstructor()
   bplaySound = false;
 
   callDialled=false;
-  attemptsToCall=0;
+  // attemptsToCall=0;
 
   actionType = 'N';
   makeResponse = false;
@@ -79,6 +79,8 @@ void SIM::anotherConstructor()
   callAccepted = false;
   freezeIncomingCalls=false;
   obtainNewEvent=true;
+
+  isMsgFromAdmin=false;
 }
 
 void SIM::delAllMsg()
@@ -121,7 +123,7 @@ void SIM::operateOnMsg(String str,bool admin=false)
           eeprom1->saveDNDSettings(false);
           eeprom1->saveResponseSettings('C');
           eeprom1->saveStartVoltageSettings(625);
-          eeprom1->saveStopVoltageSettings(660);  
+          eeprom1->saveStopVoltageSettings(675);  
           eeprom1->saveAutoStartTimeSettings(50);  
       }
       else if(stringContains(str,"AUTOON",6,str.length()-1))
@@ -171,6 +173,7 @@ void SIM::operateOnMsg(String str,bool admin=false)
           resp = resp + ".";
           t7 = ((t6-t7)*100);
           resp = resp + t7;
+          isMsgFromAdmin=admin;
           sendSMS(resp,true);
       }
       else if(stringContains(str,"AUTOTIME",8,str.length()-1))
@@ -185,11 +188,13 @@ void SIM::operateOnMsg(String str,bool admin=false)
       }
       else if(stringContains(str,"NET",3,str.length()-1))
       {
+        isMsgFromAdmin=admin;
         sendCommand("AT+CSQ",true);
         sendCSQResponse=true;
       }
       else if(stringContains(str,"BAL",3,str.length()-1))
       {
+        isMsgFromAdmin=admin;
         String s2;
         s2="AT+CUSD=1,\"";
         // s2.concat(",\"");
@@ -565,7 +570,7 @@ void SIM::makeCall()
     callCutWait = millis();
     currentStatus = 'R';
     currentCallStatus = 'O';
-    attemptsToCall++;
+    // attemptsToCall++;
 }
 
 void SIM::endCall()
@@ -580,7 +585,7 @@ void SIM::endCall()
   _SSerial->flush();
   freezeIncomingCalls=false;
   callDialled=false;
-  attemptsToCall=0;
+  // attemptsToCall=0;
 
   eeprom1->inCall(false);
   callAccepted = false;
@@ -630,6 +635,7 @@ void SIM::sendSMS(String msg="",bool predefMsg=false)
       case 'O':
       case 'U':
       case 'C':
+      case 'F':
         responseString = STR_MOTOR;
         responseString += STR_OFF;
         break;
@@ -645,7 +651,11 @@ void SIM::sendSMS(String msg="",bool predefMsg=false)
   #endif
     String command;
     command="AT+CMGS=\"+91";
-    command.concat(getActiveNumber());
+    if(isMsgFromAdmin)
+      command.concat(adminNumber);
+    else
+      command.concat(getActiveNumber());
+
     command.concat("\"");
 
     _SSerial->flush();
@@ -665,6 +675,7 @@ void SIM::sendSMS(String msg="",bool predefMsg=false)
     temp=millis();
     while(millis()-temp<1000)
     {}
+    isMsgFromAdmin=false;
 }
 
 void SIM::operateDTMF(String str)
@@ -768,6 +779,8 @@ void SIM::triggerPlaySound()
 void SIM::playSound(char actionType,bool newAction)
 {
   _SSerial->flush();
+  stopSound();
+  
   soundWait = millis();
   bplaySound = true;
   if(newAction)
@@ -887,9 +900,9 @@ void SIM::setMotorMGRResponse(char response)
   }
 }
 
-inline void SIM::isCallReady(String str)
+inline bool SIM::isCallReady(String str)
 {
-  return matchString(str,"CALL READY\r");
+  return matchString(str,"Call Ready\r");
 }
 
 void SIM::update()
@@ -911,7 +924,6 @@ void SIM::update()
     if (callTimerExpire())
     {
       char t1=actionType;
-      byte t4=attemptsToCall;
       if(!callDialled)
       {
         endCall();
@@ -919,15 +931,8 @@ void SIM::update()
           _NSerial->print("CALL DIAL");
           _NSerial->println("OFF");
         #endif
-        if(t4<2)
-        {
-          #ifndef disable_debug
-            _NSerial->println("RE REG");
-          #endif
-          attemptsToCall=t4;
-          registerEvent(t1);
-        }
-        else if(eeprom1->RESPONSE=='A')
+        actionType=t1;
+        if(eeprom1->RESPONSE=='A')
           sendSMS();
       }
       else
@@ -970,6 +975,9 @@ void SIM::update()
       }
       else if(isCallReady(str))
       {
+        #ifndef disable_debug
+          _NSerial->println("INIT");
+        #endif
         initialized=true;        
       }
       else
@@ -1023,8 +1031,8 @@ void SIM::update()
       else if (isCut(str) || callState(str) == 'E') //else if (isCut(str) || stringContains(str, "+CLCC: 1,0,6", 11, 12) == true)
       {
         endCall();
-        if (eeprom1->RESPONSE == 'A')
-            sendSMS();
+        // if (eeprom1->RESPONSE == 'A')
+            // sendSMS();
       }
       else if (callState(str) == 'I') //else if (stringContains(str, "+CLCC: 1,0,0", 11, 12) == true)
       {
