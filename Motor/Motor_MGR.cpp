@@ -106,7 +106,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1,S_EEPROM* eeprom1, BATTERY_MGR* bat
 	simEvent[6]='C';
 	simEvent[7]='S';
 	simEvent[8]='O';	
-	resetAutoStart();
+	// resetAutoStart();
 }
 
 bool Motor_MGR::getChargeState()
@@ -193,6 +193,11 @@ void Motor_MGR::resetAutoStart(bool setChange)
   	else if ((bool)eeprom1->AUTOSTART && !stopSequenceOn)
   	{
     	digitalWrite(PIN_STOP,HIGH);
+   		if(setChange && eeprom1->ACPowerState() && !eeprom1->motorState())
+  		{
+  			startTimerOn=true;
+			tempStartTimer=millis();
+  		}
   	}
 }
 
