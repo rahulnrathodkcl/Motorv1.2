@@ -31,7 +31,8 @@ class SIM
     unsigned short int callCutWaitTime;  //x100 = mSec
     unsigned long callCutWait;
 
-    byte attemptsToCall;
+    bool isMsgFromAdmin;
+    //byte attemptsToCall;
     bool callDialled;
     bool sendCSQResponse;
     bool sendCUSDResponse;
@@ -104,6 +105,7 @@ class SIM
     void networkCounterMeasures();
 
     void setObtainEvent();
+    inline bool isCallReady(String);
 
         #ifndef disable_debug
             #ifdef software_SIM
