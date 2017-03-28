@@ -10,21 +10,29 @@
 	// #undef software_SIM
 // #endif
 
+#define PIN_STOP 13
+#define PIN_START 12
+// #define PIN_BAT_CHARGE A3
 
-#define PIN_STOP A5
-#define PIN_START A4
-#define PIN_BAT_CHARGE A3
+// #define PIN_BAT_SENSOR_PWR A1				//not needed
+// #define PIN_BAT_SENSOR A2
+// #define VOLTAGERATIO 2						//2
 
-#define PIN_BAT_SENSOR_PWR A1				//not needed
-#define PIN_BAT_SENSOR A2
-#define VOLTAGERATIO 2						//2
+#define PIN_3PHASE 9
+#define PIN_MFEEDBACK 10
+#define PIN_ACFEEDBACK 11
+#define PIN_ACPHASE 3
 
-#define PIN_PHASE1 9
-#define PIN_PHASE2 10
-#define PIN_ACPHASE 11
-
-#define PIN_DTR 3
+#define PIN_DTR 4
 #define PIN_RING 2
+#define PIN_LED A5
+
+// #define PIN_PHASE1 9
+// #define PIN_PHASE2 10
+// #define PIN_ACPHASE 11
+
+// #define PIN_DTR 3
+// #define PIN_RING 2
 
 //EEPROM 
 #define autoStartAddress 0
@@ -51,6 +59,10 @@
 #define STR_OFF "OFF"
 
 
+#define AC_3PH 0x01
+#define AC_2PH 0x02
+#define AC_1PH 0x03
+#define AC_OFF 0x04
 
 //____________________
 #endif
