@@ -15,10 +15,10 @@ byte S_EEPROM::checkExists(String &number)
 {
   if (numbersCount > 0)
   {
-    if(alterNumberSetting)
+    if (alterNumberSetting)
     {
-      if(alterNumber==number)
-      return 0;
+      if (alterNumber == number)
+        return 0;
     }
 
     if (primaryNumber == number)
@@ -36,57 +36,57 @@ byte S_EEPROM::checkExists(String &number)
 
 bool S_EEPROM::addNumber(String &number)
 {
-    if (numbersCount == 5)
-      return false;
-    else
+  if (numbersCount == 5)
+    return false;
+  else
+  {
+    if (checkExists(number) == 0xFF)
     {
-      if (checkExists(number) == 0xFF)
-      {
-        if (numbersCount == 0)
-          primaryNumber = number;
-        else if (numbersCount < 5)
-          secondary[numbersCount - 1] = number;
+      if (numbersCount == 0)
+        primaryNumber = number;
+      else if (numbersCount < 5)
+        secondary[numbersCount - 1] = number;
 
-        numbersCount++;
-        updateNumberChanges();
-        return true;
-      }
+      numbersCount++;
+      updateNumberChanges();
+      return true;
     }
+  }
   return false;
 }
 
 bool S_EEPROM::addAlternateNumber(String &number)
 {
-    if(numbersCount>0)
-    {
-      alterNumber=number;
-      alterNumberPresent=true;
-      EEPROM.put(alterNumberPresentAddress, alterNumberPresent);
-      write_StringEE(alterNumberAddress,alterNumber);
-      return true;
-    }
-    return false;
+  if (numbersCount > 0)
+  {
+    alterNumber = number;
+    alterNumberPresent = true;
+    EEPROM.put(alterNumberPresentAddress, alterNumberPresent);
+    write_StringEE(alterNumberAddress, alterNumber);
+    return true;
+  }
+  return false;
 }
 
 bool S_EEPROM::removeNumber(String &number)
 {
-    if (numbersCount < 2)
-      return false;
-    else
+  if (numbersCount < 2)
+    return false;
+  else
+  {
+    byte loc = checkExists(number);
+    if (loc != 0xFF && loc != 0x00)
     {
-      byte loc=checkExists(number);
-      if(loc!=0xFF && loc!=0x00)
+      secondary[loc - 1] = "";
+      for (byte i = loc; i < numbersCount; i++)
       {
-          secondary[loc - 1] = "";
-          for (byte i = loc; i < numbersCount; i++)
-          {
-            secondary[i - 1] = secondary[i];
-          }
-          numbersCount--;
-          updateNumberChanges();
-          return true;        
+        secondary[i - 1] = secondary[i];
       }
+      numbersCount--;
+      updateNumberChanges();
+      return true;
     }
+  }
   return false;
 }
 
@@ -133,37 +133,37 @@ void S_EEPROM::clearLoadedNumbers()
 
 void S_EEPROM::saveAlterNumberSetting(bool temp)
 {
-  alterNumberSetting=temp;
-  EEPROM.put(alterNumberSettingAddress,alterNumberSetting);
+  alterNumberSetting = temp;
+  EEPROM.put(alterNumberSettingAddress, alterNumberSetting);
 }
 
 void S_EEPROM::saveAutoStartSettings(bool temp)
-{  
-  AUTOSTART=(byte)temp;
-  EEPROM.put(autoStartAddress,AUTOSTART);
- 
+{
+  AUTOSTART = (byte)temp;
+  EEPROM.put(autoStartAddress, AUTOSTART);
+
 }
 
 void S_EEPROM::saveAutoStartTimeSettings(unsigned short int temp)
 {
-  AUTOSTARTTIME=temp;
-  EEPROM.put(autoStartTimeAddress,AUTOSTARTTIME);
+  AUTOSTARTTIME = temp;
+  EEPROM.put(autoStartTimeAddress, AUTOSTARTTIME);
 }
 
 void S_EEPROM::saveDNDSettings(bool temp)
-{  
-  DND=(byte)temp;
-  EEPROM.put(dndAddress,DND);
+{
+  DND = (byte)temp;
+  EEPROM.put(dndAddress, DND);
 }
 
 void S_EEPROM::saveResponseSettings(char temp)
-{  
-  RESPONSE=temp;
-  EEPROM.put(responseAddress,RESPONSE);
+{
+  RESPONSE = temp;
+  EEPROM.put(responseAddress, RESPONSE);
 }
 
 // void S_EEPROM::saveStartVoltageSettings(unsigned short int temp,bool admin)
-// {  
+// {
 //   if(admin || (temp>=615 && temp<STOPVOLTAGE))
 //   {
 //     STARTVOLTAGE=temp;
@@ -173,7 +173,7 @@ void S_EEPROM::saveResponseSettings(char temp)
 // }
 
 // void S_EEPROM::saveStopVoltageSettings(unsigned short int temp,bool admin)
-// {  
+// {
 //   if(admin || (temp>STARTVOLTAGE && temp<711))
 //   {
 //     STOPVOLTAGE=temp;
@@ -184,42 +184,42 @@ void S_EEPROM::saveResponseSettings(char temp)
 
 void S_EEPROM::saveTempSettings(unsigned short int temp)
 {
-  EEPROM.put(highTempAddress,temp);
-  EEPROM.get(highTempAddress,HIGHTEMP);
+  EEPROM.put(highTempAddress, temp);
+  EEPROM.get(highTempAddress, HIGHTEMP);
 }
 
 void S_EEPROM::loadTempSettings()
 {
-  EEPROM.get(highTempAddress,HIGHTEMP);
-  if(HIGHTEMP==0xFFFF)
+  EEPROM.get(highTempAddress, HIGHTEMP);
+  if (HIGHTEMP == 0xFFFF)
     saveTempSettings(50);
 }
 
 void S_EEPROM::loadAutoStartSettings()
 {
-  EEPROM.get(autoStartAddress,AUTOSTART);
-  if(AUTOSTART==0xFF)
+  EEPROM.get(autoStartAddress, AUTOSTART);
+  if (AUTOSTART == 0xFF)
     saveAutoStartSettings(true);
 }
 
 void S_EEPROM::loadAutoStartTimeSettings()
 {
-  EEPROM.get(autoStartTimeAddress,AUTOSTARTTIME);
-  if(AUTOSTARTTIME==0xFFFF)
+  EEPROM.get(autoStartTimeAddress, AUTOSTARTTIME);
+  if (AUTOSTARTTIME == 0xFFFF)
     saveAutoStartTimeSettings(50);
 }
 
 void S_EEPROM::loadDNDSettings()
 {
-  EEPROM.get(dndAddress,DND);
-  if(DND==0xFF)
+  EEPROM.get(dndAddress, DND);
+  if (DND == 0xFF)
     saveDNDSettings(false);
 }
 
 void S_EEPROM::loadResponseSettings()
 {
-  EEPROM.get(responseAddress,RESPONSE);
-  if((byte)RESPONSE==0xFF)
+  EEPROM.get(responseAddress, RESPONSE);
+  if ((byte)RESPONSE == 0xFF)
     saveResponseSettings('C');
 }
 
@@ -239,20 +239,20 @@ void S_EEPROM::loadResponseSettings()
 
 void S_EEPROM::loadAlterNumberSettings()
 {
-  EEPROM.get(alterNumberSettingAddress,alterNumberSetting);
-  if(alterNumberSetting==0xFF)
+  EEPROM.get(alterNumberSettingAddress, alterNumberSetting);
+  if (alterNumberSetting == 0xFF)
     saveAlterNumberSetting(false);
 }
 
 void S_EEPROM::loadAlterNumber()
 {
   EEPROM.get(alterNumberPresentAddress, alterNumberPresent);
-  if(alterNumberPresent==(byte)true)
+  if (alterNumberPresent == (byte)true)
   {
     alterNumber = read_StringEE(alterNumberAddress, 11);
   }
-  else if(alterNumberPresent==0xFF)
-    EEPROM.put(alterNumberPresentAddress,(byte)false);
+  else if (alterNumberPresent == 0xFF)
+    EEPROM.put(alterNumberPresentAddress, (byte)false);
 }
 
 void S_EEPROM::loadAllData()
@@ -262,8 +262,8 @@ void S_EEPROM::loadAllData()
   loadAutoStartTimeSettings();
   loadDNDSettings();
   loadResponseSettings();
-  loadStartVoltageSettings();
-  loadStopVoltageSettings();
+  // loadStartVoltageSettings();
+  // loadStopVoltageSettings();
   loadNumbers();
   loadAlterNumberSettings();
   loadAlterNumber();
@@ -294,7 +294,7 @@ void S_EEPROM::clearNumbers(bool admin = false)
     EEPROM.write(i, 0xFF);
   }
 
-  i=alterNumberAddress;
+  i = alterNumberAddress;
   temp = alterNumberAddress + 11;
   for (; i <= temp; i++)
   {
@@ -304,7 +304,7 @@ void S_EEPROM::clearNumbers(bool admin = false)
   EEPROM.put(numbersCountAddress, numbersCount);
 
   saveAlterNumberSetting(false);
-  alterNumberPresent=false;
+  alterNumberPresent = false;
   EEPROM.put(alterNumberPresentAddress, alterNumberPresent);
 }
 
@@ -399,5 +399,5 @@ bool S_EEPROM::inCall()
 
 void S_EEPROM::inCall(bool b)
 {
-  varInCall=b;
+  varInCall = b;
 }

@@ -57,7 +57,7 @@ class SIM
     unsigned long obtainEventTimer;
 
     void anotherConstructor();
-   
+
     void delAllMsg();
     bool isNumeric(String &str);
     void sendReadMsg(String str);
@@ -69,11 +69,11 @@ class SIM
 
     bool isNumber(String &str);
     bool checkNumber(String);
-    
+
     void acceptCommands();
     void rejectCommands();
-    void sendCommand(char cmd,bool newline);
-    void sendCommand(String cmd,bool newline);
+    void sendCommand(char cmd, bool newline);
+    void sendCommand(String cmd, bool newline);
 
     bool isCSQ(String &);
     bool sendBlockingATCommand(String);
@@ -89,14 +89,14 @@ class SIM
     void makeCall();
     void endCall();
     void acceptCall();
-    void sendSMS(String,bool);
+    void sendSMS(String, bool);
     void operateDTMF(String str);
     inline void subDTMF();
     void operateRing();
     bool playSoundElligible();
     void triggerPlaySound();
     void playSoundAgain(String);
-    void playSound(char c,bool x=true);
+    void playSound(char c, bool x = true);
     void stopSound();
     bool callTimerExpire();
     void makeResponseAction();
@@ -107,47 +107,47 @@ class SIM
     void setObtainEvent();
     inline bool isCallReady(String);
 
-        #ifndef disable_debug
-            #ifdef software_SIM
-                HardwareSerial* _NSerial;
-                SoftwareSerial* _SSerial;
-            #else
-                SoftwareSerial* _NSerial;
-                HardwareSerial* _SSerial;
-            #endif
-        #else
-                #ifdef software_SIM
-                    SoftwareSerial* _SSerial;
-                #else
-                    HardwareSerial* _SSerial;
-                #endif
-        #endif
+#ifndef disable_debug
+#ifdef software_SIM
+    HardwareSerial* _NSerial;
+    SoftwareSerial* _SSerial;
+#else
+    SoftwareSerial* _NSerial;
+    HardwareSerial* _SSerial;
+#endif
+#else
+#ifdef software_SIM
+    SoftwareSerial* _SSerial;
+#else
+    HardwareSerial* _SSerial;
+#endif
+#endif
 
 
   public:
 
     bool initialized;
 
-        #ifndef disable_debug
-            #ifdef software_SIM
-                SIM(HardwareSerial* serial, SoftwareSerial* serial1);
-            #else
-                SIM(SoftwareSerial* serial, HardwareSerial* serial1);
-            #endif
-        #else
-            #ifdef software_SIM
-                SIM(SoftwareSerial* serial);
-            #else
-                SIM(HardwareSerial* serial);
-            #endif
-        #endif    
+#ifndef disable_debug
+#ifdef software_SIM
+    SIM(HardwareSerial* serial, SoftwareSerial* serial1);
+#else
+    SIM(SoftwareSerial* serial, HardwareSerial* serial1);
+#endif
+#else
+#ifdef software_SIM
+    SIM(SoftwareSerial* serial);
+#else
+    SIM(HardwareSerial* serial);
+#endif
+#endif
 
-    void setClassReference(S_EEPROM* e1,Motor_MGR* m1);
+    void setClassReference(S_EEPROM* e1, Motor_MGR* m1);
     bool initialize();
 
     bool registerEvent(char eventType);
 
-    void operateOnMsg(String str,bool admin);
+    void operateOnMsg(String str, bool admin);
     bool isCUSD(String &str);
     void setCallBackFunctions(void (*ImdEvent)(bool));
 

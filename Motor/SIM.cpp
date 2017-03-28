@@ -4,277 +4,277 @@
   Gets the Phone Numbers From the EEPROM Class.
 */
 
-  #ifndef disable_debug
+#ifndef disable_debug
 
-    #ifdef software_SIM
-      SIM::SIM(HardwareSerial* serial,SoftwareSerial* serial1)
-      {
-        _NSerial=serial;
-        _NSerial->begin(19200);
-        _SSerial=serial1;
-        _SSerial->begin(19200);
-        anotherConstructor();
-      }
-    #else
-      SIM::SIM(SoftwareSerial* serial,HardwareSerial* serial1)
-      {
-        _NSerial=serial;
-        _NSerial->begin(19200);
-        _SSerial=serial1;
-        _SSerial->begin(19200);
-        anotherConstructor();
-      }
-    #endif
+#ifdef software_SIM
+SIM::SIM(HardwareSerial* serial, SoftwareSerial* serial1)
+{
+  _NSerial = serial;
+  _NSerial->begin(19200);
+  _SSerial = serial1;
+  _SSerial->begin(19200);
+  anotherConstructor();
+}
+#else
+SIM::SIM(SoftwareSerial* serial, HardwareSerial* serial1)
+{
+  _NSerial = serial;
+  _NSerial->begin(19200);
+  _SSerial = serial1;
+  _SSerial->begin(19200);
+  anotherConstructor();
+}
+#endif
 
-  #else
-      #ifdef software_SIM
-        SIM::SIM(SoftwareSerial* serial)
-        {
-          _SSerial=serial;
-          _SSerial->begin(19200);
-          anotherConstructor();
-        }
-      #else
-        SIM::SIM(HardwareSerial* serial)
-        {
-          _SSerial=serial;
-          _SSerial->begin(19200);
-          anotherConstructor();
-        }
-      #endif
-  #endif
+#else
+#ifdef software_SIM
+SIM::SIM(SoftwareSerial* serial)
+{
+  _SSerial = serial;
+  _SSerial->begin(19200);
+  anotherConstructor();
+}
+#else
+SIM::SIM(HardwareSerial* serial)
+{
+  _SSerial = serial;
+  _SSerial->begin(19200);
+  anotherConstructor();
+}
+#endif
+#endif
 
 
 void SIM::anotherConstructor()
 {
-  adminNumber="7041196959";
-  initialized=false;
+  adminNumber = "7041196959";
+  initialized = false;
 
-  acceptCommandsTime=200;
-  commandsAccepted=false;
- 
+  acceptCommandsTime = 200;
+  commandsAccepted = false;
+
   // pinMode(PIN_RING,INPUT);
-  pinMode(PIN_DTR,OUTPUT);
+  pinMode(PIN_DTR, OUTPUT);
   rejectCommands();
 
   soundWaitTime = 5;
   bplaySound = false;
 
-  callDialled=false;
+  callDialled = false;
   // attemptsToCall=0;
 
   actionType = 'N';
   makeResponse = false;
-  responseToAction=false;
+  responseToAction = false;
 
   callCutWaitTime = 580;
   nr = 0;
   currentStatus = 'N';
   currentCallStatus = 'N';
   callAccepted = false;
-  freezeIncomingCalls=false;
-  obtainNewEvent=true;
+  freezeIncomingCalls = false;
+  obtainNewEvent = true;
 
-  isMsgFromAdmin=false;
+  isMsgFromAdmin = false;
 }
 
 void SIM::delAllMsg()
 {
-  sendCommand("AT+CMGDA=\"DEL ALL\"",true);
+  sendCommand("AT+CMGDA=\"DEL ALL\"", true);
 }
 
 bool SIM::isNumeric(String &str)
 {
-  for(byte i=0;i<str.length();i++)
+  for (byte i = 0; i < str.length(); i++)
   {
-    if( !isDigit(str.charAt(i)))
+    if ( !isDigit(str.charAt(i)))
       return false;
   }
   return true;
 }
 
-void SIM::operateOnMsg(String str,bool admin=false)
+void SIM::operateOnMsg(String str, bool admin = false)
 {
-    if((stringContains(str,"CLEARALL",8,str.length()-1)) && admin)//if (str == "CLEARALL" && admin)
+  if ((stringContains(str, "CLEARALL", 8, str.length() - 1)) && admin) //if (str == "CLEARALL" && admin)
+  {
+    eeprom1->clearNumbers(admin);
+  }
+  else
+  {
+    unsigned short int data;
+    if (stringContains(str, "TEMP", 4, str.length() - 1))
     {
-      eeprom1->clearNumbers(admin);
+      if (isNumeric(str))
+      {
+        data = str.toInt();
+        if (data < 50) data = 50;
+        if (data > 80) data = 80;
+        eeprom1->saveTempSettings(data);  //Store in EEPROM the TEMP value
+      }
     }
-    else
+    else if (stringContains(str, "DEFAULT", 7, str.length() - 1))
     {
-      unsigned short int data;
-      if(stringContains(str,"TEMP",4,str.length()-1))
+      eeprom1->saveAutoStartSettings(true);
+      eeprom1->saveDNDSettings(false);
+      eeprom1->saveResponseSettings('C');
+      eeprom1->saveAutoStartTimeSettings(50);
+    }
+    else if (stringContains(str, "AUTOON", 6, str.length() - 1))
+    {
+      eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
+      motor1->resetAutoStart(true);
+    }
+    else if (stringContains(str, "AUTOOFF", 7, str.length() - 1))
+    {
+      eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
+      motor1->resetAutoStart(true);
+    }
+    else if (stringContains(str, "DNDON", 5, str.length() - 1))
+      eeprom1->saveDNDSettings(true);  //set DND to true in EEPROM
+    else if (stringContains(str, "DNDOFF", 6, str.length() - 1))
+      eeprom1->saveDNDSettings(false);  //set DND to False in EEPROM
+    else if (stringContains(str, "RESPC", 5, str.length() - 1))
+      eeprom1->saveResponseSettings('C');  //set DND to False in EEPROM
+    else if (stringContains(str, "RESPA", 5, str.length() - 1))
+      eeprom1->saveResponseSettings('A');  //set DND to False in EEPROM
+    else if (stringContains(str, "STATUS", 6, str.length() - 1))
+    {
+      bool t3 = motor1->ACPowerState();
+      bool t5 = motor1->motorState();
+      // float t6 = motor1->getBatVolt();
+      // unsigned short int t7;
+      // t6 = t6/100.0;
+      // t7=t6;
+      String resp;
+      resp = "AC:";
+      resp = resp + (t3 ? " ON\n" : " OFF\n");
+      // resp = resp + "C:";
+      // resp = resp + (t4?" ON\n":" OFF\n");
+      resp = resp + "M:";
+      resp = resp + (t5 ? " ON\n" : " OFF\n");
+      if (eeprom1->AUTOSTART)
+        resp = resp + "AUTOON";
+      else
+        resp = resp + "AUTOOFF";
+      // resp = resp + "\nBAT:";
+      // resp = resp + t7;
+      // resp = resp + ".";
+      // t7 = ((t6-t7)*100);
+      // resp = resp + t7;
+      isMsgFromAdmin = admin;
+      sendSMS(resp, true);
+    }
+    else if (stringContains(str, "AUTOTIME", 8, str.length() - 1))
+    {
+      if (isNumeric(str))
       {
-        if(isNumeric(str))
-        {
-            data=str.toInt();
-            if(data<50) data=50;
-            if(data>80) data=80;
-            eeprom1->saveTempSettings(data);  //Store in EEPROM the TEMP value            
-        }
+        data = str.toInt();
+        if (data < 50) data = 50;
+        if (data > 480) data = 480;
+        eeprom1->saveAutoStartTimeSettings(data);  //Store in EEPROM the AUTO START TIME
       }
-      else if(stringContains(str,"DEFAULT",7,str.length()-1))
-      {
-          eeprom1->saveAutoStartSettings(true);
-          eeprom1->saveDNDSettings(false);
-          eeprom1->saveResponseSettings('C');
-          eeprom1->saveAutoStartTimeSettings(50);  
-      }
-      else if(stringContains(str,"AUTOON",6,str.length()-1))
-      {
-          eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM            
-          motor1->resetAutoStart(true);
-      }
-      else if(stringContains(str,"AUTOOFF",7,str.length()-1))
-      {
-          eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
-          motor1->resetAutoStart(true);
-      }   
-      else if(stringContains(str,"DNDON",5,str.length()-1))
-          eeprom1->saveDNDSettings(true);  //set DND to true in EEPROM
-      else if(stringContains(str,"DNDOFF",6,str.length()-1))
-          eeprom1->saveDNDSettings(false);  //set DND to False in EEPROM
-      else if(stringContains(str,"RESPC",5,str.length()-1))
-          eeprom1->saveResponseSettings('C');  //set DND to False in EEPROM
-      else if(stringContains(str,"RESPA",5,str.length()-1))
-          eeprom1->saveResponseSettings('A');  //set DND to False in EEPROM
-      else if(stringContains(str,"STATUS",6,str.length()-1))
-      {
-          bool t3 = motor1->ACPowerState();
-          bool t5 = motor1->motorState();
-          // float t6 = motor1->getBatVolt();
-          // unsigned short int t7;
-          // t6 = t6/100.0;
-          // t7=t6;
-          String resp;
-          resp = "AC:";
-          resp = resp + (t3?" ON\n":" OFF\n");
-          // resp = resp + "C:";
-          // resp = resp + (t4?" ON\n":" OFF\n");
-          resp = resp + "M:";
-          resp = resp + (t5?" ON\n":" OFF\n");          
-          if(eeprom1->AUTOSTART)
-            resp=resp+"AUTOON";
-          else 
-            resp=resp+"AUTOOFF";
-          // resp = resp + "\nBAT:";
-          // resp = resp + t7;
-          // resp = resp + ".";
-          // t7 = ((t6-t7)*100);
-          // resp = resp + t7;
-          isMsgFromAdmin=admin;
-          sendSMS(resp,true);
-      }
-      else if(stringContains(str,"AUTOTIME",8,str.length()-1))
-      {
-        if(isNumeric(str))
-        {
-            data=str.toInt();
-            if(data<50) data=50;
-            if(data>480) data=480;
-            eeprom1->saveAutoStartTimeSettings(data);  //Store in EEPROM the AUTO START TIME
-        }
-      }
-      else if(stringContains(str,"NET",3,str.length()-1))
-      {
-        isMsgFromAdmin=admin;
-        sendCommand("AT+CSQ",true);
-        sendCSQResponse=true;
-      }
-      else if(stringContains(str,"BAL",3,str.length()-1))
-      {
-        isMsgFromAdmin=admin;
-        String s2;
-        s2="AT+CUSD=1,\"";
-        // s2.concat(",\"");
-        s2.concat(str);
-        s2.concat("\"");
-        sendCUSDResponse=true;
-        sendCommand(s2,true);
-      }
+    }
+    else if (stringContains(str, "NET", 3, str.length() - 1))
+    {
+      isMsgFromAdmin = admin;
+      sendCommand("AT+CSQ", true);
+      sendCSQResponse = true;
+    }
+    else if (stringContains(str, "BAL", 3, str.length() - 1))
+    {
+      isMsgFromAdmin = admin;
+      String s2;
+      s2 = "AT+CUSD=1,\"";
+      // s2.concat(",\"");
+      s2.concat(str);
+      s2.concat("\"");
+      sendCUSDResponse = true;
+      sendCommand(s2, true);
+    }
 
-      if(stringContains(str,"M-",2,12))
+    if (stringContains(str, "M-", 2, 12))
+    {
+      if (str.length() == 10 && isNumeric(str))
       {
-        if(str.length()==10 && isNumeric(str))
-        {
-          bool t=eeprom1->removeNumber(str);
-          #ifndef disable_debug
-            _NSerial->print("Rem:");
-            _NSerial->println((bool)t);
-          #endif
-        }
-      }
-      else if (stringContains(str,"M+",2,12))
-      {
-        if (str.length() == 10 && isNumeric(str))
-        {
-          bool t=eeprom1->addNumber(str);
-          #ifndef disable_debug
-            _NSerial->print("Add:");
-            _NSerial->println((bool)t);
-          #endif
-        }
-      }
-      else if(stringContains(str,"AMON",4,str.length()-1))
-      {
-        if(eeprom1->alterNumberPresent)
-          eeprom1->saveAlterNumberSetting(true);
-      }
-      else if(stringContains(str,"AMOFF",5,str.length()-1))
-      {
-        eeprom1->saveAlterNumberSetting(false);
-      }
-      else if (stringContains(str,"AM+",3,13))
-      {
-        if (str.length() == 10 && isNumeric(str))
-        {
-          bool t=eeprom1->addAlternateNumber(str);
-          #ifndef disable_debug
-            _NSerial->print("Alter ");
-            _NSerial->print("Add:");
-            _NSerial->println((bool)t);
-          #endif
-        }
+        bool t = eeprom1->removeNumber(str);
+#ifndef disable_debug
+        _NSerial->print("Rem:");
+        _NSerial->println((bool)t);
+#endif
       }
     }
+    else if (stringContains(str, "M+", 2, 12))
+    {
+      if (str.length() == 10 && isNumeric(str))
+      {
+        bool t = eeprom1->addNumber(str);
+#ifndef disable_debug
+        _NSerial->print("Add:");
+        _NSerial->println((bool)t);
+#endif
+      }
+    }
+    else if (stringContains(str, "AMON", 4, str.length() - 1))
+    {
+      if (eeprom1->alterNumberPresent)
+        eeprom1->saveAlterNumberSetting(true);
+    }
+    else if (stringContains(str, "AMOFF", 5, str.length() - 1))
+    {
+      eeprom1->saveAlterNumberSetting(false);
+    }
+    else if (stringContains(str, "AM+", 3, 13))
+    {
+      if (str.length() == 10 && isNumeric(str))
+      {
+        bool t = eeprom1->addAlternateNumber(str);
+#ifndef disable_debug
+        _NSerial->print("Alter ");
+        _NSerial->print("Add:");
+        _NSerial->println((bool)t);
+#endif
+      }
+    }
+  }
 }
 
 inline bool SIM::isCUSD(String &str)
 {
-  return stringContains(str,"+CUSD:",6,str.length()-1);
+  return stringContains(str, "+CUSD:", 6, str.length() - 1);
 }
 
 inline bool SIM::isCSQ(String &str)
 {
-  return stringContains(str, "+CSQ", 5, str.length()-3);
+  return stringContains(str, "+CSQ", 5, str.length() - 3);
 }
 
 inline void SIM::sendReadMsg(String str)
 {
   String s;
-  s="AT+CMGR=";
+  s = "AT+CMGR=";
   s.concat(str);
-  sendCommand(s,true);
+  sendCommand(s, true);
 }
 
 inline bool SIM::isMsgBody(String &str)
 {
-  return stringContains(str,"+CMGR:",24,34);
+  return stringContains(str, "+CMGR:", 24, 34);
 }
 
 bool SIM::isAdmin(String str)
 {
-  if(str==adminNumber)
+  if (str == adminNumber)
     return true;
   return false;
 }
 
 bool SIM::isPrimaryNumber(String str)
 {
-  if(eeprom1->numbersCount>0)
+  if (eeprom1->numbersCount > 0)
   {
-    if(eeprom1->primaryNumber==str)
-      return true; 
-    if (eeprom1->alterNumberSetting && eeprom1->alterNumber==str)
+    if (eeprom1->primaryNumber == str)
+      return true;
+    if (eeprom1->alterNumberSetting && eeprom1->alterNumber == str)
       return true;
   }
   return false;
@@ -282,127 +282,127 @@ bool SIM::isPrimaryNumber(String str)
 
 void SIM::gotMsgBody(String &str)
 {
-  bool admin=isAdmin(str);
-  if(admin || isPrimaryNumber(str))
+  bool admin = isAdmin(str);
+  if (admin || isPrimaryNumber(str))
   {
-    str=readString();//_SSerial->readStringUntil('\n');
-    #ifndef disable_debug
-      _NSerial->print("MSG:");
-      _NSerial->println(str);
-    #endif
-    operateOnMsg(str,admin);
+    str = readString(); //_SSerial->readStringUntil('\n');
+#ifndef disable_debug
+    _NSerial->print("MSG:");
+    _NSerial->println(str);
+#endif
+    operateOnMsg(str, admin);
   }
   delAllMsg();
 }
 
 bool SIM::isNewMsg(String &str)
 {
-  return stringContains(str,"+CMTI:",12,str.length()-1);
+  return stringContains(str, "+CMTI:", 12, str.length() - 1);
 }
 
-void SIM::setClassReference(S_EEPROM* e1,Motor_MGR* m1)
+void SIM::setClassReference(S_EEPROM* e1, Motor_MGR* m1)
 {
-  eeprom1=e1;
-  motor1=m1;
+  eeprom1 = e1;
+  motor1 = m1;
 }
 
 bool SIM::initialize()
 {
-  byte attempts=0;
-  try_again:
+  byte attempts = 0;
+try_again:
   if (sendBlockingATCommand("AT\r\n"))
   {
-      if (sendBlockingATCommand("AT+CLIP=1\r\n"))
+    if (sendBlockingATCommand("AT+CLIP=1\r\n"))
+    {
+      if (sendBlockingATCommand("AT+CLCC=1\r\n") && sendBlockingATCommand("AT+CMGF=1\r\n") &&  sendBlockingATCommand("AT+CNMI=2,1,0,0,0\r\n") )
       {
-        if (sendBlockingATCommand("AT+CLCC=1\r\n") && sendBlockingATCommand("AT+CMGF=1\r\n") &&  sendBlockingATCommand("AT+CNMI=2,1,0,0,0\r\n") )
-        {
-          #ifndef disable_debug
-          _NSerial->println("INIT OK");
-          #endif
-          initialized=true;
-          return true;
-        }
+#ifndef disable_debug
+        _NSerial->println("INIT OK");
+#endif
+        initialized = true;
+        return true;
       }
+    }
   }
-  if(!initialized && attempts==0)
+  if (!initialized && attempts == 0)
   {
     attempts++;
-    goto try_again;  
+    goto try_again;
   }
-  #ifndef disable_debug
-    _NSerial->println("INIT UNSUCCESS");
-  #endif
+#ifndef disable_debug
+  _NSerial->println("INIT UNSUCCESS");
+#endif
   return false;
 }
 
 bool SIM::isNumber(String &str)
 {
-return (stringContains(str, "+CLIP: \"", 11, 21));
+  return (stringContains(str, "+CLIP: \"", 11, 21));
 }
 
 bool SIM::checkNumber(String number)
 {
-  #ifndef disable_debug
-    _NSerial->print("Number:");
-    _NSerial->println(number);
-  #endif
+#ifndef disable_debug
+  _NSerial->print("Number:");
+  _NSerial->println(number);
+#endif
 
-  if (number==adminNumber)
+  if (number == adminNumber)
     return true;
-  else if(eeprom1->checkExists(number)!=0xFF)
+  else if (eeprom1->checkExists(number) != 0xFF)
     return true;
-  
+
   return false;
 }
 
 void SIM::acceptCommands()
 {
-  if(!commandsAccepted)
+  if (!commandsAccepted)
   {
-    #ifndef disable_debug
-      _NSerial->print("com");
-      _NSerial->print("Acc:");
-      _NSerial->println(millis());
-    #endif
+#ifndef disable_debug
+    _NSerial->print("com");
+    _NSerial->print("Acc:");
+    _NSerial->println(millis());
+#endif
     //digitalWrite(PIN_DTR,LOW);
-    commandsAccepted=true;
-    tempAcceptCommandTime=millis();  
-    while(millis()-tempAcceptCommandTime<=100)
+    commandsAccepted = true;
+    tempAcceptCommandTime = millis();
+    while (millis() - tempAcceptCommandTime <= 100)
     {}
   }
   else
   {
-    tempAcceptCommandTime=millis();  
+    tempAcceptCommandTime = millis();
   }
 }
 
 void SIM::rejectCommands()
 {
-  #ifndef disable_debug
-    _NSerial->print("com");
-    _NSerial->print("Reject");
-    _NSerial->println(millis());
-  #endif
+#ifndef disable_debug
+  _NSerial->print("com");
+  _NSerial->print("Reject");
+  _NSerial->println(millis());
+#endif
   //digitalWrite(PIN_DTR,HIGH);
-  commandsAccepted=false;
+  commandsAccepted = false;
 }
-void SIM::sendCommand(char cmd,bool newline=false)
+void SIM::sendCommand(char cmd, bool newline = false)
 {
   acceptCommands();
-    if(!newline)
+  if (!newline)
     _SSerial->print(cmd);
-    else
+  else
     _SSerial->println(cmd);
 }
 
-void SIM::sendCommand(String cmd,bool newline=false)
+void SIM::sendCommand(String cmd, bool newline = false)
 {
   acceptCommands();
-  if(cmd=="")
+  if (cmd == "")
     _SSerial->println();
   else
   {
-    if(!newline)
+    if (!newline)
       _SSerial->print(cmd);
     else
       _SSerial->println(cmd);
@@ -412,9 +412,9 @@ void SIM::sendCommand(String cmd,bool newline=false)
 bool SIM::sendBlockingATCommand(String cmd)
 {
   sendCommand(cmd);
-  #ifndef disable_debug
+#ifndef disable_debug
   _NSerial->print(cmd);
-  #endif
+#endif
 
   unsigned long t = millis();
   String str;
@@ -423,9 +423,9 @@ bool SIM::sendBlockingATCommand(String cmd)
     if (_SSerial->available() > 0)
     {
       str = readString();
-      #ifndef disable_debug
+#ifndef disable_debug
       _NSerial->println(str);
-      #endif
+#endif
 
       if (matchString(str, "OK\r") == true)
         return true;
@@ -443,9 +443,9 @@ String SIM::readString()
   {
     acceptCommands();
     str = _SSerial->readStringUntil('\n');
-    #ifndef disable_debug
+#ifndef disable_debug
     _NSerial->println(str);
-    #endif
+#endif
   }
   return str;
 }
@@ -458,8 +458,8 @@ bool SIM::matchString(String m1, String m2)
 bool SIM::stringContains(String &sstr, String mstr, byte sstart, byte sstop)
 {
   if (sstr.startsWith(mstr))
-  {   
-        sstr = sstr.substring(sstart, sstop);
+  {
+    sstr = sstr.substring(sstart, sstop);
     return true;
   }
   return false;
@@ -467,7 +467,7 @@ bool SIM::stringContains(String &sstr, String mstr, byte sstart, byte sstop)
 
 bool SIM::isRinging(String str)
 {
-  return(str == "RING\r");
+  return (str == "RING\r");
 }
 
 bool SIM::isDTMF(String &str)
@@ -477,22 +477,22 @@ bool SIM::isDTMF(String &str)
 
 bool SIM::isCut(String str)
 {
-  if(currentStatus=='I' && (currentCallStatus=='I' || currentCallStatus=='O'))
+  if (currentStatus == 'I' && (currentCallStatus == 'I' || currentCallStatus == 'O'))
   {
-    #ifndef disable_debug
+#ifndef disable_debug
     _NSerial->print("STR RCV : ");
     _NSerial->print(str);
     _NSerial->println("STR END");
-    #endif
+#endif
   }
 
-  if(matchString(str, "NO CARRIER\r"))
+  if (matchString(str, "NO CARRIER\r"))
     return true;
-  else if(matchString(str, "BUSY\r"))
+  else if (matchString(str, "BUSY\r"))
     return true;
-  else if(matchString(str, "NO ANSWER\r"))
+  else if (matchString(str, "NO ANSWER\r"))
     return true;
-  else if(matchString(str, "ERROR\r"))
+  else if (matchString(str, "ERROR\r"))
     return true;
   return false;
 }
@@ -504,10 +504,10 @@ bool SIM::isSoundStop(String str)
 
 char SIM::callState(String str)
 {
-  #ifndef disable_debug
+#ifndef disable_debug
   _NSerial->print("str:");
   _NSerial->println(str);
-  #endif
+#endif
 
 
   if (stringContains(str, "+CLCC: 1,0,2", 11, 12))    //dialling
@@ -524,95 +524,95 @@ char SIM::callState(String str)
 
 String SIM::getActiveNumber()
 {
-    if(eeprom1->numbersCount>0)
-    {
-      if(!eeprom1->alterNumberSetting)
-        return(eeprom1->primaryNumber);
-      else
-        return(eeprom1->alterNumber);
-    }
+  if (eeprom1->numbersCount > 0)
+  {
+    if (!eeprom1->alterNumberSetting)
+      return (eeprom1->primaryNumber);
     else
-     return(adminNumber);//="AT+CMGS=\"+917698439201\"";  
+      return (eeprom1->alterNumber);
+  }
+  else
+    return (adminNumber); //="AT+CMGS=\"+917698439201\"";
 }
 
 void SIM::makeCall()
 {
   acceptCommands();
   _SSerial->flush();
- 
-    String command;
-    command="ATD+91";
-    command.concat(getActiveNumber());
-    command.concat(";");
-    sendCommand(command,true);
 
-    double temp=millis();
-    while(millis()-temp<100)
-    {    }
-    sendCommand("",true);
-    #ifndef disable_debug
-    _NSerial->print("Call");
-    _NSerial->println("Made");
-    #endif
-    eeprom1->inCall(true);
-    callCutWait = millis();
-    currentStatus = 'R';
-    currentCallStatus = 'O';
-    // attemptsToCall++;
+  String command;
+  command = "ATD+91";
+  command.concat(getActiveNumber());
+  command.concat(";");
+  sendCommand(command, true);
+
+  double temp = millis();
+  while (millis() - temp < 100)
+  {    }
+  sendCommand("", true);
+#ifndef disable_debug
+  _NSerial->print("Call");
+  _NSerial->println("Made");
+#endif
+  eeprom1->inCall(true);
+  callCutWait = millis();
+  currentStatus = 'R';
+  currentCallStatus = 'O';
+  // attemptsToCall++;
 }
 
 void SIM::endCall()
 {
   nr = 0;
   _SSerial->flush();
-  sendCommand("AT+CHUP",true);
-  double temp=millis();
-  while(millis()-temp<100)
+  sendCommand("AT+CHUP", true);
+  double temp = millis();
+  while (millis() - temp < 100)
   {  }
-  sendCommand("",true);
+  sendCommand("", true);
   _SSerial->flush();
-  freezeIncomingCalls=false;
-  callDialled=false;
+  freezeIncomingCalls = false;
+  callDialled = false;
   // attemptsToCall=0;
 
   eeprom1->inCall(false);
   callAccepted = false;
-  responseToAction=false;
+  responseToAction = false;
   currentStatus = 'N';
   currentCallStatus = 'N';
-  
-  obtainEventTimer=millis();
-  obtainNewEvent=false;
-//  starPresent=false;
-  #ifndef disable_debug
+
+  obtainEventTimer = millis();
+  obtainNewEvent = false;
+  //  starPresent=false;
+#ifndef disable_debug
   _NSerial->print("Call");
   _NSerial->println("End");
-  #endif
+#endif
 }
 
 void SIM::setObtainEvent()
 {
-  if(!obtainNewEvent  && millis()-obtainEventTimer>1000)
-      obtainNewEvent=true;
+  if (!obtainNewEvent  && millis() - obtainEventTimer > 1000)
+    obtainNewEvent = true;
 }
 
 void SIM::acceptCall()
 {
-    callAccepted = true;
-    _SSerial->flush();
-    sendCommand("ATA",true);
+  callAccepted = true;
+  _SSerial->flush();
+  sendCommand("ATA", true);
   _SSerial->flush();
   currentStatus = 'I';
   currentCallStatus = 'I';
   playSound('M');
 }
 
-void SIM::sendSMS(String msg="",bool predefMsg=false)
+void SIM::sendSMS(String msg = "", bool predefMsg = false)
 {
   _SSerial->flush();
   String responseString;
 
-  if(!predefMsg)
+  if (!predefMsg)
   {
     switch (actionType)
     {
@@ -632,71 +632,71 @@ void SIM::sendSMS(String msg="",bool predefMsg=false)
     }
   }
   else
-    responseString=msg;
+    responseString = msg;
 
-  #ifndef disable_debug
+#ifndef disable_debug
   _NSerial->println("SMS");
-  #endif
-    String command;
-    command="AT+CMGS=\"+91";
-    if(isMsgFromAdmin)
-      command.concat(adminNumber);
-    else
-      command.concat(getActiveNumber());
+#endif
+  String command;
+  command = "AT+CMGS=\"+91";
+  if (isMsgFromAdmin)
+    command.concat(adminNumber);
+  else
+    command.concat(getActiveNumber());
 
-    command.concat("\"");
+  command.concat("\"");
 
-    _SSerial->flush();
-    sendCommand(command,true);
-    _SSerial->flush();
-    unsigned long int temp=millis();
-    while(millis()-temp<1000)
-    {}
-    sendCommand(responseString,true);
-    _SSerial->flush();
-    temp=millis();
-    while(millis()-temp<1000)
-    {}
-    _SSerial->flush();
-    sendCommand((char)26,true);
-    _SSerial->flush();    
-    temp=millis();
-    while(millis()-temp<1000)
-    {}
-    isMsgFromAdmin=false;
+  _SSerial->flush();
+  sendCommand(command, true);
+  _SSerial->flush();
+  unsigned long int temp = millis();
+  while (millis() - temp < 1000)
+  {}
+  sendCommand(responseString, true);
+  _SSerial->flush();
+  temp = millis();
+  while (millis() - temp < 1000)
+  {}
+  _SSerial->flush();
+  sendCommand((char)26, true);
+  _SSerial->flush();
+  temp = millis();
+  while (millis() - temp < 1000)
+  {}
+  isMsgFromAdmin = false;
 }
 
 void SIM::operateDTMF(String str)
 {
-      if (str == "1") //Motor On
-      {
-          currentOperation='S';
-          subDTMF();
-          motor1->startMotor(true);
-      }
-      else if (str == "2") //Motor Off
-      {
-          currentOperation='O';
-          subDTMF();
-          motor1->stopMotor(true);
-      }
-      else if (str == "3") //Status
-      {
-          currentOperation='T';
-          subDTMF();
-          motor1->statusOnCall();
-      }
-      // else if (str == "4") //Set AUTOTIMER ON
-          // eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM            
-      // else if (str == "5") //Set AUTOTIMER OFF
-          // eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
+  if (str == "1") //Motor On
+  {
+    currentOperation = 'S';
+    subDTMF();
+    motor1->startMotor(true);
+  }
+  else if (str == "2") //Motor Off
+  {
+    currentOperation = 'O';
+    subDTMF();
+    motor1->stopMotor(true);
+  }
+  else if (str == "3") //Status
+  {
+    currentOperation = 'T';
+    subDTMF();
+    motor1->statusOnCall();
+  }
+  // else if (str == "4") //Set AUTOTIMER ON
+  // eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
+  // else if (str == "5") //Set AUTOTIMER OFF
+  // eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
 }
 
 inline void SIM::subDTMF()
 {
-//    // starPresent=true;
-    callCutWait=millis();
-    stopSound();  
+  //    // starPresent=true;
+  callCutWait = millis();
+  stopSound();
 }
 
 void SIM::operateRing()
@@ -705,31 +705,31 @@ void SIM::operateRing()
   if (nr <= 2)
   {
 
-    if(nr==1)
+    if (nr == 1)
     {
       sendCommand("AT+DDET=1\r\n");
       _SSerial->flush();
     }
-    
+
     String str;
     do
     {
       str = readString();
     }
     while (isNumber(str) == false);
-    
-    callCutWait=millis();
 
-    if(str.length()>=10 && isNumeric(str))
+    callCutWait = millis();
+
+    if (str.length() >= 10 && isNumeric(str))
     {
-      if (nr>1 && !checkNumber(str))
+      if (nr > 1 && !checkNumber(str))
         endCall();
     }
   }
-  else if(nr==3)
+  else if (nr == 3)
   {
-      callCutWait = millis();
-      acceptCall();     
+    callCutWait = millis();
+    acceptCall();
   }
 }
 
@@ -744,7 +744,7 @@ void SIM::triggerPlaySound()
   sendCommand("AT+CREC=4,\"");
   sendCommand("C:\\");
   sendCommand(playFile);
-  sendCommand(".amr\",0,100,1\r",true);
+  sendCommand(".amr\",0,100,1\r", true);
   _SSerial->flush();
   bplaySound = false;
 }
@@ -764,28 +764,28 @@ void SIM::triggerPlaySound()
 //   }
 // }
 
-void SIM::playSound(char actionType,bool newAction)
+void SIM::playSound(char actionType, bool newAction)
 {
   _SSerial->flush();
   stopSound();
-  
+
   soundWait = millis();
   bplaySound = true;
-  if(newAction)
-    this->actionType=actionType;
+  if (newAction)
+    this->actionType = actionType;
   playFile = actionType;
 }
 
 void SIM::stopSound()
 {
   _SSerial->flush();
-  sendCommand("AT+CREC=5\r",true);
+  sendCommand("AT+CREC=5\r", true);
   _SSerial->flush();
 }
 
 bool SIM::callTimerExpire()
 {
-  return ((millis() - callCutWait) >= (callCutWaitTime*100));
+  return ((millis() - callCutWait) >= (callCutWaitTime * 100));
 }
 
 void SIM::makeResponseAction()
@@ -797,41 +797,41 @@ void SIM::makeResponseAction()
 
 bool SIM::registerEvent(char eventType)
 {
-    if(!initialized)
-    {
-      #ifndef disable_debug
-      _NSerial->println("NO SIM");
-      #endif    
-      return true;
-    }
+  if (!initialized)
+  {
+#ifndef disable_debug
+    _NSerial->println("NO SIM");
+#endif
+    return true;
+  }
 
-    if(currentStatus=='N' && currentCallStatus=='N' && obtainNewEvent)
-    {
-      freezeIncomingCalls=true;
-      acceptCommands();
+  if (currentStatus == 'N' && currentCallStatus == 'N' && obtainNewEvent)
+  {
+    freezeIncomingCalls = true;
+    acceptCommands();
 
-      #ifndef disable_debug
-      _NSerial->print("Imm:");
-      _NSerial->print(eventType);
-      #endif
-      
-      actionType = eventType;
-      makeResponseAction();
-      return true;
-    }
-    else
-      return false;
+#ifndef disable_debug
+    _NSerial->print("Imm:");
+    _NSerial->print(eventType);
+#endif
+
+    actionType = eventType;
+    makeResponseAction();
+    return true;
+  }
+  else
+    return false;
 }
 
 
 bool SIM::rejectCommandsElligible()
 {
-  return (commandsAccepted && millis()-tempAcceptCommandTime>=(acceptCommandsTime*100));
+  return (commandsAccepted && millis() - tempAcceptCommandTime >= (acceptCommandsTime * 100));
 }
 
 void SIM::checkNetwork(String str)
 {
-  if(str=="+CPIN: NOT READY\r")
+  if (str == "+CPIN: NOT READY\r")
   {
     endCall();
     networkCounterMeasures();
@@ -843,63 +843,63 @@ void SIM::networkCounterMeasures()
   _SSerial->flush();
   sendCommand("AT+CFUN=0\r\n");
   _SSerial->flush();
-  unsigned long t=millis();
-  while(millis()-t<20)
+  unsigned long t = millis();
+  while (millis() - t < 20)
   {}
   sendCommand("AT+CFUN=1\r\n");
   _SSerial->flush();
-  while(millis()-t<20)
+  while (millis() - t < 20)
   {}
 }
 
 void SIM::setMotorMGRResponse(char response)
 {
-  if(currentOperation=='S')  //start Motor
+  if (currentOperation == 'S') //start Motor
   {
-    responseToAction=true;
-    if(response=='L')
+    responseToAction = true;
+    if (response == 'L')
       playSound('N');  //cannot start motor
-    else if(response=='O')
+    else if (response == 'O')
       playSound('1');  //motor is already on
-    else if(response=='D')
+    else if (response == 'D')
       playSound('S');  //motor has started
-      // endCall();
+    // endCall();
   }
-  else if(currentOperation=='O') //switch off motor
+  else if (currentOperation == 'O') //switch off motor
   {
-    responseToAction=true;
-    if(response=='L')
+    responseToAction = true;
+    if (response == 'L')
       playSound('P');    //cannot stop motor
-    else if(response=='O')
+    else if (response == 'O')
       playSound('2');  //motor is already off
-    else if(response=='D')
+    else if (response == 'D')
       playSound('O');  //motor has stopped
-      // endCall();
+    // endCall();
   }
-  else if (currentOperation='T')
+  else if (currentOperation = 'T')
   {
-    responseToAction=true;
-    if(response=='L')   //motor off, no light
+    responseToAction = true;
+    if (response == 'L') //motor off, no light
       playSound('L');
-    else if(response=='A')   //motor off, light on
+    else if (response == 'A') //motor off, light on
       playSound('A');
-    else if(response=='B')   //motor off, light on
-      playSound('B');    
-    else if(response=='O')   //motor off, light on
+    else if (response == 'B') //motor off, light on
+      playSound('B');
+    else if (response == 'O') //motor off, light on
       playSound('3');
-    else if(response=='D')
+    else if (response == 'D')
       playSound('1');  //motor is on
   }
 }
 
 inline bool SIM::isCallReady(String str)
 {
-  return matchString(str,"Call Ready\r");
+  return matchString(str, "Call Ready\r");
 }
 
 void SIM::update()
 {
-  if(rejectCommandsElligible())
+  if (rejectCommandsElligible())
   {
     rejectCommands();
   }
@@ -915,16 +915,16 @@ void SIM::update()
   {
     if (callTimerExpire())
     {
-      char t1=actionType;
-      if(!callDialled)
+      char t1 = actionType;
+      if (!callDialled)
       {
         endCall();
-        #ifndef disable_debug
-          _NSerial->print("CALL DIAL");
-          _NSerial->println("OFF");
-        #endif
-        actionType=t1;
-        if(eeprom1->RESPONSE=='A')
+#ifndef disable_debug
+        _NSerial->print("CALL DIAL");
+        _NSerial->println("OFF");
+#endif
+        actionType = t1;
+        if (eeprom1->RESPONSE == 'A')
           sendSMS();
       }
       else
@@ -940,40 +940,40 @@ void SIM::update()
   while (_SSerial->available() > 0)
   {
     String str;
-    str=readString();
-        
-      if(isCUSD(str) && sendCUSDResponse)
-      {
-        sendCUSDResponse=false;
-        sendSMS(str,true);
-        sendCommand("AT+CUSD=0",true);
-      }
-      else if(isCSQ(str) && sendCSQResponse)
-      {
-        sendCSQResponse=false;
-        unsigned short int t2 = str.toInt();
-        t2=t2*3;
-        str=" ";
-        str=str+t2;
-        sendSMS(str,true);
-      }
-      else if(isNewMsg(str))
-      {
-          sendReadMsg(str);
-      }
-      else if(isMsgBody(str))
-      {
-        gotMsgBody(str);
-      }
-      else if(isCallReady(str))
-      {
-        #ifndef disable_debug
-          _NSerial->println("INIT");
-        #endif
-        initialized=true;        
-      }
-      else
-        checkNetwork(str);
+    str = readString();
+
+    if (isCUSD(str) && sendCUSDResponse)
+    {
+      sendCUSDResponse = false;
+      sendSMS(str, true);
+      sendCommand("AT+CUSD=0", true);
+    }
+    else if (isCSQ(str) && sendCSQResponse)
+    {
+      sendCSQResponse = false;
+      unsigned short int t2 = str.toInt();
+      t2 = t2 * 3;
+      str = " ";
+      str = str + t2;
+      sendSMS(str, true);
+    }
+    else if (isNewMsg(str))
+    {
+      sendReadMsg(str);
+    }
+    else if (isMsgBody(str))
+    {
+      gotMsgBody(str);
+    }
+    else if (isCallReady(str))
+    {
+#ifndef disable_debug
+      _NSerial->println("INIT");
+#endif
+      initialized = true;
+    }
+    else
+      checkNetwork(str);
 
     if (!freezeIncomingCalls &&  (currentStatus == 'N' || currentStatus == 'R') && (currentCallStatus == 'N' || currentCallStatus == 'I')) //Ringing Incoming Call
     {
@@ -982,9 +982,9 @@ void SIM::update()
         eeprom1->inCall(true);
         currentStatus = 'R';
         currentCallStatus = 'I';
-        operateRing(); 
+        operateRing();
       }
-      else if(isCut(str))
+      else if (isCut(str))
       {
         endCall();
       }
@@ -1006,13 +1006,13 @@ void SIM::update()
     }
     else if ((currentStatus == 'N' || currentStatus == 'R') && currentCallStatus == 'O')
     {
-      if(callState(str)=='D')
-      { 
-          #ifndef disable_debug
-            _NSerial->print("CALL DIAL");
-            _NSerial->println("ON");
-          #endif
-          callDialled=true;
+      if (callState(str) == 'D')
+      {
+#ifndef disable_debug
+        _NSerial->print("CALL DIAL");
+        _NSerial->println("ON");
+#endif
+        callDialled = true;
       }
       else if (callState(str) == 'R')
       {
@@ -1024,13 +1024,13 @@ void SIM::update()
       {
         endCall();
         // if (eeprom1->RESPONSE == 'A')
-            // sendSMS();
+        // sendSMS();
       }
       else if (callState(str) == 'I') //else if (stringContains(str, "+CLCC: 1,0,0", 11, 12) == true)
       {
-        #ifndef disable_debug
+#ifndef disable_debug
         _NSerial->println("Call Accept");
-        #endif
+#endif
         callCutWait = millis();
         currentStatus = 'I';
         currentCallStatus = 'O';

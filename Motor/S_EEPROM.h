@@ -18,7 +18,7 @@ class S_EEPROM
     void loadAlterNumber();
     void loadAlterNumberSettings();
     void clearLoadedNumbers();
-    
+
     void updateNumberChanges();
     bool write_StringEE(int Addr, String input);
     String read_StringEE(int Addr, int length);
@@ -35,7 +35,7 @@ class S_EEPROM
 
     String primaryNumber;
     String secondary[4];
-    
+
     String alterNumber;
     byte alterNumberSetting;
     byte alterNumberPresent;
@@ -43,10 +43,10 @@ class S_EEPROM
     // unsigned short int STARTVOLTAGE;
     // unsigned short int STOPVOLTAGE;
     // bool resetBattery;
-    
+
     byte AUTOSTART;
     unsigned short int AUTOSTARTTIME;
-    
+
     byte DND;
     char RESPONSE;
 
@@ -61,13 +61,13 @@ class S_EEPROM
     void saveResponseSettings(char);
     // void saveStopVoltageSettings(unsigned short int,bool a=false);
     // void saveStartVoltageSettings(unsigned short int,bool a=false);
-    
+
     void loadAllData();
     bool addNumber(String &number);
     bool addAlternateNumber(String &number);
     bool removeNumber(String &number);
     void clearNumbers(bool admin);
-    
+
     // bool motorState();
     // void motorState(bool);
 
@@ -76,6 +76,6 @@ class S_EEPROM
 
     bool inCall();
     void inCall(bool);
-      
+
 };
 #endif

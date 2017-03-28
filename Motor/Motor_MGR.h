@@ -17,112 +17,112 @@ class SIM;
 
 class Motor_MGR
 {
-	S_EEPROM* eeprom1;
-	SIM* sim1;
+    S_EEPROM* eeprom1;
+    SIM* sim1;
 
-	bool simEventTemp[9];
-	char simEvent[9];
+    bool simEventTemp[9];
+    char simEvent[9];
 
-	bool gotOffCommand;
-	bool gotOnCommand;
+    bool gotOffCommand;
+    bool gotOnCommand;
 
-	bool allPhase;
-	bool mFeedback;
-	bool acFeedback;
-	bool phaseAC;
+    bool allPhase;
+    bool mFeedback;
+    bool acFeedback;
+    bool phaseAC;
 
-	bool semiState;
+    bool semiState;
 
-	bool startTimerOn;
-	unsigned long int tempStartTimer;
+    bool startTimerOn;
+    unsigned long int tempStartTimer;
 
-	bool stopTimerOn;
-	unsigned long int tempStopTimer;
-	unsigned int stopTimerTime;	
-	
-	bool waitCheckACTimerOn;
-	unsigned long tempWaitCheckACTimer;
-	byte waitCheckACTime;
+    bool stopTimerOn;
+    unsigned long int tempStopTimer;
+    unsigned int stopTimerTime;
 
-	bool singlePhasingTimerOn;
-	unsigned long int tempSinglePhasingTimer;
-	byte singlePhasingTime;
+    bool waitCheckACTimerOn;
+    unsigned long tempWaitCheckACTimer;
+    byte waitCheckACTime;
 
-	bool startSequenceOn;
-	unsigned long int tempStartSequenceTimer;
-	byte startSequenceTimerTime;
+    bool singlePhasingTimerOn;
+    unsigned long int tempSinglePhasingTimer;
+    byte singlePhasingTime;
 
-	bool stopSequenceOn;
-	unsigned long int tempStopSequenceTimer;
-	byte stopSequenceTimerTime;
+    bool startSequenceOn;
+    unsigned long int tempStartSequenceTimer;
+    byte startSequenceTimerTime;
 
-	bool waitStableLineOn;
-	unsigned long int waitStableLineTimer;
-	byte waitStableLineTime;
+    bool stopSequenceOn;
+    unsigned long int tempStopSequenceTimer;
+    byte stopSequenceTimerTime;
 
-	void anotherConstructor(SIM* sim1,S_EEPROM* eeprom1);
-	void readSensorState(bool &p1,bool &p2,bool &p3,bool &p4);
-	void updateSensorState(bool &p1,bool &p2,bool &p3,bool &p4);	
-	void triggerAutoStart();
-	void motorState(bool);
-	void ACFeedbackState(bool);
-	void ACPowerState(bool);
-	void AllPhaseState(bool);
+    bool waitStableLineOn;
+    unsigned long int waitStableLineTimer;
+    byte waitStableLineTime;
 
-	void operateOnEvent();
+    void anotherConstructor(SIM* sim1, S_EEPROM* eeprom1);
+    void readSensorState(bool &p1, bool &p2, bool &p3, bool &p4);
+    void updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4);
+    void triggerAutoStart();
+    void motorState(bool);
+    void ACFeedbackState(bool);
+    void ACPowerState(bool);
+    void AllPhaseState(bool);
 
-	byte checkLineSensors();
-	bool waitStableLineOver();
-	void operateOnStableLine();
+    void operateOnEvent();
 
-	bool startMotorTimerOver();
-	bool stopMotorTimerOver();
-	
-	
-	// void setACPowerState(bool b);
+    byte checkLineSensors();
+    bool waitStableLineOver();
+    void operateOnStableLine();
 
-	bool singlePhasingTimerOver();
-	void operateOnSinglePhasing();
-	bool waitCheckACTimerOver();
-	void unknownMotorOff();
+    bool startMotorTimerOver();
+    bool stopMotorTimerOver();
 
-	void terminateStopRelay();
-	void terminateStartRelay();
-	void SIMEventManager();
 
-	#ifndef disable_debug
-  		#ifdef software_SIM
-		    HardwareSerial* _NSerial;
-		#else
-		    SoftwareSerial* _NSerial;
-		#endif
-	#endif
+    // void setACPowerState(bool b);
 
-public:
+    bool singlePhasingTimerOver();
+    void operateOnSinglePhasing();
+    bool waitCheckACTimerOver();
+    void unknownMotorOff();
 
-	#ifndef disable_debug
-  		#ifdef software_SIM
-			Motor_MGR(HardwareSerial *s,SIM* sim1,S_EEPROM* eeprom1);
-		#else
-			Motor_MGR(SoftwareSerial *s,SIM* sim1,S_EEPROM* eeprom1);
-		#endif
-	#else
-		Motor_MGR(SIM* sim1,S_EEPROM* eeprom1);
-	#endif
+    void terminateStopRelay();
+    void terminateStartRelay();
+    void SIMEventManager();
 
-	bool eventOccured;
+#ifndef disable_debug
+#ifdef software_SIM
+    HardwareSerial* _NSerial;
+#else
+    SoftwareSerial* _NSerial;
+#endif
+#endif
 
-	void resetAutoStart(bool setChange=false);
-	bool motorState();
-	bool ACFeedbackState();
-	bool ACPowerState();
-	bool AllPhaseState();
-	// bool getChargeState();			//used by SIM
-	// unsigned short int getBatVolt();				//used by SIM
-	bool getMotorState();
-	void startMotor(bool commanded=false);
-	void stopMotor(bool commanded=false,bool forceStop=false);
-	void statusOnCall();
-	void update();
+  public:
+
+#ifndef disable_debug
+#ifdef software_SIM
+    Motor_MGR(HardwareSerial *s, SIM* sim1, S_EEPROM* eeprom1);
+#else
+    Motor_MGR(SoftwareSerial *s, SIM* sim1, S_EEPROM* eeprom1);
+#endif
+#else
+    Motor_MGR(SIM* sim1, S_EEPROM* eeprom1);
+#endif
+
+    bool eventOccured;
+
+    void resetAutoStart(bool setChange = false);
+    bool motorState();
+    bool ACFeedbackState();
+    bool ACPowerState();
+    bool AllPhaseState();
+    // bool getChargeState();			//used by SIM
+    // unsigned short int getBatVolt();				//used by SIM
+    bool getMotorState();
+    void startMotor(bool commanded = false);
+    void stopMotor(bool commanded = false, bool forceStop = false);
+    void statusOnCall();
+    void update();
 };
 #endif

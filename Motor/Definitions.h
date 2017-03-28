@@ -4,10 +4,10 @@
 #include <SoftwareSerial.h>
 #include <HardwareSerial.h>
 
-#define disable_debug
+// #define disable_debug
 #define software_SIM
 // #ifdef disable_debug
-	// #undef software_SIM
+// #undef software_SIM
 // #endif
 
 #define PIN_STOP 13
@@ -34,7 +34,7 @@
 // #define PIN_DTR 3
 // #define PIN_RING 2
 
-//EEPROM 
+//EEPROM
 #define autoStartAddress 0
 #define autoStartTimeAddress 4
 #define highTempAddress 8
@@ -68,6 +68,6 @@
 #endif
 //-----------------------------------------------
 //Constants FOR SPI communicatins
-	//Receive Data From Slave in (unsigned short int (2 bytes))
-	// #define ASK_RPM 0x20
-	// #define ASK_TEMP 0x21	
+//Receive Data From Slave in (unsigned short int (2 bytes))
+// #define ASK_RPM 0x20
+// #define ASK_TEMP 0x21
