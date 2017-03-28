@@ -9,17 +9,14 @@
 #define Motor_MGR_h
 
 #include "Definitions.h"
-#include "BATTERY_MGR.h"
 #include "S_EEPROM.h"
 #include "SIM.h"
 #include <Arduino.h>
 
-class BATTERY_MGR;
 class SIM;
 
 class Motor_MGR
 {
-	BATTERY_MGR* battery1;
 	S_EEPROM* eeprom1;
 	SIM* sim1;
 
@@ -29,9 +26,12 @@ class Motor_MGR
 	bool gotOffCommand;
 	bool gotOnCommand;
 
-	bool phase1;
-	bool phase2;
+	bool allPhase;
+	bool mFeedback;
+	bool acFeedback;
 	bool phaseAC;
+
+	bool semiState;
 
 	bool startTimerOn;
 	unsigned long int tempStartTimer;
@@ -60,17 +60,26 @@ class Motor_MGR
 	unsigned long int waitStableLineTimer;
 	byte waitStableLineTime;
 
-	void anotherConstructor(SIM* sim1,S_EEPROM* eeprom1,BATTERY_MGR* battery1);
-	void readSensorState(bool &p1,bool &p2,bool &p3);
-	void updateSensorState(bool &p1,bool &p2,bool &p3);	
+	void anotherConstructor(SIM* sim1,S_EEPROM* eeprom1);
+	void readSensorState(bool &p1,bool &p2,bool &p3,bool &p4);
+	void updateSensorState(bool &p1,bool &p2,bool &p3,bool &p4);	
+	void triggerAutoStart();
+	void motorState(bool);
+	void ACFeedbackState(bool);
+	void ACPowerState(bool);
+	void AllPhaseState(bool);
+
 	void operateOnEvent();
+
+	byte checkLineSensors();
+	bool waitStableLineOver();
+	void operateOnStableLine();
+
 	bool startMotorTimerOver();
 	bool stopMotorTimerOver();
 	
-	bool waitStableLineOver();
-	void operateOnStableLine();
 	
-	void setACPowerState(bool b);
+	// void setACPowerState(bool b);
 
 	bool singlePhasingTimerOver();
 	void operateOnSinglePhasing();
@@ -93,19 +102,23 @@ public:
 
 	#ifndef disable_debug
   		#ifdef software_SIM
-			Motor_MGR(HardwareSerial *s,SIM* sim1,S_EEPROM* eeprom1,BATTERY_MGR* battery1);
+			Motor_MGR(HardwareSerial *s,SIM* sim1,S_EEPROM* eeprom1);
 		#else
-			Motor_MGR(SoftwareSerial *s,SIM* sim1,S_EEPROM* eeprom1,BATTERY_MGR* battery1);
+			Motor_MGR(SoftwareSerial *s,SIM* sim1,S_EEPROM* eeprom1);
 		#endif
 	#else
-		Motor_MGR(SIM* sim1,S_EEPROM* eeprom1,BATTERY_MGR* battery1);
+		Motor_MGR(SIM* sim1,S_EEPROM* eeprom1);
 	#endif
 
 	bool eventOccured;
 
 	void resetAutoStart(bool setChange=false);
-	bool getChargeState();			//used by SIM
-	unsigned short int getBatVolt();				//used by SIM
+	bool motorState();
+	bool ACFeedbackState();
+	bool ACPowerState();
+	bool AllPhaseState();
+	// bool getChargeState();			//used by SIM
+	// unsigned short int getBatVolt();				//used by SIM
 	bool getMotorState();
 	void startMotor(bool commanded=false);
 	void stopMotor(bool commanded=false,bool forceStop=false);
