@@ -6,9 +6,9 @@
 S_EEPROM::S_EEPROM()
 {
   numbersCount = 0;
-  resetBattery=false;
-  varMotorState=false;
-  varACPowerState=false;
+  // resetBattery=false;
+  // varMotorState=false;
+  // varACPowerState=false;
 }
 
 byte S_EEPROM::checkExists(String &number)
@@ -162,25 +162,25 @@ void S_EEPROM::saveResponseSettings(char temp)
   EEPROM.put(responseAddress,RESPONSE);
 }
 
-void S_EEPROM::saveStartVoltageSettings(unsigned short int temp,bool admin)
-{  
-  if(admin || (temp>=615 && temp<STOPVOLTAGE))
-  {
-    STARTVOLTAGE=temp;
-    EEPROM.put(startVoltageAddress,STARTVOLTAGE);
-    // resetBattery=true;
-  }
-}
+// void S_EEPROM::saveStartVoltageSettings(unsigned short int temp,bool admin)
+// {  
+//   if(admin || (temp>=615 && temp<STOPVOLTAGE))
+//   {
+//     STARTVOLTAGE=temp;
+//     EEPROM.put(startVoltageAddress,STARTVOLTAGE);
+//     // resetBattery=true;
+//   }
+// }
 
-void S_EEPROM::saveStopVoltageSettings(unsigned short int temp,bool admin)
-{  
-  if(admin || (temp>STARTVOLTAGE && temp<711))
-  {
-    STOPVOLTAGE=temp;
-    EEPROM.put(stopVoltageAddress,STOPVOLTAGE);
-    resetBattery=true;
-  }
-}
+// void S_EEPROM::saveStopVoltageSettings(unsigned short int temp,bool admin)
+// {  
+//   if(admin || (temp>STARTVOLTAGE && temp<711))
+//   {
+//     STOPVOLTAGE=temp;
+//     EEPROM.put(stopVoltageAddress,STOPVOLTAGE);
+//     // resetBattery=true;
+//   }
+// }
 
 void S_EEPROM::saveTempSettings(unsigned short int temp)
 {
@@ -223,19 +223,19 @@ void S_EEPROM::loadResponseSettings()
     saveResponseSettings('C');
 }
 
-void S_EEPROM::loadStartVoltageSettings()
-{
-  EEPROM.get(startVoltageAddress,STARTVOLTAGE);
-  if(STARTVOLTAGE==0xFFFF)
-    saveStartVoltageSettings(625,true);
-}
+// void S_EEPROM::loadStartVoltageSettings()
+// {
+//   EEPROM.get(startVoltageAddress,STARTVOLTAGE);
+//   if(STARTVOLTAGE==0xFFFF)
+//     saveStartVoltageSettings(625,true);
+// }
 
-void S_EEPROM::loadStopVoltageSettings()
-{
-  EEPROM.get(stopVoltageAddress,STOPVOLTAGE);
-  if(STOPVOLTAGE==0xFFFF)
-    saveStopVoltageSettings(675,true);
-}
+// void S_EEPROM::loadStopVoltageSettings()
+// {
+//   EEPROM.get(stopVoltageAddress,STOPVOLTAGE);
+//   if(STOPVOLTAGE==0xFFFF)
+//     saveStopVoltageSettings(675,true);
+// }
 
 void S_EEPROM::loadAlterNumberSettings()
 {
@@ -391,25 +391,6 @@ bool S_EEPROM::eeprom_write_bytes(int startAddr, const byte* array, int numBytes
   return true;
 }
 
-bool S_EEPROM::motorState()
-{
-  return varMotorState;
-}
-
-void S_EEPROM::motorState(bool b)
-{
-  varMotorState=b;
-}
-
-bool S_EEPROM::ACPowerState()
-{
-  return varACPowerState;
-}
-
-void S_EEPROM::ACPowerState(bool b)
-{
-  varACPowerState=b;
-}
 
 bool S_EEPROM::inCall()
 {
