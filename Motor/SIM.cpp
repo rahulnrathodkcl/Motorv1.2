@@ -1,12 +1,7 @@
 //Version 2 Dated : 29052016
 #include "SIM.h"
-//#include <SoftwareSerial.h>
-//#include "Defintions.h"
-//#include "Defintions.h"
 /*
   Gets the Phone Numbers From the EEPROM Class.
-  Use #use_mega to use for SELF START with Serial And Serial1
-  Use #disable_debug to remove data sent to Serial port in SELF START AND SWITCH OFF.
 */
 
   #ifndef disable_debug
@@ -122,8 +117,6 @@ void SIM::operateOnMsg(String str,bool admin=false)
           eeprom1->saveAutoStartSettings(true);
           eeprom1->saveDNDSettings(false);
           eeprom1->saveResponseSettings('C');
-          eeprom1->saveStartVoltageSettings(625);
-          eeprom1->saveStopVoltageSettings(675);  
           eeprom1->saveAutoStartTimeSettings(50);  
       }
       else if(stringContains(str,"AUTOON",6,str.length()-1))
@@ -144,35 +137,30 @@ void SIM::operateOnMsg(String str,bool admin=false)
           eeprom1->saveResponseSettings('C');  //set DND to False in EEPROM
       else if(stringContains(str,"RESPA",5,str.length()-1))
           eeprom1->saveResponseSettings('A');  //set DND to False in EEPROM
-      else if(stringContains(str,"BATSTART",8,str.length()-1))
-          eeprom1->saveStartVoltageSettings(str.toInt());  //set DND to False in EEPROM
-      else if(stringContains(str,"BATSTOP",7,str.length()-1))
-          eeprom1->saveStopVoltageSettings(str.toInt());  //set DND to False in EEPROM
       else if(stringContains(str,"STATUS",6,str.length()-1))
       {
-          bool t3 = eeprom1->ACPowerState();
-          bool t4= motor1->getChargeState();
-          bool t5 = eeprom1->motorState();
-          float t6 = motor1->getBatVolt();
-          unsigned short int t7;
-          t6 = t6/100.0;
-          t7=t6;
+          bool t3 = motor1->ACPowerState();
+          bool t5 = motor1->motorState();
+          // float t6 = motor1->getBatVolt();
+          // unsigned short int t7;
+          // t6 = t6/100.0;
+          // t7=t6;
           String resp;
           resp = "AC:";
           resp = resp + (t3?" ON\n":" OFF\n");
-          resp = resp + "C:";
-          resp = resp + (t4?" ON\n":" OFF\n");
+          // resp = resp + "C:";
+          // resp = resp + (t4?" ON\n":" OFF\n");
           resp = resp + "M:";
           resp = resp + (t5?" ON\n":" OFF\n");          
           if(eeprom1->AUTOSTART)
             resp=resp+"AUTOON";
           else 
             resp=resp+"AUTOOFF";
-          resp = resp + "\nBAT:";
-          resp = resp + t7;
-          resp = resp + ".";
-          t7 = ((t6-t7)*100);
-          resp = resp + t7;
+          // resp = resp + "\nBAT:";
+          // resp = resp + t7;
+          // resp = resp + ".";
+          // t7 = ((t6-t7)*100);
+          // resp = resp + t7;
           isMsgFromAdmin=admin;
           sendSMS(resp,true);
       }
@@ -893,6 +881,10 @@ void SIM::setMotorMGRResponse(char response)
     responseToAction=true;
     if(response=='L')   //motor off, no light
       playSound('L');
+    else if(response=='A')   //motor off, light on
+      playSound('A');
+    else if(response=='B')   //motor off, light on
+      playSound('B');    
     else if(response=='O')   //motor off, light on
       playSound('3');
     else if(response=='D')
