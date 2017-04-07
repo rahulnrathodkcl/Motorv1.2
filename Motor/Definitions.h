@@ -3,9 +3,14 @@
 
 #include <SoftwareSerial.h>
 #include <HardwareSerial.h>
+// #include <avr/wdt.h>
+
+
+#define WATCHDOG_OFF    (0)
+#define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
 // #define disable_debug
-#define software_SIM
+// #define software_SIM
 // #ifdef disable_debug
 // #undef software_SIM
 // #endif
@@ -40,8 +45,8 @@
 #define highTempAddress 8
 #define dndAddress 12
 #define responseAddress 14
-#define startVoltageAddress 16
-#define stopVoltageAddress 20
+// #define startVoltageAddress 16
+// #define stopVoltageAddress 20
 
 #define numbersCountAddress 24
 #define mobileNumberAddress 28
@@ -51,13 +56,19 @@
 #define alterNumberAddress 130
 
 
+//NOT TO CHANGE____ ASSOCIATED WITH BOOTLOADER 
+#define prgUpdateRequestAddress 900
+#define progSizeAddress 904
+#define prgUpdateStatus 908
+
+//_______________________
+
 #define EEPROM_MIN_ADDR 0
 #define EEPROM_MAX_ADDR 1023
 
 #define STR_MOTOR "MOTOR "
 #define STR_ON "ON"
 #define STR_OFF "OFF"
-
 
 #define AC_3PH 0x01
 #define AC_2PH 0x02

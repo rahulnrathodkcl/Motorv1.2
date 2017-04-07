@@ -5,6 +5,12 @@
 
 S_EEPROM eeprom1;
 
+// Function Pototype
+// void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+// void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+
+void __attribute__((noinline)) watchdogConfig(uint8_t x);
+
 #ifndef disable_debug
 SoftwareSerial s1(5, 6);
 #ifdef software_SIM
@@ -32,13 +38,23 @@ SIM sim1(&Serial);
 Motor_MGR motor1(&sim1, &eeprom1);
 #endif
 
+
+
 void setup() {
+  noInterrupts();
+  watchdogConfig(WATCHDOG_OFF);
+  // wdt_init();
   // put your setup code here, to run once:
+  interrupts();
+
   Serial.begin(19200);
 #ifndef disable_debug
   USART1->begin(19200);
 #endif
-
+  
+  pinMode(PIN_LED,OUTPUT);
+  digitalWrite(PIN_LED,HIGH);
+  
   eeprom1.loadAllData();
   attachInterrupt(digitalPinToInterrupt(PIN_ACPHASE), IVR_PHASE, CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE1),IVR_PHASE,CHANGE);
@@ -47,8 +63,14 @@ void setup() {
 
   sim1.setClassReference(&eeprom1, &motor1);
 #ifndef disable_debug
-  USART1->println("Starting");
+  USART1->println("ST");
 #endif
+}
+
+
+void watchdogConfig(uint8_t x) {
+  WDTCSR = _BV(WDCE) | _BV(WDE);
+  WDTCSR = x;
 }
 
 void IVR_PHASE()
@@ -64,7 +86,7 @@ ISR(PCINT0_vect)
 ISR(BADISR_vect)
 {
 #ifndef disable_debug
-  USART1->println("!!!");
+  USART1->println("!");
   USART1->println(MCUSR);
 #endif
 }
@@ -80,6 +102,16 @@ ISR(BADISR_vect)
 //   #endif
 // }
 
+//...
+
+// Function Implementation
+// void wdt_init(void)
+// {
+    // MCUSR = 0;
+    // wdt_disable();
+    // return;
+// }
+
 void printData()
 {
 #ifndef disable_debug
@@ -89,20 +121,20 @@ void printData()
   // USART1->print("STOP:");
   // USART1->println(eeprom1.STOPVOLTAGE);
 
-  USART1->print("DND:");
+  // USART1->print("DND:");
   USART1->println(eeprom1.DND);
 
-  USART1->print("RESP:");
+  USART1->print("RES:");
   USART1->println(eeprom1.RESPONSE);
 
-  USART1->print("AUTO:");
+  USART1->print("AUT:");
   USART1->println(eeprom1.AUTOSTART);
 
-  USART1->print("TIME:");
+  USART1->print("TIM:");
   USART1->println(eeprom1.AUTOSTARTTIME);
 
-  USART1->print("TEMP:");
-  USART1->println(eeprom1.HIGHTEMP);
+  // USART1->print("TEMP:");
+  // USART1->println(eeprom1.HIGHTEMP);
 
   USART1->print("nos:");
   USART1->println(eeprom1.numbersCount);
@@ -119,18 +151,49 @@ void printData()
 String str;
 bool simDebugMode = false;
 bool initialized = false;
+bool checkedUpdate=false;
+unsigned short temp=0;
+bool led=true;
 void loop() {
   // put your main code here, to run repeatedly:
 
+
   if (!initialized)
   {
+    if(!checkedUpdate && millis() >= 2000)
+    {
+      if(eeprom1.getUpdateStatus())
+      {
+          eeprom1.discardUpdateStatus();
+          checkedUpdate=true;
+          sim1.startSIMAfterUpdate();
+      }
+    }
+    
+    if(millis()-temp>2000)
+    {
+        if(led)
+        {
+          digitalWrite(PIN_LED,LOW);
+          led=false;
+        }
+        else
+        {
+          digitalWrite(PIN_LED,HIGH);
+          led=true;
+        }
+        temp=millis();
+    }
+
+
     if (millis() >= 25000)
     {
+      digitalWrite(PIN_LED,LOW);
 
       if (!sim1.initialize())
       {
 #ifndef disable_debug
-        USART1->println("NOT INIT SIM");
+        USART1->println("NOSIM");
 #endif
       }
       motor1.eventOccured = true;
@@ -160,11 +223,10 @@ void loop() {
     str = USART1->readStringUntil('\n');
     if (simDebugMode)
     {
-      if (str == "SIMDEBUGOFF\r")
+      if (str == "SIMOFF\r")
       {
         simDebugMode = false;
-        USART1->print("SIM DEBUG ");
-        USART1->println("OFF");
+        USART1->println("SIMOFF\r");
       }
       else
         SUSART1->println(str);
@@ -175,13 +237,12 @@ void loop() {
         motor1.startMotor();
       else if (str == "A\r")
         motor1.stopMotor();
-      else if (str == "SIMDEBUGON\r")
+      else if (str == "SIMON\r")
       {
         simDebugMode = true;
-        USART1->print("SIM DEBUG ");
-        USART1->println("ON");
+        USART1->println("SIMON\r");
       }
-      else if (str == "PRINTEEPROM\r")
+      else if (str == "PPROM\r")
         printData();
       else
         sim1.operateOnMsg(str, true);
@@ -190,7 +251,5 @@ void loop() {
 #endif
 
   sim1.update();
-  // battery1.update();
   motor1.update();
-  //eeprom1.update();
 }

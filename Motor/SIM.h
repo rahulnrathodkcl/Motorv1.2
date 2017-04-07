@@ -75,8 +75,18 @@ class SIM
     void sendCommand(char cmd, bool newline);
     void sendCommand(String cmd, bool newline);
 
+    bool startGPRS(String);
+    bool stopGPRS();
+    // bool extendedSendCommand(String &cmd,String vstr,unsigned short int len,unsigned short int timeout);
+    bool connectToFTP(String);
+    bool setFile(String);
+    bool getProgramSize();
+    bool downloadFirmware();
+    bool isGPRSConnected();
+    bool prepareForFirmwareUpdate(String &);
+
     bool isCSQ(String &);
-    bool sendBlockingATCommand(String);
+    bool sendBlockingATCommand(String,bool =false);
     String readString();
     bool matchString(String, String);
     bool stringContains(String &sstr, String mstr, byte sstart, byte sstop);
@@ -103,6 +113,7 @@ class SIM
     bool rejectCommandsElligible();
     void checkNetwork(String);//(String str);
     void networkCounterMeasures();
+    void __attribute__((noinline)) watchdogConfig(uint8_t x);
 
     void setObtainEvent();
     inline bool isCallReady(String);
@@ -141,6 +152,7 @@ class SIM
     SIM(HardwareSerial* serial);
 #endif
 #endif
+    void startSIMAfterUpdate();
 
     void setClassReference(S_EEPROM* e1, Motor_MGR* m1);
     bool initialize();

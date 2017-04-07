@@ -1,8 +1,8 @@
 #include "Motor_MGR.h"
 
 /*
-  simEventTemp[0] 	: _motor not started							N
-  simEventTemp[1] 	: _cannot turn off motor due to some problem	P
+  simEventTemp[0] 		: _motor not started							N
+  simEventTemp[1] 		: _cannot turn off motor due to some problem	P
   simEventTemp[2]		: _motor has turned off due to unknown reason.	U
   simEventTemp[3]		: _single phasing has occured,motor off			F
   simEventTemp[4]		: _AC power On									G
@@ -11,31 +11,31 @@
   simEventTemp[7]		: _motor has started  							S
   simEventTemp[8]		: _motor has turned off							O
   simEventTemp[9]		: lost power in 2 phase, motor off				D
-  simEventTemp[10]	: got AC Power in 1 phase						A
-  simEventTemp[11]	: got AC power in 2 phase						B
+  simEventTemp[10]		: got AC Power in 1 phase						A
+  simEventTemp[11]		: got AC power in 2 phase						B
 */
 
 #ifndef disable_debug
-#ifdef software_SIM
-Motor_MGR::Motor_MGR(HardwareSerial *serial, SIM* sim1, S_EEPROM* eeprom1)
-{
-  _NSerial = serial;
-  _NSerial->begin(19200);
-  anotherConstructor(sim1, eeprom1);
-}
+	#ifdef software_SIM
+		Motor_MGR::Motor_MGR(HardwareSerial *serial, SIM* sim1, S_EEPROM* eeprom1)
+		{
+			_NSerial = serial;
+			_NSerial->begin(19200);
+			anotherConstructor(sim1, eeprom1);
+		}
+	#else
+		Motor_MGR::Motor_MGR(SoftwareSerial *serial, SIM* sim1, S_EEPROM* eeprom1)
+		{
+			_NSerial = serial;
+			_NSerial->begin(19200);
+			anotherConstructor(sim1, eeprom1);
+		}
+	#endif
 #else
-Motor_MGR::Motor_MGR(SoftwareSerial *serial, SIM* sim1, S_EEPROM* eeprom1)
-{
-  _NSerial = serial;
-  _NSerial->begin(19200);
-  anotherConstructor(sim1, eeprom1);
-}
-#endif
-#else
-Motor_MGR::Motor_MGR(SIM* sim1, S_EEPROM* eeprom1)
-{
-  anotherConstructor(sim1, eeprom1);
-}
+	Motor_MGR::Motor_MGR(SIM* sim1, S_EEPROM* eeprom1)
+	{
+		anotherConstructor(sim1, eeprom1);
+	}
 #endif
 
 void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
@@ -83,7 +83,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   phaseAC = false;
 
   for (byte i = 0; i < 12; i++)
-    simEventTemp[i] = true;
+	simEventTemp[i] = true;
 
   simEvent[0] = 'N';
   simEvent[1] = 'P';
@@ -147,44 +147,46 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
   phaseAC = p4;
 
   if (!phaseAC || !allPhase)
-    startTimerOn = false;
+	startTimerOn = false;
 
   if (!(bool)eeprom1->AUTOSTART)
   {
-    if (phaseAC)
-    {
-#ifndef disable_debug
-      _NSerial->println("AC ON");
-#endif
-      if (!mFeedback)
-      {
-#ifndef disable_debug
-        _NSerial->println("M OFF");
-#endif
-        digitalWrite(PIN_STOP, LOW);
-      }
-    }
-    else
-    {
-#ifndef disable_debug
-      _NSerial->println("ON BAT");
-#endif
-      digitalWrite(PIN_STOP, HIGH);
-    }
+	if (phaseAC)
+	{
+		#ifndef disable_debug
+	  	_NSerial->print("A");
+	  	_NSerial->println("ON");
+		#endif
+	  if (!mFeedback)
+	  {
+		#ifndef disable_debug
+		_NSerial->println("M OFF");
+		#endif
+		digitalWrite(PIN_STOP, LOW);
+	  }
+	}
+	else
+	{
+		#ifndef disable_debug
+	  _NSerial->print("B");
+	  _NSerial->println("ON");
+		#endif
+	  digitalWrite(PIN_STOP, HIGH);
+	}
   }
 }
 
 void Motor_MGR::resetAutoStart(bool setChange)
 {
   if (!(bool)eeprom1->AUTOSTART && !motorState() && ACPowerState())
-    digitalWrite(PIN_STOP, LOW);
+	digitalWrite(PIN_STOP, LOW);
   else if ((bool)eeprom1->AUTOSTART && !stopSequenceOn)
   {
-    digitalWrite(PIN_STOP, HIGH);
-    if (setChange) // && eeprom1->ACPowerState() && !eeprom1->motorState())
-    {
-      triggerAutoStart();
-    }
+	digitalWrite(PIN_STOP, HIGH);
+	if (setChange) // && eeprom1->ACPowerState() && !eeprom1->motorState())
+	{
+	  triggerAutoStart();
+	}
   }
 }
 
@@ -192,11 +194,11 @@ void Motor_MGR::triggerAutoStart()
 {
   if (!motorState())
   {
-    if (AllPhaseState() && ACPowerState())
-    {
-      startTimerOn = true;
-      tempStartTimer = millis();
-    }
+	if (AllPhaseState() && ACPowerState())
+	{
+	  startTimerOn = true;
+	  tempStartTimer = millis();
+	}
   }
 }
 
@@ -247,66 +249,68 @@ void Motor_MGR::operateOnEvent()
 
   if (motorState())		//motorOn
   {
-    if (!t3Phase && !tMotor && !tacPhase)	//acPower Cut Off
-    {
-      waitCheckACTimerOn = false;		//stop any unknown reason of motor off event
-      stopMotor();
-      simEventTemp[6] = sim1->registerEvent('C'); //report To SIM Motor Off due to POWER CUT OFF
-      // _NSerial->println("Got C");
-    }
-    else if ((tacPhase && ACPowerState()) &&
-             (t3Phase && AllPhaseState()) &&
-             (!tMotor))		//motor switched off due to any reason
-    {
-      tempWaitCheckACTimer = millis();
-      waitCheckACTimerOn = true;
+	if (!t3Phase && !tMotor && !tacPhase)	//acPower Cut Off
+	{
+		waitCheckACTimerOn = false;		//stop any unknown reason of motor off event
+		stopMotor();
+		simEventTemp[6] = sim1->registerEvent('C'); //report To SIM Motor Off due to POWER CUT OFF
+		// _NSerial->println("Got C");
+	}
+	else if ((tacPhase && ACPowerState()) &&
+			 (t3Phase && AllPhaseState()) &&
+			 (!tMotor))		//motor switched off due to any reason
+	{
+		tempWaitCheckACTimer = millis();
+	 	waitCheckACTimerOn = true;
+	#ifndef disable_debug
+		  _NSerial->print("Got");
+		  _NSerial->println("U");
+	#endif
+	  //report to SIM Motor Off due to Unknown Reason
+	  // simEventTemp[2]=sim1->registerEvent('U');
+	  // stopMotor();
+	}
+	else if (!t3Phase && tacPhase && mFeedback) ////single phasing occured
+	{
+	  // operateOnSinglePhasing();
+	  tempSinglePhasingTimer = millis();
+	  singlePhasingTimerOn = true;
 #ifndef disable_debug
-      _NSerial->println("Got U");
+	  _NSerial->print("Got");
+	  _NSerial->println("F");
 #endif
-      //report to SIM Motor Off due to Unknown Reason
-      // simEventTemp[2]=sim1->registerEvent('U');
-      // stopMotor();
-    }
-    else if (!t3Phase && tacPhase && mFeedback) ////single phasing occured
-    {
-      // operateOnSinglePhasing();
-      tempSinglePhasingTimer = millis();
-      singlePhasingTimerOn = true;
-#ifndef disable_debug
-      _NSerial->println("Got F");
-#endif
-      semiState = true;
-    }
-    else if (!mFeedback && (!tacPhase && ACPowerState()) && (t3Phase && AllPhaseState()))	//2 Phases Got Off
-    {
-      waitCheckACTimerOn = false;		//stop any unknown reason of motor off event
-      stopMotor();
-      simEventTemp[9] = sim1->registerEvent('D');
-      semiState = true;
-    }
-    // No need to check if single phasing had occured, but all phase present now.
+	  semiState = true;
+	}
+	else if (!mFeedback && (!tacPhase && ACPowerState()) && (t3Phase && AllPhaseState()))	//2 Phases Got Off
+	{
+	  waitCheckACTimerOn = false;		//stop any unknown reason of motor off event
+	  stopMotor();
+	  simEventTemp[9] = sim1->registerEvent('D');
+	  semiState = true;
+	}
+	// No need to check if single phasing had occured, but all phase present now.
   }
   else				//motorOff
   {
-    if (mFeedback)		// motor turn on manually
-    {
-      if (t3Phase && tacPhase)
-      {
-        semiState = false;
-        if (startTimerOn)
-          startTimerOn = false;
-        simEventTemp[7] = sim1->registerEvent('S');	//register To SIM Motor has started
-      }
-      else
-      {
-        stopMotor();
-      }
-    }
-    else	// changes in AC lines, i.e. got power in 3 phase, 2phase or 1 phase, or lost ACpower.
-    {
-      waitStableLineOn = true;
-      waitStableLineTimer = millis();
-    }
+	if (mFeedback)		// motor turn on manually
+	{
+	  if (t3Phase && tacPhase)
+	  {
+		semiState = false;
+		if (startTimerOn)
+		  startTimerOn = false;
+		simEventTemp[7] = sim1->registerEvent('S');	//register To SIM Motor has started
+	  }
+	  else
+	  {
+		stopMotor();
+	  }
+	}
+	else	// changes in AC lines, i.e. got power in 3 phase, 2phase or 1 phase, or lost ACpower.
+	{
+	  waitStableLineOn = true;
+	  waitStableLineTimer = millis();
+	}
   }
   updateSensorState(t3Phase, tMotor, tacFeedback, tacPhase);
 }
@@ -314,13 +318,13 @@ void Motor_MGR::operateOnEvent()
 byte Motor_MGR::checkLineSensors()
 {
   if (ACPowerState() && AllPhaseState())		//all phase present
-    return AC_3PH;
+	return AC_3PH;
   else if ((ACPowerState() || ACFeedbackState())  && !AllPhaseState())	//2 phase present
-    return AC_2PH;
+	return AC_2PH;
   else if (!ACPowerState() && AllPhaseState())	//1 phase present
-    return AC_1PH;
+	return AC_1PH;
   else if (!ACPowerState() && !AllPhaseState())	//1 phase present
-    return AC_OFF;
+	return AC_OFF;
 }
 
 bool Motor_MGR::waitStableLineOver()
@@ -335,39 +339,39 @@ void Motor_MGR::operateOnStableLine()
   byte temp = checkLineSensors();
   if (temp == AC_3PH)
   {
-    semiState = false;
-#ifndef disable_debug
-    _NSerial->print("AUTO:");
-    _NSerial->println(eeprom1->AUTOSTART);
-    _NSerial->print("TIME:");
-    _NSerial->println(eeprom1->AUTOSTARTTIME);
-#endif
-    if (eeprom1->AUTOSTART)			//startMotor if autoStart=ON
-      triggerAutoStart();
-    else
-    {
-      if (!eeprom1->DND)	//if DND off then
-        simEventTemp[4] = sim1->registerEvent('G'); //register TO SIM AC power ON
-    }
+	semiState = false;
+// #ifndef disable_debug
+	// _NSerial->print("AUTO:");
+	// _NSerial->println(eeprom1->AUTOSTART);
+	// _NSerial->print("TIME:");
+	// _NSerial->println(eeprom1->AUTOSTARTTIME);
+// #endif
+	if (eeprom1->AUTOSTART)			//startMotor if autoStart=ON
+	  triggerAutoStart();
+	else
+	{
+	  if (!eeprom1->DND)	//if DND off then
+		simEventTemp[4] = sim1->registerEvent('G'); //register TO SIM AC power ON
+	}
   }
   else if (!semiState && temp == AC_2PH) //Got Power in 2 phase
   {
-    semiState = true;
-    if (!eeprom1->DND)	//if DND off then
-      simEventTemp[11] = sim1->registerEvent('B'); //register TO SIM 2 phase power ON
+	semiState = true;
+	if (!eeprom1->DND)	//if DND off then
+	  simEventTemp[11] = sim1->registerEvent('B'); //register TO SIM 2 phase power ON
 
   }
   else if (!semiState && temp == AC_1PH)		//Got Power in 1 phase
   {
-    semiState = true;
-    if (!eeprom1->DND)	//if DND off then
-      simEventTemp[10] = sim1->registerEvent('A'); //register TO SIM 1 phase power ON
+	semiState = true;
+	if (!eeprom1->DND)	//if DND off then
+	  simEventTemp[10] = sim1->registerEvent('A'); //register TO SIM 1 phase power ON
   }
   else if (temp == AC_OFF)	//Lost Power in All Phase
   {
-    semiState = false;
-    if (!eeprom1->DND)		//if DND off
-      simEventTemp[5] = sim1->registerEvent('L'); //register To SIM AC Power OFF
+	semiState = false;
+	if (!eeprom1->DND)		//if DND off
+	  simEventTemp[5] = sim1->registerEvent('L'); //register To SIM AC Power OFF
   }
 }
 
@@ -380,11 +384,6 @@ bool Motor_MGR::stopMotorTimerOver()
 {
   return (millis() - tempStopTimer >= (stopTimerTime * 100));
 }
-
-// void Motor_MGR::setACPowerState(bool temp)
-// {
-// 	eeprom1->ACPowerState(temp);
-// }
 
 bool Motor_MGR::waitCheckACTimerOver()
 {
@@ -415,35 +414,35 @@ void Motor_MGR::startMotor(bool commanded)
 {
 #ifndef disable_debug
   _NSerial->print("Start");
-  _NSerial->println("Motor ");
+  // _NSerial->println("Motor ");
 #endif
   if (ACPowerState() && AllPhaseState())
   {
-    if (!motorState())
-    {
-      startTimerOn = false;
-      if (!(bool)eeprom1->AUTOSTART)
-        digitalWrite(PIN_STOP, HIGH);
-      digitalWrite(PIN_START, LOW);
-      tempStartSequenceTimer = millis();
-      startSequenceOn = true;
-      motorState(true);
-      gotOnCommand = commanded;
-    }
-    else
-    {
-      if (commanded)
-        sim1->setMotorMGRResponse('O');
-#ifndef disable_debug
-      _NSerial->print("Motor ");
-      _NSerial->println("ON");
-#endif
-    }
+	if (!motorState())
+	{
+	  startTimerOn = false;
+	  if (!(bool)eeprom1->AUTOSTART)
+		digitalWrite(PIN_STOP, HIGH);
+	  digitalWrite(PIN_START, LOW);
+	  tempStartSequenceTimer = millis();
+	  startSequenceOn = true;
+	  motorState(true);
+	  gotOnCommand = commanded;
+	}
+	else
+	{
+	  if (commanded)
+		sim1->setMotorMGRResponse('O');
+		// #ifndef disable_debug
+		// 	  _NSerial->print("M ");
+		// 	  _NSerial->println("ON");
+		// #endif
+	}
   }
   else
   {
-    if (commanded)
-      sim1->setMotorMGRResponse('L');	//cannot start motor due to some problem
+	if (commanded)
+	  sim1->setMotorMGRResponse('L');	//cannot start motor due to some problem
   }
 }
 
@@ -451,26 +450,22 @@ void Motor_MGR::stopMotor(bool commanded, bool forceStop)
 {
 #ifndef disable_debug
   _NSerial->print("Stop");
-  _NSerial->println("Motor ");
+  _NSerial->println("M ");
 #endif
   if (forceStop || motorState())
   {
-    startTimerOn = false;
-    singlePhasingTimerOn = false;
-    digitalWrite(PIN_STOP, LOW);
-    tempStopSequenceTimer = millis();
-    stopSequenceOn = true;
-    motorState(false);
-    gotOffCommand = commanded;
+	startTimerOn = false;
+	singlePhasingTimerOn = false;
+	digitalWrite(PIN_STOP, LOW);
+	tempStopSequenceTimer = millis();
+	stopSequenceOn = true;
+	motorState(false);
+	gotOffCommand = commanded;
   }
   else
   {
-    if (commanded)
-      sim1->setMotorMGRResponse('O');
-#ifndef disable_debug
-    _NSerial->print("Motor ");
-    _NSerial->println("OFF");
-#endif
+	if (commanded)
+	  sim1->setMotorMGRResponse('O');
   }
 }
 
@@ -478,37 +473,32 @@ void Motor_MGR::terminateStopRelay()
 {
   if (stopSequenceOn && millis() - tempStopSequenceTimer > (stopSequenceTimerTime * 100))
   {
-    if ((bool)eeprom1->AUTOSTART || !ACPowerState())
-      digitalWrite(PIN_STOP, HIGH);
+	if ((bool)eeprom1->AUTOSTART || !ACPowerState())
+	  digitalWrite(PIN_STOP, HIGH);
 
-    stopSequenceOn = false;
+	stopSequenceOn = false;
 
-#ifndef disable_debug
-    _NSerial->print("Stop");
-    _NSerial->println("Over");
-#endif
-
-    if (!getMotorState())		//motor has turned off
-    {
-      if (gotOffCommand)
-      {
-        gotOffCommand = false;
-        sim1->setMotorMGRResponse('D');		//motor has stopped
-      }
-      // else
-      // simEventTemp[8] = sim1->registerEvent('O'); //register TO SIM motor has turned off
-    }
-    else	//motor is still on, with either phase 1 or phase 2 feedback on with ACPhase on
-    {
-      if (gotOffCommand)
-      {
-        gotOffCommand = false;
-        sim1->setMotorMGRResponse('L');		//cannot turn off motor
-      }
-      else
-        simEventTemp[1] = sim1->registerEvent('P');
-      //register to SIM cannot turn off motor due to some problem
-    }
+	if (!getMotorState())		//motor has turned off
+	{
+	  if (gotOffCommand)
+	  {
+		gotOffCommand = false;
+		sim1->setMotorMGRResponse('D');		//motor has stopped
+	  }
+	  // else
+	  // simEventTemp[8] = sim1->registerEvent('O'); //register TO SIM motor has turned off
+	}
+	else	//motor is still on, with either phase 1 or phase 2 feedback on with ACPhase on
+	{
+	  if (gotOffCommand)
+	  {
+		gotOffCommand = false;
+		sim1->setMotorMGRResponse('L');		//cannot turn off motor
+	  }
+	  else
+		simEventTemp[1] = sim1->registerEvent('P');
+	  //register to SIM cannot turn off motor due to some problem
+	}
   }
 }
 
@@ -516,37 +506,37 @@ void Motor_MGR::terminateStartRelay()
 {
   if (startSequenceOn &&  millis() - tempStartSequenceTimer > (startSequenceTimerTime * 100))
   {
-    digitalWrite(PIN_START, HIGH);
-    startSequenceOn = false;
+	digitalWrite(PIN_START, HIGH);
+	startSequenceOn = false;
 
-#ifndef disable_debug
-    _NSerial->print("Start");
-    _NSerial->println("Over");
-#endif
+// #ifndef disable_debug
+	// _NSerial->print("Start");
+	// _NSerial->println("Over");
+// #endif
 
-    if (gotOnCommand)
-    {
-      gotOnCommand = false;
-      if (getMotorState())
-      {
-        sim1->setMotorMGRResponse('D'); // motor has started
-      }
-      else
-      {
-        stopMotor(false, true);
-        sim1->setMotorMGRResponse('L');	//cannot start motor due to some problem
-      }
-    }
-    else
-    {
-      if (getMotorState())
-        simEventTemp[7] = sim1->registerEvent('S');// ;//register To SIM Motor has started
-      else
-      {
-        stopMotor(false, true);
-        simEventTemp[0] = sim1->registerEvent('N');//register To SIM motor not started due to phase failure
-      }
-    }
+	if (gotOnCommand)
+	{
+	  gotOnCommand = false;
+	  if (getMotorState())
+	  {
+		sim1->setMotorMGRResponse('D'); // motor has started
+	  }
+	  else
+	  {
+		stopMotor(false, true);
+		sim1->setMotorMGRResponse('L');	//cannot start motor due to some problem
+	  }
+	}
+	else
+	{
+	  if (getMotorState())
+		simEventTemp[7] = sim1->registerEvent('S');// ;//register To SIM Motor has started
+	  else
+	  {
+		stopMotor(false, true);
+		simEventTemp[0] = sim1->registerEvent('N');//register To SIM motor not started due to phase failure
+	  }
+	}
   }
 }
 
@@ -554,19 +544,19 @@ void Motor_MGR::statusOnCall()
 {
   bool temp = getMotorState();
   if (temp)
-    sim1->setMotorMGRResponse('D');	//motor is on
+	sim1->setMotorMGRResponse('D');	//motor is on
   else
   {
-    byte b = checkLineSensors();
+	byte b = checkLineSensors();
 
-    if (b == AC_OFF)
-      sim1->setMotorMGRResponse('L');	//motor off, no light
-    else if (b == AC_1PH)	// power only in 1 phase
-      sim1->setMotorMGRResponse('A');	//motor off, no light
-    else if (b == AC_2PH)	//power only in 2 phase
-      sim1->setMotorMGRResponse('B');	//motor off, no light
-    else if (b == AC_3PH)
-      sim1->setMotorMGRResponse('O');	//motor off, light on
+	if (b == AC_OFF)
+	  sim1->setMotorMGRResponse('L');	//motor off, no light
+	else if (b == AC_1PH)	// power only in 1 phase
+	  sim1->setMotorMGRResponse('A');	//motor off, no light
+	else if (b == AC_2PH)	//power only in 2 phase
+	  sim1->setMotorMGRResponse('B');	//motor off, no light
+	else if (b == AC_3PH)
+	  sim1->setMotorMGRResponse('O');	//motor off, light on
   }
 }
 
@@ -574,40 +564,40 @@ void Motor_MGR::SIMEventManager()
 {
   for (byte i = 0; i < 12; i++)
   {
-    if (!simEventTemp[i])
-      simEventTemp[i] = sim1->registerEvent(simEvent[i]);
+	if (!simEventTemp[i])
+	  simEventTemp[i] = sim1->registerEvent(simEvent[i]);
   }
 }
 void Motor_MGR::update()
 {
   if (!startSequenceOn && !stopSequenceOn && eventOccured)
-    operateOnEvent();
+	operateOnEvent();
 
   if (waitStableLineOn)
-    if (waitStableLineOver())
-      operateOnStableLine();
+	if (waitStableLineOver())
+	  operateOnStableLine();
 
   if (waitCheckACTimerOn)
-    if (waitCheckACTimerOver())
-      unknownMotorOff();
+	if (waitCheckACTimerOver())
+	  unknownMotorOff();
 
   if (singlePhasingTimerOn)
-    if (singlePhasingTimerOver())
-      operateOnSinglePhasing();
+	if (singlePhasingTimerOver())
+	  operateOnSinglePhasing();
 
   if (startTimerOn)
-    if (startMotorTimerOver())
-      startMotor();
+	if (startMotorTimerOver())
+	  startMotor();
 
   if (stopTimerOn)
-    if (stopMotorTimerOver())
-      stopMotor();
+	if (stopMotorTimerOver())
+	  stopMotor();
 
   if (startSequenceOn)
-    terminateStartRelay();
+	terminateStartRelay();
 
   if (stopSequenceOn)
-    terminateStopRelay();
+	terminateStopRelay();
 
   SIMEventManager();
 }

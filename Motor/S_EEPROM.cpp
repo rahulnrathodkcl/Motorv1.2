@@ -1,14 +1,10 @@
-//#include "Defintions.h"
-
 #include <Arduino.h>
 #include "S_EEPROM.h"
 
 S_EEPROM::S_EEPROM()
 {
-  numbersCount = 0;
-  // resetBattery=false;
-  // varMotorState=false;
-  // varACPowerState=false;
+    numbersCount = 0;
+    PROGSIZE=0;
 }
 
 byte S_EEPROM::checkExists(String &number)
@@ -23,7 +19,6 @@ byte S_EEPROM::checkExists(String &number)
 
     if (primaryNumber == number)
       return 0;
-
 
     for (byte i = 0; i < numbersCount - 1; i++)
     {
@@ -144,6 +139,13 @@ void S_EEPROM::saveAutoStartSettings(bool temp)
 
 }
 
+void S_EEPROM::saveProgramSize(unsigned long int temp)
+{
+  programSizeSet=true;
+  PROGSIZE = temp;
+  EEPROM.put(progSizeAddress, PROGSIZE);
+}
+
 void S_EEPROM::saveAutoStartTimeSettings(unsigned short int temp)
 {
   AUTOSTARTTIME = temp;
@@ -162,38 +164,23 @@ void S_EEPROM::saveResponseSettings(char temp)
   EEPROM.put(responseAddress, RESPONSE);
 }
 
-// void S_EEPROM::saveStartVoltageSettings(unsigned short int temp,bool admin)
-// {
-//   if(admin || (temp>=615 && temp<STOPVOLTAGE))
-//   {
-//     STARTVOLTAGE=temp;
-//     EEPROM.put(startVoltageAddress,STARTVOLTAGE);
-//     // resetBattery=true;
-//   }
-// }
-
-// void S_EEPROM::saveStopVoltageSettings(unsigned short int temp,bool admin)
-// {
-//   if(admin || (temp>STARTVOLTAGE && temp<711))
-//   {
-//     STOPVOLTAGE=temp;
-//     EEPROM.put(stopVoltageAddress,STOPVOLTAGE);
-//     // resetBattery=true;
-//   }
-// }
-
-void S_EEPROM::saveTempSettings(unsigned short int temp)
+void S_EEPROM::updateFirmware(bool temp)
 {
-  EEPROM.put(highTempAddress, temp);
-  EEPROM.get(highTempAddress, HIGHTEMP);
+  EEPROM.put(prgUpdateRequestAddress, (byte)temp); 
 }
 
-void S_EEPROM::loadTempSettings()
-{
-  EEPROM.get(highTempAddress, HIGHTEMP);
-  if (HIGHTEMP == 0xFFFF)
-    saveTempSettings(50);
-}
+// void S_EEPROM::saveTempSettings(unsigned short int temp)
+// {
+  // EEPROM.put(highTempAddress, temp);
+  // EEPROM.get(highTempAddress, HIGHTEMP);
+// }
+
+// void S_EEPROM::loadTempSettings()
+// {
+  // EEPROM.get(highTempAddress, HIGHTEMP);
+  // if (HIGHTEMP == 0xFFFF)
+    // saveTempSettings(50);
+// }
 
 void S_EEPROM::loadAutoStartSettings()
 {
@@ -209,6 +196,23 @@ void S_EEPROM::loadAutoStartTimeSettings()
     saveAutoStartTimeSettings(50);
 }
 
+unsigned long int S_EEPROM::getProgramSize()
+{
+  return PROGSIZE;
+}
+
+bool S_EEPROM::getUpdateStatus()
+{
+  bool b;
+  EEPROM.get(prgUpdateStatus,b);
+  return b;
+}
+
+void S_EEPROM::discardUpdateStatus()
+{
+  EEPROM.put(prgUpdateStatus, false);
+}
+
 void S_EEPROM::loadDNDSettings()
 {
   EEPROM.get(dndAddress, DND);
@@ -222,20 +226,6 @@ void S_EEPROM::loadResponseSettings()
   if ((byte)RESPONSE == 0xFF)
     saveResponseSettings('C');
 }
-
-// void S_EEPROM::loadStartVoltageSettings()
-// {
-//   EEPROM.get(startVoltageAddress,STARTVOLTAGE);
-//   if(STARTVOLTAGE==0xFFFF)
-//     saveStartVoltageSettings(625,true);
-// }
-
-// void S_EEPROM::loadStopVoltageSettings()
-// {
-//   EEPROM.get(stopVoltageAddress,STOPVOLTAGE);
-//   if(STOPVOLTAGE==0xFFFF)
-//     saveStopVoltageSettings(675,true);
-// }
 
 void S_EEPROM::loadAlterNumberSettings()
 {
@@ -257,13 +247,11 @@ void S_EEPROM::loadAlterNumber()
 
 void S_EEPROM::loadAllData()
 {
-  loadTempSettings();
+  // loadTempSettings();
   loadAutoStartSettings();
   loadAutoStartTimeSettings();
   loadDNDSettings();
   loadResponseSettings();
-  // loadStartVoltageSettings();
-  // loadStopVoltageSettings();
   loadNumbers();
   loadAlterNumberSettings();
   loadAlterNumber();
@@ -286,7 +274,7 @@ void S_EEPROM::clearNumbers(bool admin = false)
     numbersCount = 0;
     primaryNumber = "";
   }
-  for (int t = 0; t < 4; t++)
+  for (byte t = 0; t < 4; t++)
     secondary[t] = "";
 
   for (; i <= temp; i++)
@@ -308,14 +296,14 @@ void S_EEPROM::clearNumbers(bool admin = false)
   EEPROM.put(alterNumberPresentAddress, alterNumberPresent);
 }
 
-bool S_EEPROM::write_StringEE(int Addr, String input)
+bool S_EEPROM::write_StringEE(unsigned short int Addr, String input)
 {
   char cbuff[input.length() + 1]; //Finds length of string to make a buffer
   input.toCharArray(cbuff, input.length() + 1); //Converts String into character array
   return eeprom_write_string(Addr, cbuff); //Saves String
 }
 
-String S_EEPROM::read_StringEE(int Addr, int length)
+String S_EEPROM::read_StringEE(unsigned short int Addr, byte length)
 {
   char cbuff[length + 1];
   eeprom_read_string(Addr, cbuff, length + 1);
@@ -324,9 +312,9 @@ String S_EEPROM::read_StringEE(int Addr, int length)
   return stemp;
 }
 
-bool S_EEPROM::eeprom_read_string(int addr, char* buffer, int bufSize) {
+bool S_EEPROM::eeprom_read_string(unsigned short int addr, char* buffer, byte bufSize) {
   byte ch; // byte read from eeprom
-  int bytesRead; // number of bytes read so far
+  byte bytesRead; // number of bytes read so far
 
   if (!eeprom_is_addr_ok(addr)) { // check start address
     return false;
@@ -366,38 +354,26 @@ bool S_EEPROM::eeprom_read_string(int addr, char* buffer, int bufSize) {
   return true;
 }
 
-bool S_EEPROM::eeprom_write_string(int addr, const char* str)
+bool S_EEPROM::eeprom_write_string(unsigned short int addr, const char* str)
 {
-  int numBytes; // actual number of bytes to be written
+  byte numBytes; // actual number of bytes to be written
   numBytes = strlen(str) + 1;
   return eeprom_write_bytes(addr, (const byte*)str, numBytes);
 }
 
-bool S_EEPROM::eeprom_is_addr_ok(int addr)
+bool S_EEPROM::eeprom_is_addr_ok(unsigned short int addr)
 {
   return ((addr >= EEPROM_MIN_ADDR) && (addr <= EEPROM_MAX_ADDR));
 }
 
-bool S_EEPROM::eeprom_write_bytes(int startAddr, const byte* array, int numBytes)
+bool S_EEPROM::eeprom_write_bytes(unsigned short int startAddr, const byte* array, byte numBytes)
 {
-  int i;
   if (!eeprom_is_addr_ok(startAddr) || !eeprom_is_addr_ok(startAddr + numBytes))
     return false;
 
-  for (i = 0; i < numBytes; i++)
+  for (byte i = 0; i < numBytes; i++)
   {
     EEPROM.write(startAddr + i, array[i]);
   }
   return true;
-}
-
-
-bool S_EEPROM::inCall()
-{
-  return varInCall;
-}
-
-void S_EEPROM::inCall(bool b)
-{
-  varInCall = b;
 }
