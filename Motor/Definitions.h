@@ -3,10 +3,21 @@
 
 #include <SoftwareSerial.h>
 #include <HardwareSerial.h>
-// #include <avr/wdt.h>
+#include <avr/wdt.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
+
+
+
+#define STR_SAPBR_PARAM "AT+SAPBR=3,1,\""
+#define STR_SAPBR_GPRS "ConType\",\"GPRS\"\r\n"
+#define STR_SAPBR_APN "APN\",\""
+#define STR_SAPBR_START "AT+SAPBR=1,1\r\n"
+#define STR_SAPBR_STOP "AT+SAPBR=0,1\r\n"
 
 
 #define WATCHDOG_OFF    (0)
+#define WATCHDOG_16MS   (_BV(WDE))
 #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
 // #define disable_debug
@@ -26,6 +37,9 @@
 #define PIN_3PHASE 9
 #define PIN_MFEEDBACK 10
 #define PIN_ACFEEDBACK 11
+#define PIN_BATLEVEL 11
+#define PIN_TURNOFF 8
+
 #define PIN_ACPHASE 3
 
 #define PIN_DTR 4
@@ -58,8 +72,11 @@
 
 //NOT TO CHANGE____ ASSOCIATED WITH BOOTLOADER 
 #define prgUpdateRequestAddress 900
-#define progSizeAddress 904
-#define prgUpdateStatus 908
+#define prgSizeAddress 904
+#define prgUpdateStatusAddress 908
+#define VerifyStatusAddress 912
+#define prgUpdateTryAddress 916
+
 
 //_______________________
 
@@ -74,6 +91,9 @@
 #define AC_2PH 0x02
 #define AC_1PH 0x03
 #define AC_OFF 0x04
+
+// #define L_REGULAR 0x0A
+// #define L_SLEEP 0x0B
 
 //____________________
 #endif
