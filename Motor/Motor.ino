@@ -41,6 +41,14 @@ Motor_MGR motor1(&sim1, &eeprom1);
 
 
 void setup() {
+  pinMode(PIN_TURNOFF,OUTPUT);
+  pinMode(PIN_BATLEVEL,INPUT);
+  if(digitalRead(PIN_BATLEVEL)==HIGH)
+    digitalWrite(PIN_TURNOFF,HIGH);
+
+  PCICR |= (1 << PCIE0);   // set PCIE0 to enable PCMSK0 scan
+  PCMSK0 |= (1 << PCINT3);// set PCINT3 to trigger an interrupt on state change
+
   noInterrupts();
   watchdogConfig(WATCHDOG_OFF);
   // wdt_init();
@@ -56,7 +64,6 @@ void setup() {
   digitalWrite(PIN_LED,HIGH);
   
   eeprom1.loadAllData();
-  attachInterrupt(digitalPinToInterrupt(PIN_ACPHASE), IVR_PHASE, CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE1),IVR_PHASE,CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE2),IVR_PHASE,CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_ACPHASE),IVR_PHASE,CHANGE);
@@ -78,8 +85,13 @@ void IVR_PHASE()
   motor1.eventOccured = true;
 }
 
+void IVR_RING(){}   //stub, used to wake up the MCU by SIM by generating interrupt on PIN_RING
+
 ISR(PCINT0_vect)
 {
+  #ifndef disable_debug
+    USART1->println("PCI");
+  #endif
   motor1.eventOccured = true;
 }
 
@@ -148,29 +160,25 @@ void printData()
 #endif
 }
 
+bool checkSleepElligible()
+{
+  return (!motor1.ACPowerState() && motor1.checkSleepElligible() && sim1.checkSleepElligible());
+}
+
 String str;
 bool simDebugMode = false;
 bool initialized = false;
 bool checkedUpdate=false;
+
 unsigned short temp=0;
 bool led=true;
-void loop() {
-  // put your main code here, to run repeatedly:
+bool initSleepSeqeunce=false;
+unsigned long tempSleepWait=0;
+unsigned short sleepWaitTime=20000;
 
-
-  if (!initialized)
-  {
-    if(!checkedUpdate && millis() >= 2000)
-    {
-      if(eeprom1.getUpdateStatus())
-      {
-          eeprom1.discardUpdateStatus();
-          checkedUpdate=true;
-          sim1.startSIMAfterUpdate();
-      }
-    }
-    
-    if(millis()-temp>2000)
+void flashLed()
+{
+    if(millis()-temp>500)
     {
         if(led)
         {
@@ -184,7 +192,103 @@ void loop() {
         }
         temp=millis();
     }
+}
 
+
+void operateOnSleepElligible()
+{
+    if(!initSleepSeqeunce)
+    {
+      // sim1.setNetLight(L_SLEEP);
+      #ifndef disable_debug
+        USART1->print(F("Sleep Init Seq :"));
+        USART1->println(millis());
+      #endif
+      digitalWrite(PIN_LED,LOW);
+      tempSleepWait=millis();
+      initSleepSeqeunce=true;
+    }
+    else if(initSleepSeqeunce && millis()-tempSleepWait>sleepWaitTime)
+    {
+      #ifndef disable_debug
+        USART1->print(F("Enter sleep :"));
+        USART1->println(millis());
+      #endif
+        byte cnt=6;
+        bool led=false;
+        do
+        {
+            led=!led;
+            if(led)
+              digitalWrite(PIN_LED,HIGH);
+            else
+              digitalWrite(PIN_LED,LOW);
+
+            tempSleepWait=millis();
+            while(millis()-tempSleepWait<300)
+            {}
+        }while(--cnt);               
+        gotoSleep();
+        initSleepSeqeunce=false;      //after wakeup 
+
+        // sim1.setNetLight(L_REGULAR);
+
+      #ifndef disable_debug
+        USART1->print(F("WakeUp :"));
+        USART1->println(millis());
+      #endif
+
+    }
+}
+
+void gotoSleep()
+{
+
+  set_sleep_mode(SLEEP_MODE_IDLE);   // sleep mode is set here
+  noInterrupts();
+  sleep_enable();          // enables the sleep bit in the mcucr register
+                             // so sleep is possible. just a safety pin 
+  power_adc_disable();
+  // power_aca_disable();
+  power_spi_disable();
+  power_timer0_disable();
+  power_timer1_disable();
+  power_timer2_disable();
+  power_twi_disable();
+
+  interrupts();
+  sleep_mode();            // here the device is actually put to sleep!!
+ 
+                             // THE PROGRAM CONTINUES FROM HERE AFTER WAKING UP
+  sleep_disable();         // first thing after waking from sleep:
+                            // disable sleep...
+  power_all_enable();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  if(motor1.eventOccured)
+  {
+    if(digitalRead(PIN_BATLEVEL)==LOW)
+    {
+      USART1->println("LOW BAT");
+      digitalWrite(PIN_TURNOFF,LOW);
+    }
+    else
+      USART1->println("HIGH BAT");
+  }
+
+  if (!initialized)
+  {
+    if(!checkedUpdate && millis() >= 2000)
+    {
+      sim1.startSIMAfterUpdate(eeprom1.getUpdateStatus());
+      eeprom1.discardUpdateStatus();
+      checkedUpdate=true;
+    }
+    
+    // flashLed();
 
     if (millis() >= 25000)
     {
@@ -204,12 +308,13 @@ void loop() {
       PCMSK0 |= (1 << PCINT1); // set PCINT1 to trigger an interrupt on state change
       PCMSK0 |= (1 << PCINT2);// set PCINT2 to trigger an interrupt on state change
       PCMSK0 |= (1 << PCINT3);// set PCINT3 to trigger an interrupt on state change
+      attachInterrupt(digitalPinToInterrupt(PIN_ACPHASE), IVR_PHASE, CHANGE);
+      attachInterrupt(digitalPinToInterrupt(PIN_RING), IVR_RING, CHANGE);
 
       initialized = true;
     }
     return;
   }
-
 
 #ifndef disable_debug
   if (simDebugMode)
@@ -229,7 +334,8 @@ void loop() {
         USART1->println("SIMOFF\r");
       }
       else
-        SUSART1->println(str);
+        sim1.sendCommand(str,true);
+        // SUSART1->println(str);
     }
     else
     {
@@ -250,6 +356,18 @@ void loop() {
   }
 #endif
 
+  flashLed();
   sim1.update();
   motor1.update();
+
+  if(initSleepSeqeunce)
+    flashLed();
+
+  if(checkSleepElligible())
+    operateOnSleepElligible();
+  else
+  {
+    initSleepSeqeunce=false;
+    digitalWrite(PIN_LED,LOW);
+  }
 }
