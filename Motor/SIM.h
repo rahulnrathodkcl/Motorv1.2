@@ -38,7 +38,7 @@ class SIM
     bool sendCUSDResponse;
 
     bool commandsAccepted;
-    byte acceptCommandsTime;
+    unsigned short  acceptCommandsTime;
     unsigned long tempAcceptCommandTime;
 
     char currentStatus;
@@ -70,10 +70,11 @@ class SIM
     bool isNumber(String &str);
     bool checkNumber(String);
 
+
+
     void acceptCommands();
     void rejectCommands();
-    void sendCommand(char cmd, bool newline);
-    void sendCommand(String cmd, bool newline);
+    bool extendedSendCommand(String cmd,byte timeout);
 
     bool startGPRS(String);
     bool stopGPRS();
@@ -114,7 +115,9 @@ class SIM
     void checkNetwork(String);//(String str);
     void networkCounterMeasures();
     void __attribute__((noinline)) watchdogConfig(uint8_t x);
+    static inline void watchdogReset();
 
+    void jumpToBootloader() __attribute__ ((naked));
     void setObtainEvent();
     inline bool isCallReady(String);
 
@@ -152,7 +155,9 @@ class SIM
     SIM(HardwareSerial* serial);
 #endif
 #endif
-    void startSIMAfterUpdate();
+    void startSIMAfterUpdate(byte);
+    void sendCommand(char cmd, bool newline);
+    void sendCommand(String cmd, bool newline);
 
     void setClassReference(S_EEPROM* e1, Motor_MGR* m1);
     bool initialize();
@@ -162,8 +167,10 @@ class SIM
     void operateOnMsg(String str, bool admin);
     bool isCUSD(String &str);
     void setCallBackFunctions(void (*ImdEvent)(bool));
+    // void setNetLight(byte);
 
     void setMotorMGRResponse(char status);
+    bool checkSleepElligible();
     void update();
 };
 #endif

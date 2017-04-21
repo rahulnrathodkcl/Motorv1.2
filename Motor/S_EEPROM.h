@@ -55,11 +55,11 @@ class S_EEPROM
     void saveDNDSettings(bool);
     void saveResponseSettings(char);
     unsigned long int getProgramSize();
-    bool getUpdateStatus();
+    byte getUpdateStatus();
     void discardUpdateStatus();
     
     void saveProgramSize(unsigned long int);
-    void updateFirmware(bool);
+    void updateFirmware(bool,bool);
 
     void loadAllData();
     bool addNumber(String &number);

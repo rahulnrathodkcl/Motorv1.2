@@ -143,7 +143,7 @@ void S_EEPROM::saveProgramSize(unsigned long int temp)
 {
   programSizeSet=true;
   PROGSIZE = temp;
-  EEPROM.put(progSizeAddress, PROGSIZE);
+  EEPROM.put(prgSizeAddress, PROGSIZE);
 }
 
 void S_EEPROM::saveAutoStartTimeSettings(unsigned short int temp)
@@ -164,9 +164,11 @@ void S_EEPROM::saveResponseSettings(char temp)
   EEPROM.put(responseAddress, RESPONSE);
 }
 
-void S_EEPROM::updateFirmware(bool temp)
+void S_EEPROM::updateFirmware(bool temp,bool verify)
 {
   EEPROM.put(prgUpdateRequestAddress, (byte)temp); 
+  EEPROM.put(prgUpdateTryAddress, 0x00);
+  EEPROM.put(VerifyStatusAddress, (byte)!verify);
 }
 
 // void S_EEPROM::saveTempSettings(unsigned short int temp)
@@ -201,16 +203,16 @@ unsigned long int S_EEPROM::getProgramSize()
   return PROGSIZE;
 }
 
-bool S_EEPROM::getUpdateStatus()
+byte S_EEPROM::getUpdateStatus()
 {
-  bool b;
-  EEPROM.get(prgUpdateStatus,b);
+  byte b;
+  EEPROM.get(prgUpdateStatusAddress,b);
   return b;
 }
 
 void S_EEPROM::discardUpdateStatus()
 {
-  EEPROM.put(prgUpdateStatus, false);
+  EEPROM.put(prgUpdateStatusAddress, false);
 }
 
 void S_EEPROM::loadDNDSettings()
