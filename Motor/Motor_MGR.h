@@ -20,8 +20,8 @@ class Motor_MGR
     S_EEPROM* eeprom1;
     SIM* sim1;
 
-    bool simEventTemp[9];
-    char simEvent[9];
+    bool simEventTemp[10];
+    char simEvent[10];
 
     bool gotOffCommand;
     bool gotOnCommand;
@@ -30,8 +30,6 @@ class Motor_MGR
     bool mFeedback;
     bool acFeedback;
     bool phaseAC;
-
-    bool semiState;
 
     bool startTimerOn;
     unsigned long int tempStartTimer;
@@ -123,6 +121,7 @@ class Motor_MGR
     void startMotor(bool commanded = false);
     void stopMotor(bool commanded = false, bool forceStop = false);
     void statusOnCall();
+    bool checkSleepElligible();
     void update();
 };
 #endif
