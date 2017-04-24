@@ -117,7 +117,7 @@ void Motor_MGR::readSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
 {
   eventOccured = false;
   noInterrupts();
-  p1 = !digitalRead(PIN_3PHASE);
+  p1 = digitalRead(PIN_3PHASE);
   p2 = !digitalRead(PIN_MFEEDBACK);
   p3 = 0;//!digitalRead(PIN_ACFEEDBACK);
   p4 = digitalRead(PIN_ACPHASE);
@@ -159,7 +159,7 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
 		#ifndef disable_debug
 		_NSerial->println("M OFF");
 		#endif
-		digitalWrite(PIN_STOP, LOW);
+		digitalWrite(PIN_STOP,HIGH);
 	  }
 	}
 	else
@@ -176,10 +176,10 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
 void Motor_MGR::resetAutoStart(bool setChange)
 {
   if (!(bool)eeprom1->AUTOSTART && !motorState() && ACPowerState())
-	digitalWrite(PIN_STOP, LOW);
-  else if ((bool)eeprom1->AUTOSTART && !stopSequenceOn)
-  {
 	digitalWrite(PIN_STOP, HIGH);
+  else if ((bool)eeprom1->AUTOSTART && !stopSequenceOn && ACPowerState())
+  {
+	digitalWrite(PIN_STOP, LOW);
 	if (setChange) // && eeprom1->ACPowerState() && !eeprom1->motorState())
 	{
 	  triggerAutoStart();
@@ -250,7 +250,7 @@ void Motor_MGR::operateOnEvent()
 
   if (motorState())		//motorOn
   {
-	if (!t3Phase && !tMotor && !tacPhase)	//acPower Cut Off
+	if (t3Phase && !tMotor && !tacPhase)	//acPower Cut Off
 	{
 		waitCheckACTimerOn = false;		//stop any unknown reason of motor off event
 		stopMotor();
@@ -430,8 +430,8 @@ void Motor_MGR::startMotor(bool commanded)
   {
 	if (!motorState())
 	{
-	  if (!(bool)eeprom1->AUTOSTART)
-		digitalWrite(PIN_STOP, HIGH);
+	  // if (!(bool)eeprom1->AUTOSTART)
+		digitalWrite(PIN_STOP, LOW);
 	  digitalWrite(PIN_START, LOW);
 	  tempStartSequenceTimer = millis();
 	  startSequenceOn = true;
@@ -465,7 +465,7 @@ void Motor_MGR::stopMotor(bool commanded, bool forceStop)
   {
 	startTimerOn = false;
 	singlePhasingTimerOn = false;
-	digitalWrite(PIN_STOP, LOW);
+	digitalWrite(PIN_STOP, HIGH);
 	tempStopSequenceTimer = millis();
 	stopSequenceOn = true;
 	motorState(false);
@@ -482,8 +482,8 @@ void Motor_MGR::terminateStopRelay()
 {
   if (stopSequenceOn && millis() - tempStopSequenceTimer > (stopSequenceTimerTime * 100))
   {
-	if ((bool)eeprom1->AUTOSTART || !ACPowerState())
-	  digitalWrite(PIN_STOP, HIGH);
+	if ((bool)eeprom1->AUTOSTART && ACPowerState())
+	  digitalWrite(PIN_STOP, LOW);
 
 	stopSequenceOn = false;
 
@@ -560,10 +560,10 @@ void Motor_MGR::statusOnCall()
 
 	if (b == AC_OFF)
 	  sim1->setMotorMGRResponse('L');	//motor off, no light
-	else if (b == AC_1PH)	// power only in 1 phase
-	  sim1->setMotorMGRResponse('A');	//motor off, no light
+		// else if (b == AC_1PH)	// power only in 1 phase
+	  // sim1->setMotorMGRResponse('A');	//motor off, no light
 	else if (b == AC_2PH)	//power only in 2 phase
-	  sim1->setMotorMGRResponse('B');	//motor off, no light
+	  sim1->setMotorMGRResponse('A');
 	else if (b == AC_3PH)
 	  sim1->setMotorMGRResponse('O');	//motor off, light on
   }
