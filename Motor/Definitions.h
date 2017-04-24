@@ -26,19 +26,19 @@
 // #undef software_SIM
 // #endif
 
-#define PIN_STOP 13
-#define PIN_START 12
+#define PIN_STOP A0
+#define PIN_START 13
 // #define PIN_BAT_CHARGE A3
 
 // #define PIN_BAT_SENSOR_PWR A1				//not needed
 // #define PIN_BAT_SENSOR A2
 // #define VOLTAGERATIO 2						//2
 
-#define PIN_3PHASE 9
-#define PIN_MFEEDBACK 10
-#define PIN_ACFEEDBACK 11
-#define PIN_BATLEVEL 11
-#define PIN_TURNOFF 8
+#define PIN_3PHASE 10
+#define PIN_MFEEDBACK 11
+#define PIN_ACFEEDBACK 12
+#define PIN_BATLEVEL 9
+#define PIN_TURNOFF 7
 
 #define PIN_ACPHASE 3
 
