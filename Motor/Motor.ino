@@ -5,6 +5,9 @@
 
 S_EEPROM eeprom1;
 
+bool batStatus;
+bool batLevelChange=false;
+
 // Function Pototype
 // void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 // void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
@@ -41,13 +44,25 @@ Motor_MGR motor1(&sim1, &eeprom1);
 
 
 void setup() {
-  pinMode(PIN_TURNOFF,OUTPUT);
-  pinMode(PIN_BATLEVEL,INPUT);
-  if(digitalRead(PIN_BATLEVEL)==HIGH)
-    digitalWrite(PIN_TURNOFF,HIGH);
+  byte b=MCUSR;
 
-  PCICR |= (1 << PCIE0);   // set PCIE0 to enable PCMSK0 scan
-  PCMSK0 |= (1 << PCINT3);// set PCINT3 to trigger an interrupt on state change
+  pinMode(PIN_BATLEVEL,INPUT_PULLUP);
+  pinMode(PIN_TURNOFF,OUTPUT);
+
+  if(digitalRead(PIN_BATLEVEL)==LOW)
+  {
+    batStatus=false;
+    digitalWrite(PIN_TURNOFF,LOW);
+  }
+  else
+  {
+    digitalWrite(PIN_TURNOFF,HIGH);
+    batStatus=true;
+  }
+
+  PCICR |= (1 << PCIE0);    // set PCIE0 to enable PCMSK0 scan
+  PCMSK0 |= (1 << PCINT1);  // set PCINT1 to trigger an interrupt on state change
+
 
   noInterrupts();
   watchdogConfig(WATCHDOG_OFF);
@@ -59,6 +74,15 @@ void setup() {
 #ifndef disable_debug
   USART1->begin(19200);
 #endif
+
+    if (b & _BV(BORF))
+    {
+    #ifndef disable_debug
+      USART1->println("Brown Out Reset");
+    #endif
+    
+    }
+
   
   pinMode(PIN_LED,OUTPUT);
   digitalWrite(PIN_LED,HIGH);
@@ -89,10 +113,19 @@ void IVR_RING(){}   //stub, used to wake up the MCU by SIM by generating interru
 
 ISR(PCINT0_vect)
 {
+  byte b = digitalRead(PIN_BATLEVEL);
+  if(b==batStatus)
+    motor1.eventOccured = true;
+  else
+  {
+    batStatus=b;
+    batLevelChange=true;    
+  }
+
   #ifndef disable_debug
     USART1->println("PCI");
   #endif
-  motor1.eventOccured = true;
+  // motor1.eventOccured = true;
 }
 
 ISR(BADISR_vect)
@@ -265,22 +298,59 @@ void gotoSleep()
   power_all_enable();
 }
 
+
+unsigned long tempTurnoffTime=0;
+bool turnOffTimerOn=false;
+bool initTurnoff=false;
+
 void loop() {
   // put your main code here, to run repeatedly:
+    // if(digitalRead(PIN_BATLEVEL)==HIGH)
+      // digitalWrite(PIN_TURNOFF,HIGH);
 
-  if(motor1.eventOccured)
+  if(turnOffTimerOn)
   {
-    if(digitalRead(PIN_BATLEVEL)==LOW)
+    if(millis()-tempTurnoffTime>15000)
     {
-      USART1->println("LOW BAT");
-      digitalWrite(PIN_TURNOFF,LOW);
-    }
-    else
-      USART1->println("HIGH BAT");
+      if(digitalRead(PIN_BATLEVEL)==LOW && sim1.checkSleepElligible())
+      {
+        turnOffTimerOn=false;
+        USART1->println("LOW BAT");
+        digitalWrite(PIN_TURNOFF,LOW);  
+      }
+      else
+        turnOffTimerOn=false;
+    }    
   }
 
-  if (!initialized)
+  if(batLevelChange)
   {
+    batLevelChange=false;
+    if(!batStatus && sim1.checkSleepElligible())
+    {
+       tempTurnoffTime=millis();
+       turnOffTimerOn=true;
+      USART1->println("LOW BAT DET");
+
+    }
+    else
+    {
+      digitalWrite(PIN_TURNOFF,HIGH);
+    }
+  }
+  // if(batLevelChange && sim1.checkSleepElligible())//&& !turnOffTimerOn)
+  // {
+    // if(digitalRead(PIN_BATLEVEL)==LOW)
+    // {
+    // }
+    // else 
+    // {
+      // digitalWrite(PIN_TURNOFF,HIGH);
+    // }
+  // }
+
+  if (!initialized)
+  {  
     if(!checkedUpdate && millis() >= 2000)
     {
       sim1.startSIMAfterUpdate(eeprom1.getUpdateStatus());
