@@ -620,6 +620,7 @@ void SIM::operateOnMsg(String str, bool admin = false)
   		}
   		else
   		{
+          stopGPRS();
           eeprom1->programSizeSet=false;
 		    	eeprom1->updateFirmware(false,false);
           #ifndef disable_debug
@@ -837,6 +838,7 @@ try_again:
         _NSerial->println("INIT");
 #endif
         initialized = true;
+        sendBlockingATCommand(F("AT+DDET=1\r\n"));
         return true;
       }
     }
@@ -1057,6 +1059,7 @@ String SIM::getActiveNumber()
 
 void SIM::makeCall()
 {
+  
   acceptCommands();
   _SSerial->flush();
 
@@ -1405,8 +1408,8 @@ void SIM::setMotorMGRResponse(char response)
       playSound('L');
     else if (response == 'A') //motor off, light on
       playSound('A');
-    else if (response == 'B') //motor off, light on
-      playSound('B');
+    // else if (response == 'B') //motor off, light on
+      // playSound('B');
     else if (response == 'O') //motor off, light on
       playSound('3');
     else if (response == 'D')
