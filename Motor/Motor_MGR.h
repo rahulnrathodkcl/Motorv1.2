@@ -69,7 +69,6 @@ class Motor_MGR
 
     void operateOnEvent();
 
-    byte checkLineSensors();
     bool waitStableLineOver();
     void operateOnStableLine();
 
@@ -87,6 +86,8 @@ class Motor_MGR
     void terminateStopRelay();
     void terminateStartRelay();
     void SIMEventManager();
+    void setLED(bool);
+
 
 #ifndef disable_debug
 #ifdef software_SIM
@@ -117,6 +118,7 @@ class Motor_MGR
     bool AllPhaseState();
     // bool getChargeState();			//used by SIM
     // unsigned short int getBatVolt();				//used by SIM
+    byte checkLineSensors();
     bool getMotorState();
     void startMotor(bool commanded = false);
     void stopMotor(bool commanded = false, bool forceStop = false);
