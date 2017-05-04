@@ -7,18 +7,20 @@
 #include <avr/sleep.h>
 #include <avr/power.h>
 
+#define TURN_ON true
+#define TURN_OFF false
 
 
+#define adminNumber F("7041196959")
 #define STR_SAPBR_PARAM "AT+SAPBR=3,1,\""
 #define STR_SAPBR_GPRS "ConType\",\"GPRS\"\r\n"
 #define STR_SAPBR_APN "APN\",\""
 #define STR_SAPBR_START "AT+SAPBR=1,1\r\n"
 #define STR_SAPBR_STOP "AT+SAPBR=0,1\r\n"
 
-
 #define WATCHDOG_OFF    (0)
-#define WATCHDOG_16MS   (_BV(WDE))
-#define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
+// #define WATCHDOG_16MS   (_BV(WDE))
+// #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
 // #define disable_debug
 // #define software_SIM
@@ -67,7 +69,9 @@
 
 #define alterNumberPresentAddress 122
 #define alterNumberSettingAddress 126
-#define alterNumberAddress 130
+#define alterNumberAddress 130  
+// #define balNumberPresentAddress 150
+// #define balNumberAddress 154 // leave 18 bytes for storing bal number
 
 
 //NOT TO CHANGE____ ASSOCIATED WITH BOOTLOADER 
