@@ -1,6 +1,20 @@
 #include <Arduino.h>
 #include "S_EEPROM.h"
 
+#ifndef disable_debug
+String S_EEPROM::getNumbers()
+{
+  String str="";
+  for(byte i=0;i<numbersCount;i++)
+  {
+    str=str+read_StringEE(mobileNumberAddress + (i*11),10);
+    str=str+"\n";    
+  }
+  return str;
+}
+
+#endif
+
 S_EEPROM::S_EEPROM()
 {
     numbersCount = 0;
@@ -11,20 +25,30 @@ byte S_EEPROM::checkExists(String &number)
 {
   if (numbersCount > 0)
   {
-    if (alterNumberSetting)
-    {
-      if (alterNumber == number)
+ 
+      // if (alterNumber == number)
+      if(isPrimaryNumber(number))
         return 0;
-    }
 
-    if (primaryNumber == number)
-      return 0;
+      // if(alterNumberSetting && number == read_StringEE(alterNumberAddress, 10))
+        // return 0;
 
-    for (byte i = 0; i < numbersCount - 1; i++)
-    {
-      if (secondary[i] == number)
-        return i + 1;
-    }
+    // if (primaryNumber == number)
+      for (byte i=1;i<numbersCount;i++)      // not to check for primaryNumber as it is checked in isPrimaryNUmber() above, so i=1
+      {
+          if(read_StringEE(mobileNumberAddress + (i*11),10)==number)
+            return i;
+      }
+    // if(read_StringEE(mobileNumberAddress, 10)==number)
+    //   return 0;
+
+    //   secondary[temp - 1] = read_StringEE(mobileNumberAddress + (11 * temp), 10);
+
+    // for (byte i = 0; i < numbersCount - 1; i++)
+    // {
+    //   if (secondary[i] == number)
+    //     return i + 1;
+    // }
   }
   return 0xFF;
 }
@@ -37,27 +61,74 @@ bool S_EEPROM::addNumber(String &number)
   {
     if (checkExists(number) == 0xFF)
     {
-      if (numbersCount == 0)
-        primaryNumber = number;
-      else if (numbersCount < 5)
-        secondary[numbersCount - 1] = number;
+      write_StringEE(mobileNumberAddress + (11 * numbersCount), number);
+      EEPROM.put(numbersCountAddress,++numbersCount);
 
-      numbersCount++;
-      updateNumberChanges();
+      // if (numbersCount == 0)
+      //   primaryNumber = number;
+      // else if (numbersCount < 5)
+      //   secondary[numbersCount - 1] = number;
+
+      // updateNumberChanges();
       return true;
     }
   }
   return false;
 }
 
+// bool S_EEPROM::saveBalNumber(String &number)
+// {
+//   if(number.startsWith("*") && number.endsWith("#") && number.length()>=5 && number.length()<=9)
+//   {
+//     EEPROM.put(balNumberPresentAddress, true);
+//     write_StringEE(balNumberAddress, number);
+//     return true;
+//   }
+//   return false;
+// }
+
+// bool S_EEPROM::getBalNumber(String &number)
+// {
+//   bool b= EEPROM.get(balNumberPresentAddress);
+//   if(b!=false)
+//     number = read_StringEE(balNumberAddress, 9);
+//   return b;
+// }
+
+bool S_EEPROM::isPrimaryNumber(String number)
+{
+  if (numbersCount > 0)
+  {
+      if(read_StringEE(mobileNumberAddress,10)==number)
+        return true;
+       if(alterNumberSetting && number == read_StringEE(alterNumberAddress, 10))
+        return true;
+    // if (primaryNumber == str)
+      // return true;
+    // if (alterNumberSetting && alterNumber == str)
+      // return true;
+  }
+  return false;
+}
+
+String S_EEPROM::getActiveNumber()
+{
+  if (numbersCount > 0)
+  {
+    return(read_StringEE((!alterNumberSetting ? mobileNumberAddress : alterNumberAddress),10));
+  }
+  else
+    return (adminNumber); //="AT+CMGS=\"+917698439201\"";
+}
+
 bool S_EEPROM::addAlternateNumber(String &number)
 {
   if (numbersCount > 0)
   {
-    alterNumber = number;
+    // alterNumber = number;
     alterNumberPresent = true;
     EEPROM.put(alterNumberPresentAddress, alterNumberPresent);
-    write_StringEE(alterNumberAddress, alterNumber);
+    write_StringEE(alterNumberAddress, number);
     return true;
   }
   return false;
@@ -69,62 +140,79 @@ bool S_EEPROM::removeNumber(String &number)
     return false;
   else
   {
-    byte loc = checkExists(number);
+    byte loc = checkExists(number);    
     if (loc != 0xFF && loc != 0x00)
     {
-      secondary[loc - 1] = "";
-      for (byte i = loc; i < numbersCount; i++)
+
+      // secondary[loc - 1] = "";
+      for (byte i = loc; i < (numbersCount-1); i++)
       {
-        secondary[i - 1] = secondary[i];
+        write_StringEE(mobileNumberAddress + (i*11), read_StringEE(mobileNumberAddress + ((i+1)*11),10));
+        // secondary[i - 1] = secondary[i];
       }
       numbersCount--;
-      updateNumberChanges();
+      // updateNumberChanges();
       return true;
     }
   }
   return false;
 }
 
-void S_EEPROM::updateNumberChanges()
-{
-  EEPROM.put(numbersCountAddress, numbersCount);
-  if (numbersCount > 0)
-  {
-    write_StringEE(mobileNumberAddress, primaryNumber);
-    for (byte temp = 1; temp < numbersCount; temp++)
-    {
-      write_StringEE(mobileNumberAddress + (11 * temp), secondary[temp - 1]);
-    }
-  }
-}
+// void S_EEPROM::updateNumberChanges()
+// {
+  // EEPROM.put(numbersCountAddress, numbersCount);
+  // if (numbersCount > 0)
+  // {
+    // write_StringEE(mobileNumberAddress, primaryNumber);
+    // for (byte temp = 1; temp < numbersCount; temp++)
+    // {
+      // write_StringEE(mobileNumberAddress + (11 * temp), secondary[temp - 1]);
+    // }
+  // }
+// }
 
-void S_EEPROM::loadNumbers()
+void S_EEPROM::loadNumberSettings()
 {
   EEPROM.get(numbersCountAddress, numbersCount);
+  if(numbersCount==0xFF)
+  {
+    numbersCount=0;
+    EEPROM.put(numbersCountAddress,numbersCount);
+  }
 
-  if (numbersCount > 0 && numbersCount != 0xFF)
+  EEPROM.get(alterNumberPresentAddress, alterNumberPresent);    //whether alterNUmber is present or not
+  if (alterNumberPresent == 0xFF)
   {
-    primaryNumber = read_StringEE(mobileNumberAddress, 11);
-    for (byte temp = 1; temp < numbersCount; temp++)
-    {
-      secondary[temp - 1] = read_StringEE(mobileNumberAddress + (11 * temp), 10);
-    }
+    alterNumberPresent=false;
+    EEPROM.put(alterNumberPresentAddress, alterNumberPresent);
   }
-  else
-  {
-    clearLoadedNumbers();
-  }
-}
 
-void S_EEPROM::clearLoadedNumbers()
-{
-  numbersCount = 0;
-  primaryNumber = "";
-  for (byte temp = 0; temp < 4; temp++)
-  {
-    secondary[temp] = "";
-  }
+  EEPROM.get(alterNumberSettingAddress, alterNumberSetting);    //whether alterNUmber is On or not
+  if (alterNumberSetting == 0xFF)
+    saveAlterNumberSetting(false);
 }
+  // if (numbersCount > 0 && numbersCount != 0xFF)
+  // {
+    // primaryNumber = read_StringEE(mobileNumberAddress, 11);
+    // for (byte temp = 1; temp < numbersCount; temp++)
+    // {
+      // secondary[temp - 1] = read_StringEE(mobileNumberAddress + (11 * temp), 10);
+    // }
+  // }
+  // else
+  // {
+    // clearLoadedNumbers();
+  // }
+
+// void S_EEPROM::clearLoadedNumbers()
+// {
+  // numbersCount = 0;
+  // primaryNumber = "";
+  // for (byte temp = 0; temp < 4; temp++)
+  // {
+    // secondary[temp] = "";
+  // }
+// }
 
 void S_EEPROM::saveAlterNumberSetting(bool temp)
 {
@@ -212,7 +300,7 @@ byte S_EEPROM::getUpdateStatus()
 
 void S_EEPROM::discardUpdateStatus()
 {
-  EEPROM.put(prgUpdateStatusAddress, false);
+  EEPROM.put(prgUpdateStatusAddress, 0);
 }
 
 void S_EEPROM::loadDNDSettings()
@@ -229,23 +317,18 @@ void S_EEPROM::loadResponseSettings()
     saveResponseSettings('C');
 }
 
-void S_EEPROM::loadAlterNumberSettings()
-{
-  EEPROM.get(alterNumberSettingAddress, alterNumberSetting);
-  if (alterNumberSetting == 0xFF)
-    saveAlterNumberSetting(false);
-}
+// void S_EEPROM::loadAlterNumberSettings()
+// {
+ // 
+// }
 
-void S_EEPROM::loadAlterNumber()
-{
-  EEPROM.get(alterNumberPresentAddress, alterNumberPresent);
-  if (alterNumberPresent == (byte)true)
-  {
-    alterNumber = read_StringEE(alterNumberAddress, 11);
-  }
-  else if (alterNumberPresent == 0xFF)
-    EEPROM.put(alterNumberPresentAddress, (byte)false);
-}
+// void S_EEPROM::loadAlterNumber()
+// {
+//   // if (alterNumberPresent == (byte)true)
+//   // {
+//     // alterNumber = read_StringEE(alterNumberAddress, 11);
+//   // }
+// }
 
 void S_EEPROM::loadAllData()
 {
@@ -254,42 +337,16 @@ void S_EEPROM::loadAllData()
   loadAutoStartTimeSettings();
   loadDNDSettings();
   loadResponseSettings();
-  loadNumbers();
-  loadAlterNumberSettings();
-  loadAlterNumber();
+  loadNumberSettings();
+  // loadNumbers();
+  // loadAlterNumber();
 }
 
 void S_EEPROM::clearNumbers(bool admin = false)
 {
   unsigned short int i;
-  byte temp;
-  if (!admin)
-  {
-    i = mobileNumberAddress + 11;
-    temp = i + 44;
-    numbersCount = 1;
-  }
-  else
-  {
-    i = mobileNumberAddress;
-    temp = i + 55;
-    numbersCount = 0;
-    primaryNumber = "";
-  }
-  for (byte t = 0; t < 4; t++)
-    secondary[t] = "";
-
-  for (; i <= temp; i++)
-  {
-    EEPROM.write(i, 0xFF);
-  }
-
-  i = alterNumberAddress;
-  temp = alterNumberAddress + 11;
-  for (; i <= temp; i++)
-  {
-    EEPROM.write(i, 0xFF);
-  }
+  if(admin) numbersCount=0;
+  else numbersCount=1;  
 
   EEPROM.put(numbersCountAddress, numbersCount);
 

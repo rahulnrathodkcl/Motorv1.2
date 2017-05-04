@@ -7,18 +7,18 @@
 
 class S_EEPROM
 {
-    void loadNumbers();
+    void loadNumberSettings();
     // void loadTempSettings();
     void loadAutoStartSettings();
     void loadAutoStartTimeSettings();
     void loadDNDSettings();
     void loadResponseSettings();
 
-    void loadAlterNumber();
-    void loadAlterNumberSettings();
-    void clearLoadedNumbers();
+    // void loadAlterNumber();
+    // void loadAlterNumberSettings();
+    // void clearLoadedNumbers();
 
-    void updateNumberChanges();
+    // void updateNumberChanges();
     bool write_StringEE(unsigned short int Addr, String input);
     String read_StringEE(unsigned short int Addr, byte length);
     bool eeprom_read_string(unsigned short int addr, char* buffer, byte bufSize);
@@ -28,10 +28,10 @@ class S_EEPROM
 
   public:
     byte numbersCount;
-    String primaryNumber;
-    String secondary[4];
+    // String primaryNumber;
+    // String secondary[4];
 
-    String alterNumber;
+    // String alterNumber;
     byte alterNumberSetting;
     byte alterNumberPresent;
     // unsigned short int HIGHTEMP;
@@ -46,6 +46,10 @@ class S_EEPROM
     char RESPONSE;
 
     S_EEPROM();
+
+    #ifndef disable_debug
+    String getNumbers();
+    #endif
 
     byte checkExists(String &number);
     void saveAlterNumberSetting(bool);
@@ -63,6 +67,11 @@ class S_EEPROM
 
     void loadAllData();
     bool addNumber(String &number);
+    // bool saveBalNumber(String &str);
+    // bool getBalNumber(String &str);
+    bool isPrimaryNumber(String str);
+    String getActiveNumber();
+
     bool addAlternateNumber(String &number);
     bool removeNumber(String &number);
     void clearNumbers(bool admin);
