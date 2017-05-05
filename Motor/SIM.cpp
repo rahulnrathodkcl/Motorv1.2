@@ -744,7 +744,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
     }
     else if (str.startsWith(F("DEFAULT"))) //stringContains(str, F("DEFAULT"), 7, str.length() - 1))
     {
-      eeprom1->saveAutoStartSettings(true);
+      eeprom1->saveAutoStartSettings(false);
       eeprom1->saveDNDSettings(false);
       eeprom1->saveResponseSettings('C');
       eeprom1->saveAutoStartTimeSettings(50);

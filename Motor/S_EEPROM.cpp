@@ -276,7 +276,7 @@ void S_EEPROM::loadAutoStartSettings()
 {
   EEPROM.get(autoStartAddress, AUTOSTART);
   if (AUTOSTART == 0xFF)
-    saveAutoStartSettings(true);
+    saveAutoStartSettings(false);
 }
 
 void S_EEPROM::loadAutoStartTimeSettings()
