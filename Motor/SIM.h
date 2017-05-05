@@ -35,8 +35,8 @@ class SIM
 
     bool isMsgFromAdmin;
     //byte attemptsToCall;
-    bool callDialled;
-    bool callAlerted;
+    // bool callDialled;
+    // bool callAlerted;
 
     // bool sendCSQResponse;
     // byte batPer;
@@ -140,6 +140,7 @@ class SIM
     void jumpToBootloader() __attribute__ ((naked));
     void setObtainEvent();
     inline bool isCallReady(String);
+    void checkRespSMS(char t1);
 
 #ifndef disable_debug
 #ifdef software_SIM
@@ -156,7 +157,6 @@ class SIM
     HardwareSerial* _SSerial;
 #endif
 #endif
-
 
   public:
 

@@ -61,8 +61,8 @@ void SIM::anotherConstructor()
   soundWaitTime = 5;
   bplaySound = false;
 
-  callDialled = false;
-  callAlerted = false;
+  // callDialled = false;
+  // callAlerted = false;
   // attemptsToCall=0;
 
   actionType = 'N';
@@ -1250,8 +1250,8 @@ void SIM::endCall()
   sendCommand("", true);
   _SSerial->flush();
   freezeIncomingCalls = false;
-  callDialled = false;
-  callAlerted = false;
+  // callDialled = false;
+  // callAlerted = false;
   // attemptsToCall=0;
 
   // eeprom1->inCall(false);
@@ -1645,6 +1645,19 @@ String SIM::makeStatusMsg(byte battery, byte network)
       return resp;
 }
 
+void SIM::checkRespSMS(char t1)
+{
+  if (!callAccepted && eeprom1->RESPONSE=='A')
+  {
+#ifndef disable_debug
+        _NSerial->print("DIAL");
+        _NSerial->println("OFF");
+#endif
+          actionType = t1;
+          sendSMS();
+  }
+}
+
 void SIM::update()
 {
   if(inInterrupt && checkEventGone())
@@ -1667,23 +1680,8 @@ void SIM::update()
     if (callTimerExpire())
     {
       char t1 = actionType;
-      if (!callDialled || !callAlerted)
-      {
-        endCall();
-#ifndef disable_debug
-        _NSerial->print("DIAL");
-        _NSerial->println("OFF");
-#endif
-        if (eeprom1->RESPONSE == 'A')
-        {
-          actionType = t1;
-          sendSMS();
-        }
-      }
-      else
-      {
-        endCall();
-      }
+      endCall();
+      checkRespSMS(t1);
     }
 
     if (playSoundElligible())
@@ -1746,29 +1744,30 @@ void SIM::update()
     }
     else if ((currentStatus == 'N' || currentStatus == 'R') && currentCallStatus == 'O') // OUTGOING CALL
     {
-      if (callState(str) == 'D')
+      // if (callState(str) == 'D')
+      // {
+        // #ifndef disable_debug
+        // _NSerial->print("DIAL");
+        // _NSerial->println("ON");
+        // #endif
+        // callDialled=true;
+      // }
+      if (callState(str) == 'R')
       {
-        #ifndef disable_debug
-        _NSerial->print("DIAL");
-        _NSerial->println("ON");
-        #endif
-        callDialled=true;
-      }
-      else if (callState(str) == 'R')
-      {
-
-        #ifndef disable_debug
-        _NSerial->print("ALRT");
-        _NSerial->println("ON");
-        #endif
-        callAlerted = true;
+        // #ifndef disable_debug
+        // _NSerial->print("ALRT");
+        // _NSerial->println("ON");
+        // #endif
+        // callAlerted = true;
         callCutWait = millis();
         currentStatus = 'R';
         currentCallStatus = 'O';
       }
       else if (isCut(str) || callState(str) == 'E') //
       {
+        char t1 = actionType;
         endCall();
+        checkRespSMS(t1);
       }
       else if (callState(str) == 'I') //else if (stringContains(str, "+CLCC: 1,0,0", 11, 12) == true)
       {
