@@ -62,6 +62,7 @@ void SIM::anotherConstructor()
   bplaySound = false;
 
   callDialled = false;
+  callAlerted = false;
   // attemptsToCall=0;
 
   actionType = 'N';
@@ -1250,6 +1251,7 @@ void SIM::endCall()
   _SSerial->flush();
   freezeIncomingCalls = false;
   callDialled = false;
+  callAlerted = false;
   // attemptsToCall=0;
 
   // eeprom1->inCall(false);
@@ -1665,16 +1667,18 @@ void SIM::update()
     if (callTimerExpire())
     {
       char t1 = actionType;
-      if (!callDialled)
+      if (!callDialled || !callAlerted)
       {
         endCall();
 #ifndef disable_debug
         _NSerial->print("DIAL");
         _NSerial->println("OFF");
 #endif
-        actionType = t1;
         if (eeprom1->RESPONSE == 'A')
+        {
+          actionType = t1;
           sendSMS();
+        }
       }
       else
       {
@@ -1744,14 +1748,20 @@ void SIM::update()
     {
       if (callState(str) == 'D')
       {
-				#ifndef disable_debug
+        #ifndef disable_debug
         _NSerial->print("DIAL");
         _NSerial->println("ON");
-				#endif
-        callDialled = true;
+        #endif
+        callDialled=true;
       }
       else if (callState(str) == 'R')
       {
+
+        #ifndef disable_debug
+        _NSerial->print("ALRT");
+        _NSerial->println("ON");
+        #endif
+        callAlerted = true;
         callCutWait = millis();
         currentStatus = 'R';
         currentCallStatus = 'O';

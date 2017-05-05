@@ -36,6 +36,7 @@ class SIM
     bool isMsgFromAdmin;
     //byte attemptsToCall;
     bool callDialled;
+    bool callAlerted;
 
     // bool sendCSQResponse;
     // byte batPer;
