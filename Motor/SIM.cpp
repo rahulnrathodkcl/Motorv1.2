@@ -679,7 +679,7 @@ bool SIM::checkPrgReq(String str,bool noMsg)
 
 void SIM::stopCallWaiting()
 {
-    sendBlockingATCommand(F("AT+CCWA=0\r\n"));
+    sendBlockingATCommand(F("AT+CCWA=0,0\r\n"));
 }
 
 

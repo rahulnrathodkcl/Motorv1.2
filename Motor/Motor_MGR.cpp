@@ -67,10 +67,10 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   singlePhasingTime = 10;
   singlePhasingTimerOn = false;
 
-  startSequenceTimerTime = 20;
+  startSequenceTimerTime = 30;
   startSequenceOn = false;
 
-  stopSequenceTimerTime = 20;
+  stopSequenceTimerTime = 30;
   stopSequenceOn = false;
 
   waitStableLineTime = 50;
