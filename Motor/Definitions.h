@@ -27,6 +27,10 @@
 // #ifdef disable_debug
 // #undef software_SIM
 // #endif
+#define PIN_STARTBUTTON A4
+#define PIN_STOPBUTTON A3
+#define PIN_MOTORLED A2
+
 
 #define PIN_STOP A0
 #define PIN_START 13

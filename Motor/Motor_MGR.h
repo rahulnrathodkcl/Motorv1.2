@@ -25,6 +25,7 @@ class Motor_MGR
 
     bool gotOffCommand;
     bool gotOnCommand;
+    bool offButtonPressed;
 
     bool allPhase;
     bool mFeedback;
@@ -121,7 +122,7 @@ class Motor_MGR
     byte checkLineSensors();
     bool getMotorState();
     void startMotor(bool commanded = false);
-    void stopMotor(bool commanded = false, bool forceStop = false);
+    void stopMotor(bool commanded = false, bool forceStop = false,bool offButton=false);
     void statusOnCall();
     bool checkSleepElligible();
     void update();

@@ -104,6 +104,10 @@ void setup() {
   pinMode(PIN_LED,OUTPUT);
   
   eeprom1.loadAllData();
+  pinMode(8,INPUT_PULLUP);
+  pinMode(12,INPUT_PULLUP);
+  pinMode(A1,INPUT_PULLUP);
+
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE1),IVR_PHASE,CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE2),IVR_PHASE,CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_ACPHASE),IVR_PHASE,CHANGE);
@@ -278,22 +282,27 @@ void operateOnSleepElligible()
 
 void gotoSleep()
 {
-
-  set_sleep_mode(SLEEP_MODE_IDLE);   // sleep mode is set here
+// SLEEP_MODE_PWR_DOWN
+  // SLEEP_MODE_IDLE
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // sleep mode is set here
   noInterrupts();
   sleep_enable();          // enables the sleep bit in the mcucr register
                              // so sleep is possible. just a safety pin 
-  power_adc_disable();
-  // power_aca_disable();
-  power_spi_disable();
-  power_timer0_disable();
-  power_timer1_disable();
-  power_timer2_disable();
-  power_twi_disable();
-
+  power_all_disable();
   interrupts();
-  sleep_mode();            // here the device is actually put to sleep!!
- 
+
+  // power_adc_disable();
+  // // power_aca_disable();
+  // power_spi_disable();
+  // power_timer0_disable();
+  // power_timer1_disable();
+  // power_timer2_disable();
+  // power_twi_disable();
+
+  MCUCR |= (3<<5);                        //disable BOD before sleeing
+  MCUCR = (MCUCR & ~(1<<5)) | (1<<6);     // it is timed sequence, so need to execute before sleep_cpu() only.
+
+  sleep_cpu();            // here the device is actually put to sleep!!
                              // THE PROGRAM CONTINUES FROM HERE AFTER WAKING UP
   sleep_disable();         // first thing after waking from sleep:
                             // disable sleep...

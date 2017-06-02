@@ -52,6 +52,11 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   // pinMode(PIN_ACFEEDBACK, INPUT_PULLUP);
   pinMode(PIN_ACPHASE, INPUT);
 
+  pinMode(PIN_STARTBUTTON,INPUT_PULLUP);
+  pinMode(PIN_STOPBUTTON,INPUT_PULLUP);
+
+  pinMode(PIN_MOTORLED,OUTPUT);
+
   gotOffCommand = false;
   gotOnCommand = false;
 
@@ -76,10 +81,10 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   waitStableLineTime = 50;
   waitStableLineOn = false;
 
-  allPhase = false;
-  mFeedback = false;
-  acFeedback = false;
-  phaseAC = false;
+  AllPhaseState(false); // allPhase = false;
+  motorState(false);// mFeedback = false;
+  ACFeedbackState(false); // acFeedback = false;
+  ACPowerState(false);//  phaseAC = false;
 
   for (byte i = 0; i < 10; i++)
 	simEventTemp[i] = true;
@@ -137,22 +142,22 @@ void Motor_MGR::readSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
 
 void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
 {
-  allPhase = p1;
-  mFeedback = p2;
-  acFeedback = p3;
-  phaseAC = p4;
+  AllPhaseState(p1); // allPhase = p1;
+  motorState(p2); // mFeedback = p2;
+  ACFeedbackState(p3); // acFeedback = p3;
+  ACPowerState(p4); // phaseAC = p4;
 
-  if (!phaseAC || !allPhase)
+  if (!ACPowerState() || !AllPhaseState())// if (!phaseAC || !allPhase)
 	startTimerOn = false;
 
   if (!(bool)eeprom1->AUTOSTART)
   {
-	if (phaseAC)
+	if (ACPowerState())
 	{
 		#ifndef disable_debug
 	  	_NSerial->println(F("A ON"));
 		#endif
-	  if (!mFeedback)
+	  if (!motorState())// if (!mFeedback)
 	  {
 		#ifndef disable_debug
 		_NSerial->println(F("M OFF"));
@@ -214,6 +219,11 @@ bool Motor_MGR::motorState()
 inline void Motor_MGR::motorState(bool b)
 {
   mFeedback = b;
+   if(b)
+  	digitalWrite(PIN_MOTORLED,HIGH);
+  else
+  	digitalWrite(PIN_MOTORLED,LOW);
+
 }
 
 bool Motor_MGR::ACFeedbackState()
@@ -280,7 +290,7 @@ void Motor_MGR::operateOnEvent()
 	  // simEventTemp[2]=sim1->registerEvent('U');
 	  // stopMotor();
 	}
-	else if (!t3Phase && tacPhase && mFeedback) ////single phasing occured
+	else if (!t3Phase && tacPhase) ////single phasing occured
 	{
 	  	// operateOnSinglePhasing();
 	  	tempSinglePhasingTimer = millis();
@@ -469,7 +479,7 @@ void Motor_MGR::startMotor(bool commanded)
   }
 }
 
-void Motor_MGR::stopMotor(bool commanded, bool forceStop)
+void Motor_MGR::stopMotor(bool commanded, bool forceStop,bool offButton)
 {
 #ifndef disable_debug
   _NSerial->print("Stop");
@@ -484,6 +494,7 @@ void Motor_MGR::stopMotor(bool commanded, bool forceStop)
 	stopSequenceOn = true;
 	motorState(false);
 	gotOffCommand = commanded;
+	offButtonPressed=offButton;
   }
   else
   {
@@ -508,8 +519,10 @@ void Motor_MGR::terminateStopRelay()
 		gotOffCommand = false;
 		sim1->setMotorMGRResponse('D');		//motor has stopped
 	  }
-	  // else
-	  // simEventTemp[8] = sim1->registerEvent('O'); //register TO SIM motor has turned off
+	  else if(offButtonPressed)
+	  {
+	  	simEventTemp[8] = sim1->registerEvent('O'); //register TO SIM motor has turned off
+	  }
 	}
 	else	//motor is still on, with either phase 1 or phase 2 feedback on with ACPhase on
 	{
@@ -519,9 +532,12 @@ void Motor_MGR::terminateStopRelay()
 		sim1->setMotorMGRResponse('L');		//cannot turn off motor
 	  }
 	  else
+	  {
 		simEventTemp[1] = sim1->registerEvent('P');
+	  }
 	  //register to SIM cannot turn off motor due to some problem
 	}
+	offButtonPressed=false;
   }
 }
 
@@ -616,6 +632,11 @@ bool Motor_MGR::checkSleepElligible()
 
 void Motor_MGR::update()
 {
+	if(digitalRead(PIN_STARTBUTTON)==LOW)
+		startMotor();
+	else if(digiatlRead(PIN_STOPBUTTON)==LOW)
+		stopMotor(false,false,true);
+
   if (!startSequenceOn && !stopSequenceOn && eventOccured)
 	operateOnEvent();
 

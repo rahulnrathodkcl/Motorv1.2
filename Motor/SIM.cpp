@@ -88,6 +88,10 @@ void SIM::startSIMAfterUpdate()
 
 void SIM::sendUpdateStatus(byte updateStatus)
 {
+
+  if(!initialized)
+    return;
+  
   String promptStr;
 
     if(updateStatus>0 && updateStatus!=0xFF)
