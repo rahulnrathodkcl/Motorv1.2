@@ -65,15 +65,16 @@
 #define highTempAddress 8
 #define dndAddress 12
 #define responseAddress 14
+#define starDeltaTimerAddress 18
 // #define startVoltageAddress 16
 // #define stopVoltageAddress 20
+#define alterNumberPresentAddress 22
+#define alterNumberSettingAddress 26
+#define alterNumberAddress 30  
 
-#define numbersCountAddress 24
-#define mobileNumberAddress 28
+#define numbersCountAddress 300
+#define mobileNumberAddress 304
 
-#define alterNumberPresentAddress 122
-#define alterNumberSettingAddress 126
-#define alterNumberAddress 130  
 // #define balNumberPresentAddress 150
 // #define balNumberAddress 154 // leave 18 bytes for storing bal number
 

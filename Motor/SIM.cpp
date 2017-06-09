@@ -88,7 +88,6 @@ void SIM::startSIMAfterUpdate()
 
 void SIM::sendUpdateStatus(byte updateStatus)
 {
-
   if(!initialized)
     return;
 
@@ -756,9 +755,12 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
     }
     else if (str.startsWith(F("NUM")))
     {
-      processed=true;
-      String resp = F("Numbers:");
-      resp = resp + eeprom1->getNumbers();
+      processed=true; 
+      String resp = eeprom1->getNumbers();
+      if(resp=="")
+      {
+        resp=F("No Number");
+      }
       sendSMS(resp,true);
     }
     else if (str.startsWith(F("RESET")))// stringContains(str, F("RESET"), 5, str.length() - 1))
@@ -829,6 +831,19 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       eeprom1->saveAlterNumberSetting(false);
       done=true;
     }
+    else if (stringContains(str, F("STARTIME"), 8, str.length() - 1))
+    {
+      if (isNumeric(str))
+      {
+        data = str.toInt();
+        if (data < 2) data = 2;
+        if (data > 60) data = 60;
+        eeprom1->saveStarDeltaTimer(data);
+        tempStr = F("STARTIME");
+        tempStr = tempStr + data;
+        done=true;
+      }
+    }
     else if (stringContains(str, F("AUTOTIME"), 8, str.length() - 1))
     {
       if (isNumeric(str))
@@ -884,7 +899,6 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
         bool t = eeprom1->addAlternateNumber(str);
         if(t) done=true;
 #ifndef disable_debug
-        _NSerial->print("A ");
         _NSerial->print("Add:");
         _NSerial->println((bool)t);
 #endif

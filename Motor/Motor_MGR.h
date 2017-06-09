@@ -48,6 +48,7 @@ class Motor_MGR
     byte singlePhasingTime;
 
     bool startSequenceOn;
+    bool starDeltaTimerOn;
     unsigned long int tempStartSequenceTimer;
     byte startSequenceTimerTime;
 
@@ -86,6 +87,7 @@ class Motor_MGR
 
     void terminateStopRelay();
     void terminateStartRelay();
+    void terminateStarDeltaTimer();
     void SIMEventManager();
     void setLED(bool);
 

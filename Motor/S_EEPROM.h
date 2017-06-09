@@ -14,6 +14,7 @@ class S_EEPROM
     void loadDNDSettings();
     void loadResponseSettings();
     void loadCCID();
+    void loadStarDeltaTimer();
 
     // void loadAlterNumber();
     // void loadAlterNumberSettings();
@@ -44,6 +45,7 @@ class S_EEPROM
 
     byte AUTOSTART;
     unsigned short int AUTOSTARTTIME;
+    byte starDeltaTimerTime;
 
     byte DND;
     char RESPONSE;
@@ -59,6 +61,7 @@ class S_EEPROM
     // void saveTempSettings(unsigned short int temp);
     void saveAutoStartSettings(bool);
     void saveAutoStartTimeSettings(unsigned short int);
+    void saveStarDeltaTimer(byte);
     void saveDNDSettings(bool);
     void saveResponseSettings(char);
     unsigned long int getProgramSize();

@@ -173,7 +173,7 @@ bool S_EEPROM::removeNumber(String &number)
 void S_EEPROM::loadNumberSettings()
 {
   EEPROM.get(numbersCountAddress, numbersCount);
-  if(numbersCount==0xFF)
+  if(numbersCount==0xFF || numbersCount > 5)
   {
     numbersCount=0;
     EEPROM.put(numbersCountAddress,numbersCount);
@@ -370,6 +370,19 @@ String S_EEPROM::getDeviceId()
   return str;
 }
 
+void S_EEPROM::loadStarDeltaTimer()
+{
+  EEPROM.get(starDeltaTimerAddress,starDeltaTimerTime);
+  if(starDeltaTimerTime==0xFF)
+    saveStarDeltaTimer(2);
+}
+
+void S_EEPROM::saveStarDeltaTimer(byte data)
+{
+  starDeltaTimerTime=data;
+  EEPROM.put(starDeltaTimerAddress,starDeltaTimerTime);
+}
+
 void S_EEPROM::loadAllData()
 {
   // loadTempSettings();
@@ -379,6 +392,7 @@ void S_EEPROM::loadAllData()
   loadResponseSettings();
   loadNumberSettings();
   loadCCID();
+  loadStarDeltaTimer();
   // loadNumbers();
   // loadAlterNumber();
 }

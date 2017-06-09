@@ -72,10 +72,11 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   singlePhasingTime = 10;
   singlePhasingTimerOn = false;
 
-  startSequenceTimerTime = 30;
+  startSequenceTimerTime = 20;
+  starDeltaTimerOn=false;
   startSequenceOn = false;
 
-  stopSequenceTimerTime = 30;
+  stopSequenceTimerTime = 20;
   stopSequenceOn = false;
 
   waitStableLineTime = 50;
@@ -455,7 +456,9 @@ void Motor_MGR::startMotor(bool commanded)
 	if (!motorState())
 	{
 	  // if (!(bool)eeprom1->AUTOSTART)
-		digitalWrite(PIN_STOP, LOW);
+		stopSequenceOn=false;
+
+	  digitalWrite(PIN_STOP, LOW);
 	  digitalWrite(PIN_START, LOW);
 	  tempStartSequenceTimer = millis();
 	  startSequenceOn = true;
@@ -487,7 +490,11 @@ void Motor_MGR::stopMotor(bool commanded, bool forceStop,bool offButton)
 #endif
   if (forceStop || motorState())
   {
+	digitalWrite(PIN_START, HIGH);
+	starDeltaTimerOn=false;
+	startSequenceOn=false;
 	startTimerOn = false;
+
 	singlePhasingTimerOn = false;
 	digitalWrite(PIN_STOP, HIGH);
 	tempStopSequenceTimer = millis();
@@ -541,11 +548,27 @@ void Motor_MGR::terminateStopRelay()
   }
 }
 
+void Motor_MGR::terminateStarDeltaTimer()
+{
+	if(starDeltaTimerOn && millis() - tempStartSequenceTimer > ((unsigned int)eeprom1->starDeltaTimerTime *1000))
+	{
+		digitalWrite(PIN_START,HIGH);
+		starDeltaTimerOn=false;
+	}
+}
+
 void Motor_MGR::terminateStartRelay()
 {
   if (startSequenceOn &&  millis() - tempStartSequenceTimer > (startSequenceTimerTime * 100))
   {
-	digitalWrite(PIN_START, HIGH);
+  	if(((unsigned int)eeprom1->starDeltaTimerTime *10) <= startSequenceTimerTime)
+  	{
+		digitalWrite(PIN_START, HIGH);
+  	}
+  	else
+  	{
+  		starDeltaTimerOn=true;
+  	}
 	startSequenceOn = false;
 
 // #ifndef disable_debug
@@ -662,6 +685,9 @@ void Motor_MGR::update()
 
   if (startSequenceOn)
 	terminateStartRelay();
+
+  if(starDeltaTimerOn)
+  	terminateStarDeltaTimer();
 
   if (stopSequenceOn)
 	terminateStopRelay();
