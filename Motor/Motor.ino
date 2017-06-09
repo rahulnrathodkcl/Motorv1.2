@@ -107,6 +107,10 @@ void setup() {
   pinMode(8,INPUT_PULLUP);
   pinMode(12,INPUT_PULLUP);
   pinMode(A1,INPUT_PULLUP);
+  #ifdef disable_debug
+  pinMode(5,INPUT_PULLUP);
+  pinMode(6,INPUT_PULLUP);
+  #endif
 
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE1),IVR_PHASE,CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE2),IVR_PHASE,CHANGE);

@@ -13,6 +13,7 @@ class S_EEPROM
     void loadAutoStartTimeSettings();
     void loadDNDSettings();
     void loadResponseSettings();
+    void loadCCID();
 
     // void loadAlterNumber();
     // void loadAlterNumberSettings();
@@ -35,7 +36,9 @@ class S_EEPROM
     byte alterNumberSetting;
     byte alterNumberPresent;
     // unsigned short int HIGHTEMP;
-    
+    byte simCCIDPresent;
+
+
     unsigned long int PROGSIZE;
     bool programSizeSet;
 
@@ -47,9 +50,9 @@ class S_EEPROM
 
     S_EEPROM();
 
-    #ifndef disable_debug
+    // #ifndef disable_debug
     String getNumbers();
-    #endif
+    // #endif
 
     byte checkExists(String &number);
     void saveAlterNumberSetting(bool);
@@ -65,12 +68,17 @@ class S_EEPROM
     void saveProgramSize(unsigned long int);
     void updateFirmware(bool,bool);
 
+    void setCCID(String &);
+    bool getCCID(String &);
+
     void loadAllData();
     bool addNumber(String &number);
     // bool saveBalNumber(String &str);
     // bool getBalNumber(String &str);
     bool isPrimaryNumber(String str);
     String getActiveNumber();
+
+    String getDeviceId();
 
     bool addAlternateNumber(String &number);
     bool removeNumber(String &number);

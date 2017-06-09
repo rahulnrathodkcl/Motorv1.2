@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "S_EEPROM.h"
 
-#ifndef disable_debug
+// #ifndef disable_debug
 String S_EEPROM::getNumbers()
 {
   String str="";
@@ -12,8 +12,7 @@ String S_EEPROM::getNumbers()
   }
   return str;
 }
-
-#endif
+// #endif
 
 S_EEPROM::S_EEPROM()
 {
@@ -330,6 +329,47 @@ void S_EEPROM::loadResponseSettings()
 //   // }
 // }
 
+void S_EEPROM::loadCCID()
+{
+  EEPROM.get(simCCIDPresentAddress, simCCIDPresent);
+   if (simCCIDPresent == 0xFF)
+   {
+     simCCIDPresent=false;
+     EEPROM.put(simCCIDPresentAddress, simCCIDPresent);
+   }
+}
+
+bool S_EEPROM::getCCID(String &ccid)
+{
+  if (!simCCIDPresent)
+    return false;
+  else
+  {
+    byte length;
+    EEPROM.get(simCCIDLengthAddress,length);
+    ccid = read_StringEE(simCCIDAddress,length);
+    return true;
+  }
+}
+
+void S_EEPROM::setCCID(String &ccid)
+{
+  simCCIDPresent=true;
+  EEPROM.put(simCCIDPresentAddress, simCCIDPresent);
+  byte length = ccid.length();
+  EEPROM.put(simCCIDLengthAddress,length);
+  write_StringEE(simCCIDAddress, ccid);
+}
+
+String S_EEPROM::getDeviceId()
+{
+  String str= F("ID:");
+  unsigned long int temp;
+  EEPROM.get(deviceIdAddress,temp);
+  str = str + temp;
+  return str;
+}
+
 void S_EEPROM::loadAllData()
 {
   // loadTempSettings();
@@ -338,6 +378,7 @@ void S_EEPROM::loadAllData()
   loadDNDSettings();
   loadResponseSettings();
   loadNumberSettings();
+  loadCCID();
   // loadNumbers();
   // loadAlterNumber();
 }

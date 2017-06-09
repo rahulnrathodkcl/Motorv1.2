@@ -96,6 +96,7 @@ class SIM
 
     bool getBlockingResponse(String &cmd,bool (SIM::*func)(String &));
     
+    bool isCCID(String &str);
     bool isCUSD(String &str);
     bool isCBC(String &);
     bool isCSQ(String &);
@@ -142,6 +143,8 @@ class SIM
     inline bool isCallReady(String);
     void checkRespSMS(char t1);
 
+    void registerWithAdmin();
+    
 #ifndef disable_debug
 #ifdef software_SIM
     HardwareSerial* _NSerial;

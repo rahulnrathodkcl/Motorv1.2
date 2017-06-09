@@ -79,6 +79,11 @@
 
 
 //NOT TO CHANGE____ ASSOCIATED WITH BOOTLOADER 
+#define simCCIDPresentAddress 800
+#define simCCIDLengthAddress 804
+#define simCCIDAddress 808 // minimum length of CCID is 18. max is 22, so leave 30 bytes.
+#define deviceIdAddress 840		// deviceId is a long int.
+
 #define prgUpdateRequestAddress 900
 #define prgSizeAddress 904
 #define prgUpdateStatusAddress 908

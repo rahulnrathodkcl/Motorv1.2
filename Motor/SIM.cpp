@@ -91,7 +91,7 @@ void SIM::sendUpdateStatus(byte updateStatus)
 
   if(!initialized)
     return;
-  
+
   String promptStr;
 
     if(updateStatus>0 && updateStatus!=0xFF)
@@ -754,6 +754,13 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       eeprom1->saveAutoStartTimeSettings(50);
       done=true;
     }
+    else if (str.startsWith(F("NUM")))
+    {
+      processed=true;
+      String resp = F("Numbers:");
+      resp = resp + eeprom1->getNumbers();
+      sendSMS(resp,true);
+    }
     else if (str.startsWith(F("RESET")))// stringContains(str, F("RESET"), 5, str.length() - 1))
       jumpToBootloader();
     else if (str.startsWith(F("AUTOON")))// stringContains(str, F("AUTOON"), 6, str.length() - 1))
@@ -911,6 +918,13 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       // s2.concat("\"");
       // sendCommand(s2, true);
 // }
+inline bool SIM::isCCID(String &str)
+{
+  return(str.length()>15 && isDigit(str.charAt(0)));
+  // return stringContains(str, "+CSQ", 5, str.length() - 3);
+}
+
+
 
 inline bool SIM::isCBC(String &str)
 {
@@ -1007,6 +1021,18 @@ try_again:
   #endif
           initialized = true;
           sendBlockingATCommand(F("AT+DDET=1\r\n"));
+
+          String tempStr  = F("AT+CCID");
+          if(getBlockingResponse(tempStr,&SIM::isCCID))
+          {
+              String tempStr2="";
+              if(!eeprom1->getCCID(tempStr2) || tempStr2!=tempStr)
+              {
+                  stopCallWaiting();
+                  eeprom1->setCCID(tempStr);
+                  registerWithAdmin();
+              }
+          }
           return true;
         }
       }
@@ -1021,6 +1047,12 @@ try_again:
   _NSerial->println("INIT X");
 #endif
   return false;
+}
+
+void SIM::registerWithAdmin()
+{
+  isMsgFromAdmin=true;
+  sendSMS(eeprom1->getDeviceId(),true);
 }
 
 bool SIM::isNumber(String &str)

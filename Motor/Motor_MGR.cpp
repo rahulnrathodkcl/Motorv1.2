@@ -632,9 +632,9 @@ bool Motor_MGR::checkSleepElligible()
 
 void Motor_MGR::update()
 {
-	if(digitalRead(PIN_STARTBUTTON)==LOW)
+	if(digitalRead(PIN_STARTBUTTON)==LOW && !startSequenceOn)
 		startMotor();
-	else if(digiatlRead(PIN_STOPBUTTON)==LOW)
+	else if(digitalRead(PIN_STOPBUTTON)==LOW && !stopSequenceOn)
 		stopMotor(false,false,true);
 
   if (!startSequenceOn && !stopSequenceOn && eventOccured)
