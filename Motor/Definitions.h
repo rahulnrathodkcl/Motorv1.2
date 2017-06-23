@@ -22,14 +22,14 @@
 // #define WATCHDOG_16MS   (_BV(WDE))
 // #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
-// #define disable_debug
+#define disable_debug
 // #define software_SIM
 // #ifdef disable_debug
 // #undef software_SIM
 // #endif
 #define PIN_STARTBUTTON A4
 #define PIN_STOPBUTTON A3
-#define PIN_MOTORLED A2
+#define PIN_MOTORLED A2 
 
 
 #define PIN_STOP A0

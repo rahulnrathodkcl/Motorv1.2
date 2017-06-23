@@ -72,11 +72,11 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   singlePhasingTime = 10;
   singlePhasingTimerOn = false;
 
-  startSequenceTimerTime = 20;
+  startSequenceTimerTime = 30;
   starDeltaTimerOn=false;
   startSequenceOn = false;
 
-  stopSequenceTimerTime = 20;
+  stopSequenceTimerTime = 30;
   stopSequenceOn = false;
 
   waitStableLineTime = 50;
@@ -176,7 +176,7 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
   }
   else 					//AUtoStart is On
   {
-	if (phaseAC)				//auto start is on , and AC is Present in 2 phase, so , can start with switch or external force.
+	if (ACPowerState() && AllPhaseState())				//auto start is on , and AC is Present in 2 phase, so , can start with switch or external force.
 	{
 		digitalWrite(PIN_STOP,LOW);
 	}
@@ -456,7 +456,7 @@ void Motor_MGR::startMotor(bool commanded)
 	if (!motorState())
 	{
 	  // if (!(bool)eeprom1->AUTOSTART)
-		stopSequenceOn=false;
+		// stopSequenceOn=false;
 
 	  digitalWrite(PIN_STOP, LOW);
 	  digitalWrite(PIN_START, LOW);
@@ -490,10 +490,10 @@ void Motor_MGR::stopMotor(bool commanded, bool forceStop,bool offButton)
 #endif
   if (forceStop || motorState())
   {
-	digitalWrite(PIN_START, HIGH);
-	starDeltaTimerOn=false;
-	startSequenceOn=false;
-	startTimerOn = false;
+	// startSequenceOn=false;
+	// startTimerOn = false;
+	// starDeltaTimerOn=false;
+	// digitalWrite(PIN_START, HIGH);
 
 	singlePhasingTimerOn = false;
 	digitalWrite(PIN_STOP, HIGH);
@@ -528,6 +528,7 @@ void Motor_MGR::terminateStopRelay()
 	  }
 	  else if(offButtonPressed)
 	  {
+		offButtonPressed=false;
 	  	simEventTemp[8] = sim1->registerEvent('O'); //register TO SIM motor has turned off
 	  }
 	}
@@ -545,6 +546,7 @@ void Motor_MGR::terminateStopRelay()
 	  //register to SIM cannot turn off motor due to some problem
 	}
 	offButtonPressed=false;
+
   }
 }
 
@@ -596,7 +598,7 @@ void Motor_MGR::terminateStartRelay()
 	  else
 	  {
 		stopMotor(false, true);
-		simEventTemp[0] = sim1->registerEvent('N');//register To SIM motor not started due to phase failure
+		simEventTemp[0] = sim1->registerEvent('N');//register To SIM motor not started due to ANY REASON
 	  }
 	}
   }
@@ -653,15 +655,28 @@ bool Motor_MGR::checkSleepElligible()
 			&& !startTimerOn && !stopTimerOn && !startSequenceOn && !stopSequenceOn);
 }
 
+void Motor_MGR::operateOnButtonEvent()
+{
+	buttonEventOccured=false;
+
+	if(digitalRead(PIN_STARTBUTTON)==LOW)
+		startMotor();
+	else if (digitalRead(PIN_STOPBUTTON)==LOW)
+		stopMotor(false,false,true);
+}
+
 void Motor_MGR::update()
 {
-	if(digitalRead(PIN_STARTBUTTON)==LOW && !startSequenceOn)
-		startMotor();
-	else if(digitalRead(PIN_STOPBUTTON)==LOW && !stopSequenceOn)
-		stopMotor(false,false,true);
+	if(!startSequenceOn && !stopSequenceOn)
+	{
+		if(eventOccured)
+			operateOnEvent();
 
-  if (!startSequenceOn && !stopSequenceOn && eventOccured)
-	operateOnEvent();
+		if(buttonEventOccured)
+			operateOnButtonEvent();
+	}
+ //  if (!startSequenceOn && !stopSequenceOn && eventOccured)
+	// operateOnEvent();
 
   if (waitStableLineOn)
 	if (waitStableLineOver())

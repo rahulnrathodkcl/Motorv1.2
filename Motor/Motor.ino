@@ -80,7 +80,12 @@ void setup() {
   }
 
   PCICR |= (1 << PCIE0);    // set PCIE0 to enable PCMSK0 scan
+  PCICR |= (1 << PCIE1);    // set PCIE0 to enable PCMSK0 scan
   PCMSK0 |= (1 << PCINT1);  // set PCINT1 to trigger an interrupt on state change
+  PCMSK1 |= (1 << PCINT11);
+  PCMSK1 |= (1 << PCINT12);
+
+
 
   noInterrupts();
   watchdogConfig(WATCHDOG_OFF);
@@ -104,12 +109,12 @@ void setup() {
   pinMode(PIN_LED,OUTPUT);
   
   eeprom1.loadAllData();
-  pinMode(8,INPUT_PULLUP);
-  pinMode(12,INPUT_PULLUP);
-  pinMode(A1,INPUT_PULLUP);
+  pinMode(8,OUTPUT);
+  pinMode(12,OUTPUT);
+  pinMode(A1,OUTPUT);
   #ifdef disable_debug
-  pinMode(5,INPUT_PULLUP);
-  pinMode(6,INPUT_PULLUP);
+    pinMode(5,OUTPUT);
+    pinMode(6,OUTPUT);
   #endif
 
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE1),IVR_PHASE,CHANGE);
@@ -138,6 +143,11 @@ void IVR_RING()
   sim1.tempInterruptTime=millis();
   sim1.inInterrupt=true;
 }   //stub, used to wake up the MCU by SIM by generating interrupt on PIN_RING
+
+ISR(PCINT1_vect)
+{
+  motor1.buttonEventOccured=true;
+}
 
 ISR(PCINT0_vect)
 {
@@ -193,23 +203,29 @@ void printData()
 
   // USART1->print("STOP:");
   // USART1->println(eeprom1.STOPVOLTAGE);
+  USART1->println(eeprom1.starDeltaTimerTime);
+  String temp;
+  if(eeprom1.getCCID(temp))
+    USART1->println(temp);
 
-  USART1->print("DND:");
+  USART1->println(eeprom1.getDeviceId());
+
+  USART1->print("DND");
   USART1->println(eeprom1.DND);
 
-  USART1->print("RES:");
+  USART1->print("RES");
   USART1->println(eeprom1.RESPONSE);
 
-  USART1->print("AUT:");
+  USART1->print("AUT");
   USART1->println(eeprom1.AUTOSTART);
 
-  USART1->print("TIM:");
+  USART1->print("TIM");
   USART1->println(eeprom1.AUTOSTARTTIME);
 
   // USART1->print("TEMP:");
   // USART1->println(eeprom1.HIGHTEMP);
 
-  USART1->print("nos:" + eeprom1.numbersCount);
+  USART1->print("nos" + eeprom1.numbersCount);
   USART1->println(eeprom1.getNumbers());
   // USART1->println(eeprom1.numbersCount);
   // for (byte i = 0; i < eeprom1.numbersCount; i++)
@@ -224,6 +240,7 @@ void printData()
 
 bool checkSleepElligible()
 {
+
   return (!turnOffTimerOn && !motor1.ACPowerState() && motor1.checkSleepElligible() && sim1.checkSleepElligible());
 }
 
@@ -443,14 +460,6 @@ void loop() {
       }
       else if (str == F("PPROM\r"))
         printData();
-      else if(str == "CSL\r")
-      {
-        USART1->println(gotLowBatEvent);
-        USART1->println(batStatus);
-        USART1->println(sim1.checkNotInCall());
-        USART1->println(sim1.busy());
-        USART1->println(turnOffTimerOn);
-      }
       else if(str.startsWith("@"))
       {
         // not to remove '\r' from string, as it would be removed by operateOnMsg() in SIM
@@ -459,6 +468,14 @@ void loop() {
         str = str.substring(1,str.length());      
         sim1.operateOnMsg(str, true,true);
       }
+      // else if(str == "CSL\r")
+      // {
+      //   USART1->println(gotLowBatEvent);
+      //   USART1->println(batStatus);
+      //   USART1->println(sim1.checkNotInCall());
+      //   USART1->println(sim1.busy());
+      //   USART1->println(turnOffTimerOn);
+      // }
     }
   }
 #endif

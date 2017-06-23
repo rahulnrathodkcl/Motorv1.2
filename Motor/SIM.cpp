@@ -751,6 +751,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       eeprom1->saveDNDSettings(false);
       eeprom1->saveResponseSettings('C');
       eeprom1->saveAutoStartTimeSettings(50);
+      eeprom1->saveStarDeltaTimer(2);
       done=true;
     }
     else if (str.startsWith(F("NUM")))
@@ -764,7 +765,14 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       sendSMS(resp,true);
     }
     else if (str.startsWith(F("RESET")))// stringContains(str, F("RESET"), 5, str.length() - 1))
-      jumpToBootloader();
+    {
+       jumpToBootloader();
+    } 
+    else if (str.startsWith(F("DID")))
+    {
+      processed=true;
+      registerWithAdmin();
+    }
     else if (str.startsWith(F("AUTOON")))// stringContains(str, F("AUTOON"), 6, str.length() - 1))
     {
       eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
@@ -1042,9 +1050,10 @@ try_again:
               String tempStr2="";
               if(!eeprom1->getCCID(tempStr2) || tempStr2!=tempStr)
               {
+                  registerWithAdmin();
+                  // delay(20);    //wait for 2 secs.
                   stopCallWaiting();
                   eeprom1->setCCID(tempStr);
-                  registerWithAdmin();
               }
           }
           return true;
@@ -1066,7 +1075,7 @@ try_again:
 void SIM::registerWithAdmin()
 {
   isMsgFromAdmin=true;
-  sendSMS(eeprom1->getDeviceId(),true);
+  sendSMS((eeprom1->getDeviceId()),true);
 }
 
 bool SIM::isNumber(String &str)
@@ -1131,6 +1140,7 @@ void SIM::sendCommand(char cmd, bool newline = false)
 
 void SIM::sendCommand(String cmd, bool newline = false)
 {
+  // _NSerial->println(cmd);
   acceptCommands();
   if (cmd == "")
     _SSerial->println();
@@ -1363,6 +1373,8 @@ void SIM::sendSMS(String msg = "", bool predefMsg = false)
   else
     responseString = msg;
 
+  // _NSerial->println(responseString);
+
 // #ifndef disable_debug
   // _NSerial->println("SMS");
 // #endif
@@ -1425,10 +1437,22 @@ void SIM::operateDTMF(String str)
     subDTMF();
     motor1->statusOnCall();
   }
-  // else if (str == "4") //Set AUTOTIMER ON
-  // eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
-  // else if (str == "5") //Set AUTOTIMER OFF
-  // eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
+  else if (str == "8") //Set AUTOTIMER ON
+  {
+    subDTMF();
+    eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
+    motor1->resetAutoStart(true);
+      responseToAction = true;
+      playSound('8');     // playFile AutoStart is On
+  }
+  else if (str == "9") //Set AUTOTIMER OFF
+  {
+    subDTMF();
+    eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
+    motor1->resetAutoStart(true);
+      responseToAction = true;
+      playSound('9'); //playFile autoStart is turned oFF
+  }
 }
 
 inline void SIM::subDTMF()

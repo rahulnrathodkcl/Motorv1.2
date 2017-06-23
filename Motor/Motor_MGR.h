@@ -70,6 +70,7 @@ class Motor_MGR
     void AllPhaseState(bool);
 
     void operateOnEvent();
+    void operateOnButtonEvent();
 
     bool waitStableLineOver();
     void operateOnStableLine();
@@ -113,6 +114,7 @@ class Motor_MGR
 #endif
 
     bool eventOccured;
+    bool buttonEventOccured;
 
     void resetAutoStart(bool setChange = false);
     bool motorState();
