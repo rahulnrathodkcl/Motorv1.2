@@ -748,6 +748,9 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
     else if (str.startsWith(F("DEFAULT"))) //stringContains(str, F("DEFAULT"), 7, str.length() - 1))
     {
       eeprom1->saveAutoStartSettings(false);
+      #ifdef ENABLE_WATER
+        eeprom1->savePreventOverFlowSettings(false);
+      #endif
       eeprom1->saveDNDSettings(false);
       eeprom1->saveResponseSettings('C');
       eeprom1->saveAutoStartTimeSettings(50);
@@ -805,6 +808,18 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
        eeprom1->saveResponseSettings('A');  //set DND to False in EEPROM
        done=true;
     } 
+    #ifdef ENABLE_WATER
+    else if (str.startsWith(F("OVFON"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
+    {
+       eeprom1->savePreventOverFlowSettings(true);  //set DND to False in EEPROM
+       done=true;
+    } 
+    else if (str.startsWith(F("OVFOFF"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
+    {
+       eeprom1->savePreventOverFlowSettings(false);  //set DND to False in EEPROM
+       done=true;
+    } 
+    #endif
     else if (str.startsWith(F("STATUS")))//stringContains(str, F("STATUS"), 6, str.length() - 1))
     {
       processed=true;
@@ -1437,6 +1452,13 @@ void SIM::operateDTMF(String str)
     subDTMF();
     motor1->statusOnCall();
   }
+  else if (str == "4") //Status
+  {
+    currentOperation = 'W';
+    subDTMF();
+    motor1->waterStatusOnCall();
+  }
+
   else if (str == "8") //Set AUTOTIMER ON
   {
     subDTMF();
@@ -1614,10 +1636,11 @@ void SIM::checkNetwork(String str)
 // }
 
 void SIM::setMotorMGRResponse(char response)
-{
+{  
+  responseToAction = true;
+ 
   if (currentOperation == 'S') //start Motor
   {
-    responseToAction = true;
     if (response == 'L')
       playSound('N');  //cannot start motor
     else if (response == 'O')
@@ -1628,7 +1651,6 @@ void SIM::setMotorMGRResponse(char response)
   }
   else if (currentOperation == 'O') //switch off motor
   {
-    responseToAction = true;
     if (response == 'L')
       playSound('P');    //cannot stop motor
     else if (response == 'O')
@@ -1637,9 +1659,8 @@ void SIM::setMotorMGRResponse(char response)
       playSound('O');  //motor has stopped
     // endCall();
   }
-  else if (currentOperation = 'T')
+  else if (currentOperation == 'T')
   {
-    responseToAction = true;
     if (response == 'L') //motor off, no light
       playSound('L');
     else if (response == 'A') //motor off, light on
@@ -1650,6 +1671,10 @@ void SIM::setMotorMGRResponse(char response)
       playSound('3');
     else if (response == 'D')
       playSound('1');  //motor is on
+  }
+  else if (currentOperation == 'W')
+  {
+
   }
 }
 

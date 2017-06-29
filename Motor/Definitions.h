@@ -22,11 +22,26 @@
 // #define WATCHDOG_16MS   (_BV(WDE))
 // #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
-#define disable_debug
+#define disable_debug 
+
+#define ENABLE_WATER
 // #define software_SIM
 // #ifdef disable_debug
 // #undef software_SIM
 // #endif
+#ifdef ENABLE_WATER
+	#define PIN_LOWSENSOR 5
+	#define PIN_MIDSENSOR 6
+	#define PIN_HIGHSENSOR 7
+
+	#define HIGHLEVEL 0x03
+	#define MIDLEVEL 0x02
+	#define LOWLEVEL 0x01
+	#define CRITICALLEVEL 0x00
+
+	#define preventOverFlowAddress 50
+#endif
+
 #define PIN_STARTBUTTON A4
 #define PIN_STOPBUTTON A3
 #define PIN_MOTORLED A2 
@@ -71,6 +86,7 @@
 #define alterNumberPresentAddress 22
 #define alterNumberSettingAddress 26
 #define alterNumberAddress 30  
+///start new settings from add 54
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304
@@ -112,7 +128,3 @@
 //____________________
 #endif
 //-----------------------------------------------
-//Constants FOR SPI communicatins
-//Receive Data From Slave in (unsigned short int (2 bytes))
-// #define ASK_RPM 0x20
-// #define ASK_TEMP 0x21

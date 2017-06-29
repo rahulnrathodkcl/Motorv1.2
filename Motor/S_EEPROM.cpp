@@ -223,7 +223,6 @@ void S_EEPROM::saveAutoStartSettings(bool temp)
 {
   AUTOSTART = (byte)temp;
   EEPROM.put(autoStartAddress, AUTOSTART);
-
 }
 
 void S_EEPROM::saveProgramSize(unsigned long int temp)
@@ -277,6 +276,23 @@ void S_EEPROM::loadAutoStartSettings()
   if (AUTOSTART == 0xFF)
     saveAutoStartSettings(false);
 }
+
+#ifdef ENABLE_WATER
+
+void S_EEPROM::loadPreventOverFlowSettings()
+{
+  EEPROM.get(preventOverFlowAddress, PREVENTOVERLFOW);
+  if (PREVENTOVERLFOW == 0xFF)
+    savePreventOverFlowSettings(false);
+}
+
+void S_EEPROM::savePreventOverFlowSettings(bool temp)
+{
+  PREVENTOVERLFOW = (byte)temp;
+  EEPROM.put(preventOverFlowAddress, PREVENTOVERLFOW);
+}
+
+#endif
 
 void S_EEPROM::loadAutoStartTimeSettings()
 {
@@ -393,6 +409,9 @@ void S_EEPROM::loadAllData()
   loadNumberSettings();
   loadCCID();
   loadStarDeltaTimer();
+  #ifdef ENABLE_WATER
+    loadPreventOverFlowSettings();
+  #endif
   // loadNumbers();
   // loadAlterNumber();
 }

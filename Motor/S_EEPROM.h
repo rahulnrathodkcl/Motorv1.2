@@ -10,6 +10,9 @@ class S_EEPROM
     void loadNumberSettings();
     // void loadTempSettings();
     void loadAutoStartSettings();
+    #ifdef ENABLE_WATER
+        void loadPreventOverFlowSettings();
+    #endif
     void loadAutoStartTimeSettings();
     void loadDNDSettings();
     void loadResponseSettings();
@@ -44,6 +47,7 @@ class S_EEPROM
     bool programSizeSet;
 
     byte AUTOSTART;
+    byte PREVENTOVERFLOW;
     unsigned short int AUTOSTARTTIME;
     byte starDeltaTimerTime;
 
@@ -60,6 +64,10 @@ class S_EEPROM
     void saveAlterNumberSetting(bool);
     // void saveTempSettings(unsigned short int temp);
     void saveAutoStartSettings(bool);
+
+    #ifdef ENABLE_WATER
+        void savePreventOverFlowSettings(bool);
+    #endif
     void saveAutoStartTimeSettings(unsigned short int);
     void saveStarDeltaTimer(byte);
     void saveDNDSettings(bool);

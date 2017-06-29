@@ -11,18 +11,29 @@
 #include "Definitions.h"
 #include "S_EEPROM.h"
 #include "SIM.h"
+#include "Water.h"
 #include <Arduino.h>
 
+
 class SIM;
+class Water;
 
 class Motor_MGR
 {
+
+
+
     S_EEPROM* eeprom1;
     SIM* sim1;
 
-    bool simEventTemp[10];
-    char simEvent[10];
-
+    #ifdef ENABLE_WATER
+        bool simEventTemp[14];
+        char simEvent[14];
+    #else
+        bool simEventTemp[10];
+        char simEvent[10];
+    #endif
+    
     bool gotOffCommand;
     bool gotOnCommand;
     bool offButtonPressed;
@@ -59,6 +70,26 @@ class Motor_MGR
     bool waitStableLineOn;
     unsigned long int waitStableLineTimer;
     byte waitStableLineTime;
+
+    #ifdef ENABLE_WATER
+        bool lowLevelSensor;
+        bool midLevelSensor;
+        bool highLevelSensor;
+        byte waterEventBufferTime;
+    
+        void readWaterSensorState(bool &low,bool &mid,bool &high);
+        void updateWaterSensorState(bool &low,bool &mid,bool &high);
+    
+        void lowSensorState(bool);
+        void midSensorState(bool);
+        void highSensorState(bool);
+
+        void setWaterDefaults();
+        byte getWaterSensorState();
+        void waterStatusOnCall();
+
+        void operateOnWaterEvent();
+    #endif
 
     void anotherConstructor(SIM* sim1, S_EEPROM* eeprom1);
     void readSensorState(bool &p1, bool &p2, bool &p3, bool &p4);
@@ -115,14 +146,21 @@ class Motor_MGR
 
     bool eventOccured;
     bool buttonEventOccured;
+    
+    #ifdef ENABLE_WATER
+        bool waterEventOccured;  
+        unsigned long tempWaterEventTime;
+        bool lowSensorState();
+        bool midSensorState();
+        bool highSensorState();
+    #endif
 
     void resetAutoStart(bool setChange = false);
+
     bool motorState();
     bool ACFeedbackState();
     bool ACPowerState();
     bool AllPhaseState();
-    // bool getChargeState();			//used by SIM
-    // unsigned short int getBatVolt();				//used by SIM
     byte checkLineSensors();
     bool getMotorState();
     void startMotor(bool commanded = false);

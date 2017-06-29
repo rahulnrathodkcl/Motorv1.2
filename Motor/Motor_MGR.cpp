@@ -87,6 +87,10 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   ACFeedbackState(false); // acFeedback = false;
   ACPowerState(false);//  phaseAC = false;
 
+  #ifdef ENABLE_WATER
+  	setWaterDefaults();
+  #endif
+
   for (byte i = 0; i < 10; i++)
 	simEventTemp[i] = true;
 
@@ -100,9 +104,173 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   simEvent[7] = 'S';
   simEvent[8] = 'O';
   simEvent[9] = 'A';
-
   // resetAutoStart();
 }
+
+#ifdef ENABLE_WATER
+
+void Motor_MGR::lowSensorState(bool temp)
+{
+	lowLevelSensor=temp;	
+}
+
+bool Motor_MGR::lowSensorState()
+{
+	return lowLevelSensor;
+}
+
+void Motor_MGR::midSensorState(bool temp)
+{
+	midLevelSensor=temp;
+}
+
+bool Motor_MGR::midSensorState()
+{
+	return midLevelSensor;
+}
+
+void Motor_MGR::highSensorState(bool temp)
+{
+	highLevelSensor=temp;
+}
+
+bool Motor_MGR::highSensorState()
+{
+	return highLevelSensor;
+}
+
+void Motor_MGR::setWaterDefaults()
+{
+	pinMode(PIN_LOWSENSOR,INPUT_PULLUP);
+	pinMode(PIN_MIDSENSOR,INPUT_PULLUP);
+	pinMode(PIN_HIGHSENSOR,INPUT_PULLUP);
+
+	waterEventBufferTime=200; 		// 200x100= 20,000ms = 20s
+	waterEventOccured=false;
+
+	lowSensorState(false);
+	midSensorState(false);
+	highSensorState(false);
+
+  for (byte i = 10; i < 14; i++)
+	simEventTemp[i] = true;
+
+  simEvent[10] = 'I';
+  simEvent[11] = 'D';
+  simEvent[12] = 'H';
+  simEvent[13] = 'E';
+}
+
+void Motor_MGR::readWaterSensorState(bool &low,bool &mid,bool &high)
+{
+	waterEventOccured = false;
+  	noInterrupts();
+  	low = digitalRead(PIN_LOWSENSOR);
+	mid = digitalRead(PIN_MIDSENSOR);
+	high = digitalRead(PIN_HIGHSENSOR);
+	interrupts();
+
+#ifndef disable_debug
+  _NSerial->print("LS:");
+  _NSerial->println(low);
+  _NSerial->print("MS:");
+  _NSerial->println(mid);
+  _NSerial->print("HS:");
+  _NSerial->println(high);
+#endif
+}
+
+void Motor_MGR::updateWaterSensorState(bool &low,bool &mid,bool &high)
+{
+	lowSensorState(low);
+	midSensorState(mid);
+	highSensorState(high);
+}
+
+byte Motor_MGR::getWaterSensorState()
+{
+	bool l,m,h;
+	readWaterSensorState(l,m,h);
+
+	byte ans=0;
+	if(!l) 
+	{
+		ans++;
+		if(!m) 
+		{
+			ans++;
+			if(!h)
+			{
+				ans++;				
+			}
+		}
+	}
+	updateSensorState(l,m,h);
+	return ans;
+}
+
+
+void Motor_MGR::waterStatusOnCall()
+{
+	byte temp = getWaterSensorState();
+	if(temp==CRITICALLEVEL)
+	  sim1->setMotorMGRResponse('L');	//motor off, no light
+	else if(temp==LOWLEVEL)
+	  sim1->setMotorMGRResponse('L');	//motor off, no light
+	else if(temp==MIDLEVEL)
+	  sim1->setMotorMGRResponse('L');	//motor off, no light
+	else if(temp==HIGHLEVEL)
+	  sim1->setMotorMGRResponse('L');	//motor off, no light
+}
+
+void Motor_MGR::operateOnWaterEvent()
+{
+	if(millis()-tempWaterEventTime<(waterEventBufferTime*100))	
+		return;
+	
+	bool low,mid,high;
+	readWaterSensorState(low,mid,high);
+
+	if(!((low ^ lowSensorState()) || (mid ^ midSensorState()) || (high ^ highSensorState())))		// no chanes in sensor state
+		return;
+
+  if (motorState())		//motorOn
+  {
+  	if(low && !lowSensorState())				//water is below the motor, so stop the motor.
+  	{
+  		stopMotor(false,true);
+		simEventTemp[10] = sim1->registerEvent('I'); //report To SIM Motor Off due to insufficient water level
+  	}
+  	else if(!low && mid && !midSensorState())
+  	{
+		simEventTemp[11] = sim1->registerEvent('D'); //report To SIM water level is decreasing..
+  	}
+  	else if(!low && !mid && !high && highSensorState())
+  	{
+  		if(eeprom1->PREVENTOVERFLOW)
+  		{
+  			stopMotor(false,true);
+			simEventTemp[12] = sim1->registerEvent('H'); //report To SIM well is full, so stopped motor
+  		}
+  		else
+			simEventTemp[13] = sim1->registerEvent('E'); //report To SIM well is full.
+  	}
+  }
+  else    //motor is off
+  {
+  	if(!low && !mid && midSensorState()) 		//water is increasing, reached mid sensor
+  	{
+  		if(eeprom1->AUTOSTART)			//autoStart is ON
+	  		triggerAutoStart();
+  	}
+  	else if(!low && !mid && !high && highSensorState())
+  	{
+		simEventTemp[13] = sim1->registerEvent('E'); //report To SIM well is full.
+  	}
+  }
+  updateWaterSensorState(low,mid,high);
+}
+#endif
 
 bool Motor_MGR::getMotorState()
 {
@@ -458,6 +626,15 @@ void Motor_MGR::startMotor(bool commanded)
 	  // if (!(bool)eeprom1->AUTOSTART)
 		// stopSequenceOn=false;
 
+	#ifdef ENABLE_WATER
+		if(getWaterSensorState()==CRITICALLEVEL)
+		{
+			if (commanded)
+				sim1->setMotorMGRResponse('L');	//cannot start motor due to some problem
+			return;
+		}
+	#endif
+
 	  digitalWrite(PIN_STOP, LOW);
 	  digitalWrite(PIN_START, LOW);
 	  tempStartSequenceTimer = millis();
@@ -469,10 +646,6 @@ void Motor_MGR::startMotor(bool commanded)
 	{
 	  if (commanded)
 		sim1->setMotorMGRResponse('O');
-		// #ifndef disable_debug
-		// 	  _NSerial->print("M ");
-		// 	  _NSerial->println("ON");
-		// #endif
 	}
   }
   else
