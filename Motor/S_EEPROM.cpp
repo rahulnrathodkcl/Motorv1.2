@@ -54,7 +54,7 @@ byte S_EEPROM::checkExists(String &number)
 
 bool S_EEPROM::addNumber(String &number)
 {
-  if (numbersCount == 5)
+  if (numbersCount == MAXNUMBERS)
     return false;
   else
   {
@@ -101,6 +101,7 @@ bool S_EEPROM::isAlterNumber(String number)
     if(alterNumberSetting && number == read_StringEE(alterNumberAddress, 10))
       return true;
   }
+  return false;
 }
 
 bool S_EEPROM::isPrimaryNumber(String number)
@@ -157,7 +158,7 @@ bool S_EEPROM::removeNumber(String &number)
         write_StringEE(mobileNumberAddress + (i*11), read_StringEE(mobileNumberAddress + ((i+1)*11),10));
         // secondary[i - 1] = secondary[i];
       }
-      numbersCount--;
+      EEPROM.put(numbersCountAddress,--numbersCount);
       // updateNumberChanges();
       return true;
     }
@@ -181,7 +182,7 @@ bool S_EEPROM::removeNumber(String &number)
 void S_EEPROM::loadNumberSettings()
 {
   EEPROM.get(numbersCountAddress, numbersCount);
-  if(numbersCount==0xFF || numbersCount > 5)
+  if(numbersCount==0xFF || numbersCount > MAXNUMBERS)
   {
     numbersCount=0;
     EEPROM.put(numbersCountAddress,numbersCount);
@@ -433,7 +434,6 @@ void S_EEPROM::saveEventStageSettings(byte data)
   EVENTSTAGE=data;
   EEPROM.put(eventStageAddress,EVENTSTAGE);
 }
-
 
 void S_EEPROM::loadAllData()
 {

@@ -19,6 +19,8 @@
 #define STR_SAPBR_STOP "AT+SAPBR=0,1\r\n"
 
 #define WATCHDOG_OFF    (0)
+
+#define MAXNUMBERS 15
 // #define WATCHDOG_16MS   (_BV(WDE))
 // #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
