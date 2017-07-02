@@ -197,7 +197,7 @@ class SIM
 
     bool registerEvent(char eventType);
 
-    void operateOnMsg(String str, bool admin,bool noMsg);
+    void operateOnMsg(String str, bool admin,bool noMsg,bool alterNumber);
     void setCallBackFunctions(void (*ImdEvent)(bool));
     bool busy();
     // void setNetLight(byte);

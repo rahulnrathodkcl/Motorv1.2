@@ -94,14 +94,22 @@ bool S_EEPROM::addNumber(String &number)
 //   return b;
 // }
 
+bool S_EEPROM::isAlterNumber(String number)
+{
+  if(numbersCount>0)
+  {
+    if(alterNumberSetting && number == read_StringEE(alterNumberAddress, 10))
+      return true;
+  }
+}
+
 bool S_EEPROM::isPrimaryNumber(String number)
 {
   if (numbersCount > 0)
   {
       if(read_StringEE(mobileNumberAddress,10)==number)
         return true;
-       if(alterNumberSetting && number == read_StringEE(alterNumberAddress, 10))
-        return true;
+        return isAlterNumber(number);
     // if (primaryNumber == str)
       // return true;
     // if (alterNumberSetting && alterNumber == str)

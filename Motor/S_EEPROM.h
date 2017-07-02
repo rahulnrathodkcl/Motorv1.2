@@ -98,6 +98,7 @@ class S_EEPROM
     // bool saveBalNumber(String &str);
     // bool getBalNumber(String &str);
     bool isPrimaryNumber(String str);
+    bool isAlterNumber(String str);
     String getActiveNumber();
 
     String getDeviceId();

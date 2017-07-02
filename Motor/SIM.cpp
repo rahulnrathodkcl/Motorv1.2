@@ -707,7 +707,7 @@ bool SIM::getBlockingResponse(String &cmd,bool (SIM::*func)(String &))
   return false;
 }
 
-void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
+void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alterNumber=false)
 {
   isMsgFromAdmin=admin;
   String tempStr=str;
@@ -853,7 +853,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       
       sendSMS(makeStatusMsg(batPer,net),true);
     }
-    else if (str.startsWith(F("AMON")))//stringContains(str, "AMON", 4, str.length() - 1))
+    else if (str.startsWith(F("AMON")) && (admin || alterNumber))//stringContains(str, "AMON", 4, str.length() - 1))
     {
       if (eeprom1->alterNumberPresent)
       {
@@ -1024,14 +1024,16 @@ inline bool SIM::isAdmin(String str)
 void SIM::gotMsgBody(String &str)
 {
   bool admin = isAdmin(str);
-  if (admin || eeprom1->isPrimaryNumber(str))
+  bool alterNumber = eeprom1->isAlterNumber(str);
+
+  if (admin || eeprom1->isPrimaryNumber(str) || alterNumber)
   {
+
     str = readString(); //_SSerial->readStringUntil('\n');
 #ifndef disable_debug
     _NSerial->print("MSG:");
     _NSerial->println(str);
 #endif
-
 
     bool noMsg=false;
     if(str.startsWith("#"))
@@ -1043,10 +1045,10 @@ void SIM::gotMsgBody(String &str)
     if(admin)
     {
       if(!checkPrgReq(str,noMsg))
-        operateOnMsg(str,admin,noMsg);
+        operateOnMsg(str,admin,noMsg,alterNumber);
     }
     else
-      operateOnMsg(str, admin,noMsg);
+      operateOnMsg(str, admin,noMsg,alterNumber);
   }
   delAllMsg();
 }
