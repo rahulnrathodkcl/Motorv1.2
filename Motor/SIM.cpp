@@ -66,7 +66,6 @@ void SIM::anotherConstructor()
   // attemptsToCall=0;
 
   actionType = 'N';
-  makeResponse = false;
   responseToAction = false;
 
   callCutWaitTime = 580;
@@ -77,7 +76,8 @@ void SIM::anotherConstructor()
   freezeIncomingCalls = false;
   obtainNewEvent = true;
   isMsgFromAdmin = false;
-  
+  eventStaged=false;
+  stagedEventType = 'N'; 
   // acceptCommands();
 }
 
@@ -751,6 +751,8 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       #ifdef ENABLE_WATER
         eeprom1->savePreventOverFlowSettings(false);
       #endif
+      eeprom1->saveEventStageSettings(0);
+      eeprom1->saveBypassSettings(false);
       eeprom1->saveDNDSettings(false);
       eeprom1->saveResponseSettings('C');
       eeprom1->saveAutoStartTimeSettings(50);
@@ -786,6 +788,16 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
     {
       eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
       motor1->resetAutoStart(true);
+      done=true;
+    }
+    else if (str.startsWith(F("BYPON")))
+    {
+      eeprom1->saveBypassSettings(true);  //set BYPASS to true in EEPROM
+      done=true;
+    }
+    else if (str.startsWith(F("BYPOFF")))
+    {
+      eeprom1->saveBypassSettings(false);  //set BYPASS to false in EEPROM
       done=true;
     }
     else if (str.startsWith(F("DNDON")))//stringContains(str, F("DNDON"), 5, str.length() - 1))
@@ -854,13 +866,26 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       eeprom1->saveAlterNumberSetting(false);
       done=true;
     }
+    else if (stringContains(str, F("STAGE"), 5, str.length() - 1))
+    {
+      if (isNumeric(str))
+      {
+        data = str.toInt();
+        if (data < 0) data = 0;
+        if (data > 5) data = 5;
+        eeprom1->saveEventStageSettings(data);  //Store in EEPROM the EVENT STAGE 
+        tempStr = F("STAGE");
+        tempStr = tempStr + data;
+        done=true;
+      }
+    }
     else if (stringContains(str, F("STARTIME"), 8, str.length() - 1))
     {
       if (isNumeric(str))
       {
         data = str.toInt();
         if (data < 2) data = 2;
-        if (data > 60) data = 60;
+        if (data > 1200) data = 1200;
         eeprom1->saveStarDeltaTimer(data);
         tempStr = F("STARTIME");
         tempStr = tempStr + data;
@@ -873,7 +898,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false)
       {
         data = str.toInt();
         if (data < 50) data = 50;
-        if (data > 480) data = 480;
+        if (data > 28800) data = 28800;
         eeprom1->saveAutoStartTimeSettings(data);  //Store in EEPROM the AUTO START TIME
         tempStr = F("AUTOTIME");
         tempStr = tempStr + data;
@@ -1575,7 +1600,6 @@ bool SIM::callTimerExpire()
 
 void SIM::makeResponseAction()
 {
-  makeResponse = false;
   if (eeprom1->RESPONSE == 'A' || eeprom1->RESPONSE == 'C')
     makeCall();
 }
@@ -1590,24 +1614,31 @@ bool SIM::registerEvent(char eventType)
     return true;
   }
 
-  if (currentStatus == 'N' && currentCallStatus == 'N' && obtainNewEvent)
-  {
-    freezeIncomingCalls = true;
-    acceptCommands();
-
+  if (currentStatus == 'N' && currentCallStatus == 'N' && obtainNewEvent && !eventStaged)
+  {    
 #ifndef disable_debug
     _NSerial->print("E:");
     _NSerial->print(eventType);
 #endif
 
-    actionType = eventType;
-    makeResponseAction();
+    if(eeprom1->EVENTSTAGE>0x00)
+    {
+      tempEventStageTime=millis();
+      stagedEventType=eventType;
+      eventStaged=true;
+    }
+    else
+    {
+      actionType = eventType;
+      freezeIncomingCalls = true;
+      acceptCommands();
+      makeResponseAction();
+    }
     return true;
   }
   else
     return false;
 }
-
 
 bool SIM::rejectCommandsElligible()
 {
@@ -1692,7 +1723,7 @@ bool SIM::checkNotInCall()
 {
  return ( !sendCUSDResponse     &&  currentStatus=='N'  
   &&  currentCallStatus=='N'  &&  obtainNewEvent
-  &&  !makeResponse           &&  !freezeIncomingCalls);
+  &&  !freezeIncomingCalls);
 }
 
 // void SIM::setNetLight(byte light)
@@ -1757,6 +1788,18 @@ void SIM::checkRespSMS(char t1)
   }
 }
 
+void SIM::operateOnStagedEvent()
+{
+  if(obtainNewEvent && millis()-tempEventStageTime>((eeprom1->EVENTSTAGE)*60000L))
+  {
+      freezeIncomingCalls = true;
+      acceptCommands();
+      actionType=stagedEventType;
+      eventStaged=false;
+      makeResponseAction();
+  }
+}
+
 void SIM::update()
 {
   if(inInterrupt && checkEventGone())
@@ -1767,12 +1810,13 @@ void SIM::update()
     rejectCommands();
   }
 
-  if (currentStatus == 'N')
+  if (currentStatus == 'N' && currentCallStatus == 'N')
   {
     setObtainEvent();
-
-    if (makeResponse)
-      makeResponseAction();
+    if(eventStaged)
+    {
+      operateOnStagedEvent();
+    }
   }
   else if (currentStatus == 'I' || currentStatus == 'R')
   {

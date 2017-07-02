@@ -244,6 +244,12 @@ void S_EEPROM::saveDNDSettings(bool temp)
   EEPROM.put(dndAddress, DND);
 }
 
+void S_EEPROM::saveBypassSettings(bool temp)
+{
+  BYPASS = (byte)temp;
+  EEPROM.put(bypassAddress, BYPASS);
+}
+
 void S_EEPROM::saveResponseSettings(char temp)
 {
   RESPONSE = temp;
@@ -281,15 +287,15 @@ void S_EEPROM::loadAutoStartSettings()
 
 void S_EEPROM::loadPreventOverFlowSettings()
 {
-  EEPROM.get(preventOverFlowAddress, PREVENTOVERLFOW);
-  if (PREVENTOVERLFOW == 0xFF)
+  EEPROM.get(preventOverFlowAddress, PREVENTOVERFLOW);
+  if (PREVENTOVERFLOW == 0xFF)
     savePreventOverFlowSettings(false);
 }
 
 void S_EEPROM::savePreventOverFlowSettings(bool temp)
 {
-  PREVENTOVERLFOW = (byte)temp;
-  EEPROM.put(preventOverFlowAddress, PREVENTOVERLFOW);
+  PREVENTOVERFLOW = (byte)temp;
+  EEPROM.put(preventOverFlowAddress, PREVENTOVERFLOW);
 }
 
 #endif
@@ -324,6 +330,14 @@ void S_EEPROM::loadDNDSettings()
   if (DND == 0xFF)
     saveDNDSettings(false);
 }
+
+void S_EEPROM::loadBypassSettings()
+{
+  EEPROM.get(bypassAddress, BYPASS);
+  if (BYPASS == 0xFF)
+    saveBypassSettings(false);
+}
+
 
 void S_EEPROM::loadResponseSettings()
 {
@@ -389,19 +403,37 @@ String S_EEPROM::getDeviceId()
 void S_EEPROM::loadStarDeltaTimer()
 {
   EEPROM.get(starDeltaTimerAddress,starDeltaTimerTime);
-  if(starDeltaTimerTime==0xFF)
+  if(starDeltaTimerTime==0xFFFF)
     saveStarDeltaTimer(2);
 }
 
-void S_EEPROM::saveStarDeltaTimer(byte data)
+void S_EEPROM::loadEventStageSettings()
+{
+  EEPROM.get(eventStageAddress,EVENTSTAGE);
+  if(EVENTSTAGE==0xFF)
+    saveEventStageSettings(0);
+}
+
+void S_EEPROM::saveStarDeltaTimer(unsigned short int data)
 {
   starDeltaTimerTime=data;
   EEPROM.put(starDeltaTimerAddress,starDeltaTimerTime);
 }
 
+void S_EEPROM::saveEventStageSettings(byte data)
+{
+  EVENTSTAGE=data;
+  EEPROM.put(eventStageAddress,EVENTSTAGE);
+}
+
+
 void S_EEPROM::loadAllData()
 {
   // loadTempSettings();
+
+  loadEventStageSettings();
+  loadBypassSettings();
+
   loadAutoStartSettings();
   loadAutoStartTimeSettings();
   loadDNDSettings();

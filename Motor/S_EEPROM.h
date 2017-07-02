@@ -13,8 +13,10 @@ class S_EEPROM
     #ifdef ENABLE_WATER
         void loadPreventOverFlowSettings();
     #endif
+    void loadEventStageSettings();
     void loadAutoStartTimeSettings();
     void loadDNDSettings();
+    void loadBypassSettings();
     void loadResponseSettings();
     void loadCCID();
     void loadStarDeltaTimer();
@@ -47,9 +49,15 @@ class S_EEPROM
     bool programSizeSet;
 
     byte AUTOSTART;
-    byte PREVENTOVERFLOW;
+    byte BYPASS;
+
+    byte EVENTSTAGE;
+    
+    #ifdef ENABLE_WATER
+        byte PREVENTOVERFLOW;
+    #endif
     unsigned short int AUTOSTARTTIME;
-    byte starDeltaTimerTime;
+    unsigned short int starDeltaTimerTime;
 
     byte DND;
     char RESPONSE;
@@ -68,8 +76,11 @@ class S_EEPROM
     #ifdef ENABLE_WATER
         void savePreventOverFlowSettings(bool);
     #endif
+
     void saveAutoStartTimeSettings(unsigned short int);
-    void saveStarDeltaTimer(byte);
+    void saveStarDeltaTimer(unsigned short int);
+    void saveEventStageSettings(byte);
+    void saveBypassSettings(bool);
     void saveDNDSettings(bool);
     void saveResponseSettings(char);
     unsigned long int getProgramSize();

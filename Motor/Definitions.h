@@ -40,6 +40,7 @@
 	#define CRITICALLEVEL 0x00
 
 	#define preventOverFlowAddress 50
+
 #endif
 
 #define PIN_STARTBUTTON A4
@@ -86,7 +87,11 @@
 #define alterNumberPresentAddress 22
 #define alterNumberSettingAddress 26
 #define alterNumberAddress 30  
-///start new settings from add 54
+
+#define bypassAddress 54
+#define eventStageAddress 58
+
+
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304

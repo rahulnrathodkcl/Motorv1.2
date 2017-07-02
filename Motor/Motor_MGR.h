@@ -11,7 +11,6 @@
 #include "Definitions.h"
 #include "S_EEPROM.h"
 #include "SIM.h"
-#include "Water.h"
 #include <Arduino.h>
 
 
@@ -86,7 +85,6 @@ class Motor_MGR
 
         void setWaterDefaults();
         byte getWaterSensorState();
-        void waterStatusOnCall();
 
         void operateOnWaterEvent();
     #endif
@@ -153,6 +151,9 @@ class Motor_MGR
         bool lowSensorState();
         bool midSensorState();
         bool highSensorState();
+
+        void waterStatusOnCall();
+
     #endif
 
     void resetAutoStart(bool setChange = false);

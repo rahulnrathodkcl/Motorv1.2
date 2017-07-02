@@ -205,7 +205,7 @@ byte Motor_MGR::getWaterSensorState()
 			}
 		}
 	}
-	updateSensorState(l,m,h);
+	updateWaterSensorState(l,m,h);
 	return ans;
 }
 
@@ -231,7 +231,7 @@ void Motor_MGR::operateOnWaterEvent()
 	bool low,mid,high;
 	readWaterSensorState(low,mid,high);
 
-	if(!((low ^ lowSensorState()) || (mid ^ midSensorState()) || (high ^ highSensorState())))		// no chanes in sensor state
+	if((low == lowSensorState()) && (mid == midSensorState()) && (high == highSensorState()))		// no chanes in sensor state
 		return;
 
   if (motorState())		//motorOn
@@ -430,8 +430,7 @@ void Motor_MGR::operateOnEvent()
   bool t3Phase, tMotor, tacFeedback, tacPhase;
   readSensorState(t3Phase, tMotor, tacFeedback, tacPhase);
 
-
-  if(t3Phase && AllPhaseState() && tMotor && motorState() && tacPhase && ACPowerState())
+  if((t3Phase == AllPhaseState()) && (tMotor == motorState()) && (tacPhase == ACPowerState()))
   	return;
 
   if (motorState())		//motorOn
@@ -462,12 +461,15 @@ void Motor_MGR::operateOnEvent()
 	else if (!t3Phase && tacPhase) ////single phasing occured
 	{
 	  	// operateOnSinglePhasing();
-	  	tempSinglePhasingTimer = millis();
-	  	singlePhasingTimerOn = true;
+	  	if(!eeprom1->BYPASS)
+	  	{
+		  	tempSinglePhasingTimer = millis();
+		  	singlePhasingTimerOn = true;
 #ifndef disable_debug
-	  	_NSerial->print("Got");
-	  	_NSerial->println("F");
+		  	_NSerial->print("Got");
+		  	_NSerial->println("F");
 #endif
+	  	}
 	}
 	// else if (!mFeedback && (!tacPhase && ACPowerState()) && (t3Phase && AllPhaseState()))	//2 Phases Got Off
 	// {

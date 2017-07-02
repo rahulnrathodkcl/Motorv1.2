@@ -56,7 +56,11 @@ class SIM
     byte nr;
     bool callAccepted;
 
-    bool makeResponse;
+    // bool makeResponse;
+    bool eventStaged;
+    unsigned long tempEventStageTime;
+    char stagedEventType;
+
     char actionType;
 
     bool freezeIncomingCalls;
@@ -144,6 +148,7 @@ class SIM
     void checkRespSMS(char t1);
 
     void registerWithAdmin();
+    void operateOnStagedEvent();
     
 #ifndef disable_debug
 #ifdef software_SIM
