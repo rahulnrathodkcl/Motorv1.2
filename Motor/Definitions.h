@@ -47,13 +47,13 @@
 
 #endif
 
-#define PIN_STARTBUTTON A4
-#define PIN_STOPBUTTON A3
+#define PIN_STARTBUTTON A1
+#define PIN_STOPBUTTON A0
 #define PIN_MOTORLED A2 
 
 
-#define PIN_STOP A0
-#define PIN_START 13
+#define PIN_STOP 13
+#define PIN_START 12
 // #define PIN_BAT_CHARGE A3
 
 // #define PIN_BAT_SENSOR_PWR A1				//not needed
@@ -64,13 +64,13 @@
 #define PIN_MFEEDBACK 11
 #define PIN_ACFEEDBACK 12
 #define PIN_BATLEVEL 9
-#define PIN_TURNOFF 7
+#define PIN_TURNOFF 8
 
 #define PIN_ACPHASE 3
 
 #define PIN_DTR 4
 #define PIN_RING 2
-#define PIN_LED A5
+#define PIN_LED A3
 
 // #define PIN_PHASE1 9
 // #define PIN_PHASE2 10
