@@ -98,7 +98,7 @@ bool S_EEPROM::isAlterNumber(String number)
 {
   if(numbersCount>0)
   {
-    if(alterNumberSetting && number == read_StringEE(alterNumberAddress, 10))
+    if(alterNumberPresent && number == read_StringEE(alterNumberAddress, 10))
       return true;
   }
   return false;

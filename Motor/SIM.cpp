@@ -1479,13 +1479,14 @@ void SIM::operateDTMF(String str)
     subDTMF();
     motor1->statusOnCall();
   }
+#ifdef ENABLE_WATER
   else if (str == "4") //Status
   {
     currentOperation = 'W';
     subDTMF();
     motor1->waterStatusOnCall();
   }
-
+#endif
   else if (str == "8") //Set AUTOTIMER ON
   {
     subDTMF();
