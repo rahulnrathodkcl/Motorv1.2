@@ -25,19 +25,15 @@
 // #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
 #define disable_debug 
-
-// #define ENABLE_WATER
-
-
+#define ENABLE_WATER
 // #define software_SIM
 // #ifdef disable_debug
 // #undef software_SIM
 // #endif
+	#define PIN_LOWSENSOR 6
+	#define PIN_MIDSENSOR 7
+	#define PIN_HIGHSENSOR 5
 #ifdef ENABLE_WATER
-	#define PIN_LOWSENSOR 5
-	#define PIN_MIDSENSOR 6
-	#define PIN_HIGHSENSOR 7
-
 	#define HIGHLEVEL 0x03
 	#define MIDLEVEL 0x02
 	#define LOWLEVEL 0x01
@@ -47,13 +43,14 @@
 
 #endif
 
-#define PIN_STARTBUTTON A1
 #define PIN_STOPBUTTON A0
+#define PIN_STARTBUTTON A1
+#define PIN_AUTOBUTTON A5
+#define PIN_AUTOLED A4
 #define PIN_MOTORLED A2 
 
-
-#define PIN_STOP 13
-#define PIN_START 12
+#define PIN_MSTOP 13
+#define PIN_MSTART 12
 // #define PIN_BAT_CHARGE A3
 
 // #define PIN_BAT_SENSOR_PWR A1				//not needed
@@ -70,7 +67,7 @@
 
 #define PIN_DTR 4
 #define PIN_RING 2
-#define PIN_LED A3
+#define PIN_3PHASELED A3
 
 // #define PIN_PHASE1 9
 // #define PIN_PHASE2 10

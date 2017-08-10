@@ -986,8 +986,6 @@ inline bool SIM::isCCID(String &str)
   // return stringContains(str, "+CSQ", 5, str.length() - 3);
 }
 
-
-
 inline bool SIM::isCBC(String &str)
 {
   return(stringContains(str,"+CBC:",str.indexOf(",")+1,str.length()-1));
@@ -1508,8 +1506,8 @@ void SIM::operateDTMF(String str)
 inline void SIM::subDTMF()
 {
   //    // starPresent=true;
-  callCutWait = millis();
   stopSound();
+  callCutWait = millis();
 }
 
 void SIM::operateRing()
@@ -1671,6 +1669,11 @@ void SIM::checkNetwork(String str)
 
 void SIM::setMotorMGRResponse(char response)
 {  
+  if(currentStatus!='I')    // not in Call than return.
+  {
+    return;
+  }
+
   responseToAction = true;
  
   if (currentOperation == 'S') //start Motor
@@ -1681,6 +1684,8 @@ void SIM::setMotorMGRResponse(char response)
       playSound('1');  //motor is already on
     else if (response == 'D')
       playSound('S');  //motor has started
+    else
+      playSound(response);  //other response than specified, handled by class SIM.
     // endCall();
   }
   else if (currentOperation == 'O') //switch off motor
@@ -1691,7 +1696,8 @@ void SIM::setMotorMGRResponse(char response)
       playSound('2');  //motor is already off
     else if (response == 'D')
       playSound('O');  //motor has stopped
-    // endCall();
+    else
+      playSound(response);  //other response than specified, handled by class SIM.
   }
   else if (currentOperation == 'T')
   {
@@ -1705,10 +1711,12 @@ void SIM::setMotorMGRResponse(char response)
       playSound('3');
     else if (response == 'D')
       playSound('1');  //motor is on
+    else
+      playSound(response);  //other response than specified, handled by class SIM.
   }
   else if (currentOperation == 'W')
   {
-
+    playSound(response);
   }
 }
 
