@@ -18,6 +18,7 @@ S_EEPROM::S_EEPROM()
 {
     numbersCount = 0;
     PROGSIZE=0;
+    pinMode(PIN_AUTOLED,OUTPUT);
 }
 
 byte S_EEPROM::checkExists(String &number)
@@ -232,6 +233,7 @@ void S_EEPROM::saveAutoStartSettings(bool temp)
 {
   AUTOSTART = (byte)temp;
   EEPROM.put(autoStartAddress, AUTOSTART);
+  setAutoLed();
 }
 
 void S_EEPROM::saveProgramSize(unsigned long int temp)
@@ -285,11 +287,20 @@ void S_EEPROM::updateFirmware(bool temp,bool verify)
     // saveTempSettings(50);
 // }
 
+void S_EEPROM::setAutoLed()
+{
+  if(AUTOSTART)
+    digitalWrite(PIN_AUTOLED,HIGH);
+  else
+    digitalWrite(PIN_AUTOLED,LOW);
+}
+
 void S_EEPROM::loadAutoStartSettings()
 {
   EEPROM.get(autoStartAddress, AUTOSTART);
   if (AUTOSTART == 0xFF)
     saveAutoStartSettings(false);
+  setAutoLed();
 }
 
 #ifdef ENABLE_WATER

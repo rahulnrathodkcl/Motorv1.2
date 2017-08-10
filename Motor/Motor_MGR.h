@@ -19,18 +19,15 @@ class Water;
 
 class Motor_MGR
 {
-
-
-
     S_EEPROM* eeprom1;
     SIM* sim1;
 
     #ifdef ENABLE_WATER
-        bool simEventTemp[14];
-        char simEvent[14];
+        bool simEventTemp[17];
+        char simEvent[17];
     #else
-        bool simEventTemp[10];
-        char simEvent[10];
+        bool simEventTemp[12];
+        char simEvent[12];
     #endif
     
     bool gotOffCommand;
@@ -69,6 +66,8 @@ class Motor_MGR
     bool waitStableLineOn;
     unsigned long int waitStableLineTimer;
     byte waitStableLineTime;
+
+    unsigned long lastPressTime;
 
     #ifdef ENABLE_WATER
         bool lowLevelSensor;
