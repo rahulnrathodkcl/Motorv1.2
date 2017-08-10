@@ -21,6 +21,9 @@ class S_EEPROM
     void loadCCID();
     void loadStarDeltaTimer();
 
+    void setAutoLed();
+    
+
     // void loadAlterNumber();
     // void loadAlterNumberSettings();
     // void clearLoadedNumbers();

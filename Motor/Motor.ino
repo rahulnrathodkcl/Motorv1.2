@@ -60,8 +60,6 @@ SIM sim1(&Serial);
 Motor_MGR motor1(&sim1, &eeprom1);
 #endif
 
-
-
 void setup() {
   byte b=MCUSR;
   pinMode(PIN_TURNOFF,OUTPUT);
@@ -82,10 +80,16 @@ void setup() {
   PCICR |= (1 << PCIE0);    // set PCIE0 to enable PCMSK0 scan
   PCICR |= (1 << PCIE1);    // set PCIE0 to enable PCMSK0 scan
   PCMSK0 |= (1 << PCINT1);  // set PCINT1 to trigger an interrupt on state change
-  PCMSK1 |= (1 << PCINT11);
-  PCMSK1 |= (1 << PCINT12);
+  PCMSK1 |= (1 << PCINT8);    //set PCINT8 to trigger interrupt (OFF BUTTON)
+  PCMSK1 |= (1 << PCINT9);    //set PCINT9 to trigger interrupt (ON BUTTON)
+  PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)
 
-
+  #ifdef ENABLE_WATER
+  PCICR |= (1 << PCIE2);    // set PCIE0 to enable PCMSK0 scan
+  PCMSK2 |= (1 << PCINT21);    //set PCINT21 to trigger interrupt (Low Sensor)
+  PCMSK2 |= (1 << PCINT22);    //set PCINT22 to trigger interrupt (Mid Sensor)
+  PCMSK2 |= (1 << PCINT23);    //set PCINT23 to trigger interrupt (High Sensor)
+  #endif
 
   noInterrupts();
   watchdogConfig(WATCHDOG_OFF);
@@ -103,19 +107,25 @@ void setup() {
     #ifndef disable_debug
       USART1->println(F("BO Reset"));
     #endif
-    
     }
 
-  pinMode(PIN_LED,OUTPUT);
+  pinMode(PIN_3PHASELED,OUTPUT);
   
   eeprom1.loadAllData();
-  pinMode(8,OUTPUT);
-  pinMode(12,OUTPUT);
-  pinMode(A1,OUTPUT);
-  #ifdef disable_debug
-    pinMode(5,OUTPUT);
-    pinMode(6,OUTPUT);
-  #endif
+  // pinMode(8,OUTPUT);
+  // pinMode(12,OUTPUT);
+  // pinMode(A1,OUTPUT);
+
+#ifndef ENABLE_WATER
+  pinMode(PIN_LOWSENSOR,OUTPUT);
+  pinMode(PIN_MIDSENSOR,OUTPUT);
+  pinMode(PIN_HIGHSENSOR,OUTPUT);
+#endif
+
+  // #ifdef disable_debug
+  //   pinMode(5,OUTPUT);
+  //   pinMode(6,OUTPUT);
+  // #endif
 
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE1),IVR_PHASE,CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE2),IVR_PHASE,CHANGE);
@@ -148,6 +158,14 @@ ISR(PCINT1_vect)
 {
   motor1.buttonEventOccured=true;
 }
+
+#ifdef ENABLE_WATER
+ISR(PCINT2_vect)
+{
+  motor1.tempWaterEventTime=millis();
+  motor1.waterEventOccured=true;
+}
+#endif
 
 ISR(PCINT0_vect)
 {
@@ -249,8 +267,8 @@ void flashLed()
     if(millis()-temp>500)
     {
         led=!led;
-        if(led) digitalWrite(PIN_LED,HIGH);
-        if(!led) digitalWrite(PIN_LED,LOW);
+        if(led) digitalWrite(PIN_3PHASELED,HIGH);
+        if(!led) digitalWrite(PIN_3PHASELED,LOW);
         temp=millis();
     }
 }
@@ -264,7 +282,7 @@ void operateOnSleepElligible()
         USART1->print(F("S I Seq :"));
         USART1->println(millis());
       #endif
-      // digitalWrite(PIN_LED,LOW);
+      // digitalWrite(PIN_3PHASELED,LOW);
       tempSleepWait=millis();
       initSleepSeqeunce=true;
     }
@@ -280,9 +298,9 @@ void operateOnSleepElligible()
         {
             led=!led;
             if(led)
-              digitalWrite(PIN_LED,HIGH);
+              digitalWrite(PIN_3PHASELED,HIGH);
             else
-              digitalWrite(PIN_LED,LOW);
+              digitalWrite(PIN_3PHASELED,LOW);
 
             tempSleepWait=millis();
             while(millis()-tempSleepWait<200)
@@ -329,7 +347,6 @@ void gotoSleep()
                             // disable sleep...
   power_all_enable();
 }
-
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -420,7 +437,7 @@ void loop() {
 
       initialized = true;
       led=false;
-      digitalWrite(PIN_LED,LOW);
+      digitalWrite(PIN_3PHASELED,LOW);
     }
     return;
   }
@@ -466,7 +483,7 @@ void loop() {
         // so, the stop index of substring should be str.length().
         // otherwise , if '\r' is not removed in operateOnMsg than str.length() -1 should be stop index.
         str = str.substring(1,str.length());      
-        sim1.operateOnMsg(str, true,true);
+        sim1.operateOnMsg(str, true,true,false);
       }
       // else if(str == "CSL\r")
       // {
