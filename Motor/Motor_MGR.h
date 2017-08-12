@@ -15,7 +15,6 @@
 
 
 class SIM;
-class Water;
 
 class Motor_MGR
 {
@@ -23,8 +22,13 @@ class Motor_MGR
     SIM* sim1;
 
     #ifdef ENABLE_WATER
-        bool simEventTemp[17];
-        char simEvent[17];
+        #ifdef ENABLE_GP
+            bool simEventTemp[19];
+            char simEvent[19];
+        #else
+            bool simEventTemp[17];
+            char simEvent[17];
+        #endif
     #else
         bool simEventTemp[12];
         char simEvent[12];
@@ -73,10 +77,23 @@ class Motor_MGR
         bool lowLevelSensor;
         bool midLevelSensor;
         bool highLevelSensor;
+
+        #ifdef ENABLE_GP
+            bool oLowLevelSensor;
+            bool oHighLevelSensor;
+        #endif
         byte waterEventBufferTime;
     
         void readWaterSensorState(bool &low,bool &mid,bool &high);
         void updateWaterSensorState(bool &low,bool &mid,bool &high);
+        #ifdef ENABLE_GP
+            void overHeadLowSensorState(bool);
+            void overHeadHighSensorState(bool);
+
+            void readOverHeadWaterSensorState(bool &olow,bool &ohigh);
+            void updateOverHeadWaterSensorState(bool &olow,bool &ohigh);            
+            byte getOverHeadWaterSensorState();
+        #endif
     
         void lowSensorState(bool);
         void midSensorState(bool);
@@ -150,9 +167,11 @@ class Motor_MGR
         bool lowSensorState();
         bool midSensorState();
         bool highSensorState();
-
+        #ifdef ENABLE_GP
+            bool overHeadLowSensorState();
+            bool overHeadHighSensorState();
+        #endif
         void waterStatusOnCall();
-
     #endif
 
     void resetAutoStart(bool setChange = false);

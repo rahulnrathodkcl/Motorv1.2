@@ -18,7 +18,9 @@ S_EEPROM::S_EEPROM()
 {
     numbersCount = 0;
     PROGSIZE=0;
+    #ifndef ENABLE_GP
     pinMode(PIN_AUTOLED,OUTPUT);
+    #endif
 }
 
 byte S_EEPROM::checkExists(String &number)
@@ -233,7 +235,9 @@ void S_EEPROM::saveAutoStartSettings(bool temp)
 {
   AUTOSTART = (byte)temp;
   EEPROM.put(autoStartAddress, AUTOSTART);
-  setAutoLed();
+  #ifndef ENABLE_GP
+    setAutoLed();
+  #endif
 }
 
 void S_EEPROM::saveProgramSize(unsigned long int temp)
@@ -287,6 +291,7 @@ void S_EEPROM::updateFirmware(bool temp,bool verify)
     // saveTempSettings(50);
 // }
 
+#ifndef ENABLE_GP
 void S_EEPROM::setAutoLed()
 {
   if(AUTOSTART)
@@ -294,13 +299,16 @@ void S_EEPROM::setAutoLed()
   else
     digitalWrite(PIN_AUTOLED,LOW);
 }
+#endif
 
 void S_EEPROM::loadAutoStartSettings()
 {
   EEPROM.get(autoStartAddress, AUTOSTART);
   if (AUTOSTART == 0xFF)
     saveAutoStartSettings(false);
-  setAutoLed();
+  #ifndef ENABLE_GP
+    setAutoLed();
+  #endif
 }
 
 #ifdef ENABLE_WATER

@@ -54,7 +54,10 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
 
   pinMode(PIN_STARTBUTTON,INPUT_PULLUP);
   pinMode(PIN_STOPBUTTON,INPUT_PULLUP);
+
+  #ifndef ENABLE_GP
   pinMode(PIN_AUTOBUTTON,INPUT_PULLUP);
+  #endif
 
   pinMode(PIN_MOTORLED,OUTPUT);
 
@@ -147,11 +150,55 @@ bool Motor_MGR::highSensorState()
 	return highLevelSensor;
 }
 
+#ifdef ENABLE_GP
+
+void Motor_MGR::overHeadLowSensorState(bool temp)
+{
+	oLowLevelSensor=temp;	
+}
+
+bool Motor_MGR::overHeadLowSensorState()
+{
+	return oLowLevelSensor;
+}
+
+void Motor_MGR::overHeadHighSensorState(bool temp)
+{
+	oHighLevelSensor=temp;	
+}
+
+bool Motor_MGR::overHeadHighSensorState()
+{
+	return oHighLevelSensor;
+}
+
+void Motor_MGR::readOverHeadWaterSensorState(bool &olow,bool &ohigh)
+{
+  	noInterrupts();
+  	olow = digitalRead(PIN_OLOWSENSOR);
+	ohigh = digitalRead(PIN_OHIGHSENSOR);
+	interrupts();
+}
+
+void Motor_MGR::updateOverHeadWaterSensorState(bool &olow,bool &ohigh)
+{
+	overHeadLowSensorState(olow);
+	overHeadHighSensorState(ohigh);
+}
+#endif
+
 void Motor_MGR::setWaterDefaults()
 {
 	pinMode(PIN_LOWSENSOR,INPUT_PULLUP);
 	pinMode(PIN_MIDSENSOR,INPUT_PULLUP);
 	pinMode(PIN_HIGHSENSOR,INPUT_PULLUP);
+
+	#ifdef ENABLE_GP
+		pinMode(PIN_OLOWSENSOR,INPUT_PULLUP);
+		pinMode(PIN_OHIGHSENSOR,INPUT_PULLUP);
+		overHeadLowSensorState(false);
+		overHeadHighSensorState(false);
+	#endif
 
 	waterEventBufferTime=200; 		// 200x100= 20,000ms = 20s
 	waterEventOccured=false;
@@ -160,7 +207,12 @@ void Motor_MGR::setWaterDefaults()
 	midSensorState(false);
 	highSensorState(false);
 
-  for (byte i = 12; i < 17; i++)
+	#ifdef ENABLE_GP
+		byte j=19;
+	#else
+		byte j=17;
+	#endif
+  for (byte i = 12; i < j; i++)
 	simEventTemp[i] = true;
 
   simEvent[12] = 'I';
@@ -169,6 +221,10 @@ void Motor_MGR::setWaterDefaults()
   simEvent[15] = 'E';
   simEvent[16] = 'Z';
 
+  #ifdef ENABLE_GP
+	simEvent[17] = 'V';
+	simEvent[18] = 'W';
+  #endif
 }
 
 void Motor_MGR::readWaterSensorState(bool &low,bool &mid,bool &high)
@@ -197,12 +253,32 @@ void Motor_MGR::updateWaterSensorState(bool &low,bool &mid,bool &high)
 	highSensorState(high);
 }
 
+#ifdef ENABLE_GP
+byte Motor_MGR::getOverHeadWaterSensorState()
+{
+	bool olow,ohigh;
+	readOverHeadWaterSensorState(olow,ohigh);
+	byte ans=0;
+	if(!olow)
+	{
+		ans++;
+		if(!ohigh)
+		{
+			ans++;
+		}
+	}
+	updateOverHeadWaterSensorState(olow,ohigh);
+	return ans;
+}
+#endif
+
 byte Motor_MGR::getWaterSensorState()
 {
 	bool l,m,h;
 	readWaterSensorState(l,m,h);
 
 	byte ans=0;
+
 	if(!l) 
 	{
 		ans++;
@@ -248,8 +324,22 @@ void Motor_MGR::operateOnWaterEvent()
 	bool low,mid,high;
 	readWaterSensorState(low,mid,high);
 
+	#ifdef ENABLE_GP
+		bool olow,ohigh;
+		readOverHeadWaterSensorState(olow,ohigh);
+	#endif
+
 	if((low == lowSensorState()) && (mid == midSensorState()) && (high == highSensorState()))		// no changes in sensor state
-		return;
+	{
+		#ifdef ENABLE_GP
+		if(olow == overHeadLowSensorState() && (ohigh == overHeadHighSensorState()))
+		{
+			return;
+		}
+		#else
+			return;
+		#endif
+	}
 
   if (motorState())		//motorOn
   {
@@ -278,19 +368,54 @@ void Motor_MGR::operateOnWaterEvent()
 			simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
   		}
   	}
+  	#ifdef ENABLE_GP
+  	else if(!olow && !ohigh && overHeadHighSensorState())		//overhead tank is full
+  	{
+  		stopMotor(false,true);
+		simEventTemp[17] = sim1->registerEvent('V'); //report To SIM Motor Off due to overhead tank full
+  	}
+  	else if (olow && ohigh && !overHeadLowSensorState())
+  	{
+		simEventTemp[18] = sim1->registerEvent('W'); //report To SIM , overhead tank empty.
+  	}
+  	#endif
   }
   else    //motor is off
   {
   	if(!low && !mid && midSensorState()) 		//water is increasing, reached mid sensor
   	{
-  		if(eeprom1->AUTOSTART)			//autoStart is ON
-	  		triggerAutoStart();
+  		#ifdef ENABLE_GP
+  			if(ohigh)
+  			{
+		  		if(eeprom1->AUTOSTART)			//autoStart is ON
+			  		triggerAutoStart();
+  			}
+  		#else
+		  	if(eeprom1->AUTOSTART)			//autoStart is ON
+			  	triggerAutoStart();
+  		#endif
   	}
+  	#ifdef ENABLE_GP
+  	else if (olow && !low)// overhead tank is empty, and underground not low
+  	{
+		  	if(eeprom1->AUTOSTART)			//autoStart is ON
+			{
+			 	triggerAutoStart();
+			}
+			else
+			{
+				simEventTemp[18] = sim1->registerEvent('W'); //report To SIM overhead tank is empty.
+			}
+  	}
+  	#endif
   	else if(!low && !mid && !high && highSensorState())
   	{
 		simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
   	}
   }
+  #ifdef ENABLE_GP
+  	updateOverHeadWaterSensorState(olow,ohigh);
+  #endif
   updateWaterSensorState(low,mid,high);
 }
 #endif
@@ -369,7 +494,9 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
   {
   	if(ACPowerState())	// on AC Power,
   	{
+  		#ifndef ENABLE_GP
 	    digitalWrite(PIN_AUTOLED,HIGH); 	//AUTO LED is turned on.
+  		#endif
 		if (AllPhaseState())				//auto start is on , and AC is Present in 3 phase, so , can start with switch or external force.
 		{
 			digitalWrite(PIN_MSTOP,LOW);
@@ -377,7 +504,9 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
   	}
 	else  			// on battery, so stop AUTO LED to save power
 	{
+		#ifndef ENABLE_GP
 	    digitalWrite(PIN_AUTOLED,LOW);
+  		#endif
 	}
   }
 }
@@ -671,15 +800,28 @@ void Motor_MGR::startMotor(bool commanded)
 			}
 			return;
 		}
-	#endif
 
+		#ifdef ENABLE_GP
+		if(getOverHeadWaterSensorState()==OVERHEADCRITICALLEVEL)
+		{
+				if(commanded)
+				{
+					sim1->setMotorMGRResponse('V');	//cannot start motor as OverHead Tank Full.
+				}
+				else
+				{
+					simEventTemp[17] = sim1->registerEvent('V');//register To SIM motor not started due to ANY REASON
+				}
+				return;
+		}
+		#endif
+	#endif
 	  digitalWrite(PIN_MSTOP, LOW);
 	  digitalWrite(PIN_MSTART, LOW);
 	  setLED(TURN_ON);
 	  tempStartSequenceTimer = millis();
 	  startSequenceOn = true;
 	  motorState(true);
-
 	  gotOnCommand = commanded;
 	}
 	else
@@ -840,7 +982,11 @@ void Motor_MGR::statusOnCall()
 void Motor_MGR::SIMEventManager()
 {
 	#ifdef ENABLE_WATER
+		#ifdef ENABLE_GP
+		byte j=19;
+		#else
 		byte j=17;
+		#endif
 	#else
 		byte j=12;
 	#endif
@@ -881,6 +1027,7 @@ void Motor_MGR::operateOnButtonEvent()
 		startMotor();
 	else if (digitalRead(PIN_STOPBUTTON)==LOW)
 		stopMotor(false,false,true);
+	#ifndef ENABLE_GP
 	else if(digitalRead(PIN_AUTOBUTTON)==LOW)
 	{
 		if(millis() - lastPressTime > 500)
@@ -895,6 +1042,7 @@ void Motor_MGR::operateOnButtonEvent()
 				simEventTemp[11] = sim1->registerEvent('9');
 		}
 	}
+	#endif
 }
 
 void Motor_MGR::update()

@@ -25,7 +25,8 @@
 // #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
 #define disable_debug 
-// #define ENABLE_WATER
+#define ENABLE_WATER
+#define ENABLE_GP
 // #define software_SIM
 // #ifdef disable_debug
 // #undef software_SIM
@@ -38,16 +39,21 @@
 	#define MIDLEVEL 0x02
 	#define LOWLEVEL 0x01
 	#define CRITICALLEVEL 0x00
-
 	#define preventOverFlowAddress 50
 
+	#ifdef ENABLE_GP
+		#define OVERHEADCRITICALLEVEL 0x00
+		#define OVERHEADHIGHLEVEL 0x01
+		#define PIN_OLOWSENSOR A5
+		#define PIN_OHIGHSENSOR A4
+	#endif
 #endif
 
 #define PIN_STOPBUTTON A0
 #define PIN_STARTBUTTON A1
 #define PIN_AUTOBUTTON A5
 #define PIN_AUTOLED A4
-#define PIN_MOTORLED A2 
+#define PIN_MOTORLED A2
 
 #define PIN_MSTOP 13
 #define PIN_MSTART 12
