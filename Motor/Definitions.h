@@ -31,23 +31,6 @@
 // #ifdef disable_debug
 // #undef software_SIM
 // #endif
-	#define PIN_LOWSENSOR 6
-	#define PIN_MIDSENSOR 7
-	#define PIN_HIGHSENSOR 5
-#ifdef ENABLE_WATER
-	#define HIGHLEVEL 0x03
-	#define MIDLEVEL 0x02
-	#define LOWLEVEL 0x01
-	#define CRITICALLEVEL 0x00
-	#define preventOverFlowAddress 50
-
-	#ifdef ENABLE_GP
-		#define OVERHEADCRITICALLEVEL 0x00
-		#define OVERHEADHIGHLEVEL 0x01
-		#define PIN_OLOWSENSOR A5
-		#define PIN_OHIGHSENSOR A4
-	#endif
-#endif
 
 #define PIN_STOPBUTTON A0
 #define PIN_STARTBUTTON A1
@@ -74,6 +57,27 @@
 #define PIN_DTR 4
 #define PIN_RING 2
 #define PIN_3PHASELED A3
+
+	#define PIN_LOWSENSOR 6
+	#define PIN_MIDSENSOR 7
+	#define PIN_HIGHSENSOR 5
+#ifdef ENABLE_WATER
+	#define HIGHLEVEL 0x03
+	#define MIDLEVEL 0x02
+	#define LOWLEVEL 0x01
+	#define CRITICALLEVEL 0x00
+	#define preventOverFlowAddress 50
+
+	#ifdef ENABLE_GP
+		#undef PIN_AUTOLED
+		#undef PIN_AUTOBUTTON
+		#define OVERHEADCRITICALLEVEL 0x00
+		#define OVERHEADMIDLEVEL 0x01
+		#define OVERHEADHIGHLEVEL 0x02
+		#define PIN_OLOWSENSOR A5
+		#define PIN_OHIGHSENSOR A4
+	#endif
+#endif
 
 // #define PIN_PHASE1 9
 // #define PIN_PHASE2 10

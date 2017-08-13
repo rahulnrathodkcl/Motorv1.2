@@ -185,6 +185,40 @@ void Motor_MGR::updateOverHeadWaterSensorState(bool &olow,bool &ohigh)
 	overHeadLowSensorState(olow);
 	overHeadHighSensorState(ohigh);
 }
+
+byte Motor_MGR::getOverHeadWaterSensorState()
+{
+	bool olow,ohigh;
+	readOverHeadWaterSensorState(olow,ohigh);
+	byte ans=0;
+	if(!olow)
+	{
+		ans++;
+		if(!ohigh)
+		{
+			ans++;
+		}
+	}
+	updateOverHeadWaterSensorState(olow,ohigh);
+	return ans;
+}
+
+void Motor_MGR::overHeadWaterStatusOnCall()
+{
+	byte temp = getOverHeadWaterSensorState();
+	if(temp == OVERHEADHIGHLEVEL)
+	{
+		sim1->setMotorMGRResponse('V');
+	}
+	else if(temp == OVERHEADMIDLEVEL)
+	{
+		sim1->setMotorMGRResponse('X');
+	}
+	else if (temp == OVERHEADCRITICALLEVEL)
+	{
+		sim1->setMotorMGRResponse('W');
+	}
+}
 #endif
 
 void Motor_MGR::setWaterDefaults()
@@ -252,25 +286,6 @@ void Motor_MGR::updateWaterSensorState(bool &low,bool &mid,bool &high)
 	midSensorState(mid);
 	highSensorState(high);
 }
-
-#ifdef ENABLE_GP
-byte Motor_MGR::getOverHeadWaterSensorState()
-{
-	bool olow,ohigh;
-	readOverHeadWaterSensorState(olow,ohigh);
-	byte ans=0;
-	if(!olow)
-	{
-		ans++;
-		if(!ohigh)
-		{
-			ans++;
-		}
-	}
-	updateOverHeadWaterSensorState(olow,ohigh);
-	return ans;
-}
-#endif
 
 byte Motor_MGR::getWaterSensorState()
 {
@@ -802,7 +817,7 @@ void Motor_MGR::startMotor(bool commanded)
 		}
 
 		#ifdef ENABLE_GP
-		if(getOverHeadWaterSensorState()==OVERHEADCRITICALLEVEL)
+		if(getOverHeadWaterSensorState()==OVERHEADHIGHLEVEL)
 		{
 				if(commanded)
 				{

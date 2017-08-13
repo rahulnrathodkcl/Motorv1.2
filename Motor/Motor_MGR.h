@@ -170,6 +170,7 @@ class Motor_MGR
         #ifdef ENABLE_GP
             bool overHeadLowSensorState();
             bool overHeadHighSensorState();
+            void overHeadWaterStatusOnCall();
         #endif
         void waterStatusOnCall();
     #endif
