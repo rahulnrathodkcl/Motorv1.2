@@ -21,7 +21,9 @@ class S_EEPROM
     void loadCCID();
     void loadStarDeltaTimer();
 
+    #ifndef ENABLE_GP
     void setAutoLed();
+    #endif
     
 
     // void loadAlterNumber();

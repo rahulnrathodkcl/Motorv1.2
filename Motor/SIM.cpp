@@ -1478,12 +1478,20 @@ void SIM::operateDTMF(String str)
     motor1->statusOnCall();
   }
 #ifdef ENABLE_WATER
-  else if (str == "4") //Status
+  else if (str == "4") //underground status
   {
     currentOperation = 'W';
     subDTMF();
     motor1->waterStatusOnCall();
   }
+#ifdef ENABLE_GP
+  else if (str == "5") //overHead Status
+  {
+    currentOperation = 'V';
+    subDTMF();
+    motor1->overHeadWaterStatusOnCall();
+  }
+#endif
 #endif
   else if (str == "8") //Set AUTOTIMER ON
   {
@@ -1714,8 +1722,8 @@ void SIM::setMotorMGRResponse(char response)
     else
       playSound(response);  //other response than specified, handled by class SIM.
   }
-  else if (currentOperation == 'W')
-  {
+  else      //for all other currentOperation i.e. underground status, overhead status etc.
+  { 
     playSound(response);
   }
 }
