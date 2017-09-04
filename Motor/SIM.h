@@ -28,15 +28,12 @@ class SIM
     bool inCall;
     // String balStr;
 
-    //bool starPresent;
-
     unsigned short int callCutWaitTime;  //x100 = mSec
     unsigned long callCutWait;
 
     bool isMsgFromAdmin;
     //byte attemptsToCall;
     // bool callDialled;
-    // bool callAlerted;
 
     // bool sendCSQResponse;
     // byte batPer;
@@ -57,6 +54,22 @@ class SIM
     bool callAccepted;
 
     // bool makeResponse;
+    #ifdef ENABLE_M2M
+
+    bool m2mAck;
+    byte m2mEventCalls;
+    
+
+    bool m2mEventStaged;
+    // unsigned long tempM2MEventStageTime;
+    // byte stagedM2MEventNo;
+
+    bool m2mEvent;
+    byte m2mEventNo;
+
+    bool keyPressed;
+    #endif
+
     bool eventStaged;
     unsigned long tempEventStageTime;
     char stagedEventType;
@@ -100,6 +113,11 @@ class SIM
 
     bool getBlockingResponse(String &cmd,bool (SIM::*func)(String &));
     
+    #ifdef ENABLE_M2M
+       void verifyRemoteNumber();
+    #endif
+
+
     bool isCCID(String &str);
     bool isCUSD(String &str);
     bool isCBC(String &);
@@ -109,7 +127,7 @@ class SIM
     bool matchString(String, String);
     bool stringContains(String &sstr, String mstr, byte sstart, byte sstop);
     bool isRinging(String);
-    bool isDTMF(String &str);
+    bool isDTMF(String &s);
     bool isCut(String);
     bool isSoundStop(String);
     char callState(String);
@@ -117,8 +135,10 @@ class SIM
     void makeCall();
     void endCall();
     void acceptCall();
-    void sendSMS(String, bool);
-    void operateDTMF(String str);
+    void sendSMS(String, bool ,byte isM2m= 0x00);
+    
+    // void operateM2MDTMF(String str);
+    void operateDTMF(String s);
     inline void subDTMF();
     void operateRing();
     bool playSoundElligible();
@@ -149,6 +169,8 @@ class SIM
 
     void registerWithAdmin();
     void operateOnStagedEvent();
+    void sendDTMFTone(byte);
+
     
 #ifndef disable_debug
 #ifdef software_SIM
@@ -195,6 +217,9 @@ class SIM
     void setClassReference(S_EEPROM* e1, Motor_MGR* m1);
     bool initialize();
 
+    #ifdef ENABLE_M2M
+        void registerM2MEvent(byte);
+    #endif
     bool registerEvent(char eventType);
 
     void operateOnMsg(String str, bool admin,bool noMsg,bool alterNumber);

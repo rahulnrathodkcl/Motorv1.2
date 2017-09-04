@@ -12,7 +12,13 @@ class S_EEPROM
     void loadAutoStartSettings();
     #ifdef ENABLE_WATER
         void loadPreventOverFlowSettings();
+        #ifdef ENABLE_M2M
+            void loadM2MSettings();
+        #endif
     #endif
+
+    void loadM2MClientSettings();
+
     void loadEventStageSettings();
     void loadAutoStartTimeSettings();
     void loadDNDSettings();
@@ -21,7 +27,9 @@ class S_EEPROM
     void loadCCID();
     void loadStarDeltaTimer();
 
+    #ifndef ENABLE_GP
     void setAutoLed();
+    #endif
     
 
     // void loadAlterNumber();
@@ -44,9 +52,13 @@ class S_EEPROM
     // String alterNumber;
     byte alterNumberSetting;
     byte alterNumberPresent;
+
+
+    byte m2mPresent;
+    byte m2mVerified;
+
     // unsigned short int HIGHTEMP;
     byte simCCIDPresent;
-
 
     unsigned long int PROGSIZE;
     bool programSizeSet;
@@ -54,11 +66,20 @@ class S_EEPROM
     byte AUTOSTART;
     byte BYPASS;
 
+
     byte EVENTSTAGE;
     
     #ifdef ENABLE_WATER
-        byte PREVENTOVERFLOW;
+        #ifndef ENABLE_M2M 
+            byte PREVENTOVERFLOW;
+        #else
+            byte M2M;
+            byte m2mRemotePresent;
+            byte m2mRemoteVerified;
+        #endif
     #endif
+
+
     unsigned short int AUTOSTARTTIME;
     unsigned short int starDeltaTimerTime;
 
@@ -77,8 +98,21 @@ class S_EEPROM
     void saveAutoStartSettings(bool);
 
     #ifdef ENABLE_WATER
-        void savePreventOverFlowSettings(bool);
+        #ifndef ENABLE_M2M
+            void savePreventOverFlowSettings(bool);
+        #else
+            void saveM2MSettings(bool);
+            void addM2MRemoteNumber(String &number);
+            bool isM2MRemoteNumber(String &number);
+
+            String getM2MRemoteNumber();
+            void setM2MRemoteVerified(bool temp);
+        #endif
     #endif
+
+
+    void addM2MNumber(String &number);      //for client
+    void setM2MVerify(bool temp);           //for client
 
     void saveAutoStartTimeSettings(unsigned short int);
     void saveStarDeltaTimer(unsigned short int);
@@ -102,7 +136,10 @@ class S_EEPROM
     // bool getBalNumber(String &str);
     bool isPrimaryNumber(String str);
     bool isAlterNumber(String str);
+    bool isM2MNumber(String str);
+
     String getActiveNumber();
+    String getM2MNumber();
 
     String getDeviceId();
 

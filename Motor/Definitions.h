@@ -21,33 +21,29 @@
 #define WATCHDOG_OFF    (0)
 
 #define MAXNUMBERS 15
-// #define WATCHDOG_16MS   (_BV(WDE))
-// #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
 #define disable_debug 
-// #define ENABLE_WATER
+#define ENABLE_WATER
+#define ENABLE_GP
+#define ENABLE_M2M
+
+
+#ifdef ENABLE_M2M
+	#ifndef ENABLE_WATER
+		#undef ENABLE_M2M
+	#endif
+#endif
+
 // #define software_SIM
 // #ifdef disable_debug
 // #undef software_SIM
 // #endif
-	#define PIN_LOWSENSOR 6
-	#define PIN_MIDSENSOR 7
-	#define PIN_HIGHSENSOR 5
-#ifdef ENABLE_WATER
-	#define HIGHLEVEL 0x03
-	#define MIDLEVEL 0x02
-	#define LOWLEVEL 0x01
-	#define CRITICALLEVEL 0x00
-
-	#define preventOverFlowAddress 50
-
-#endif
 
 #define PIN_STOPBUTTON A0
 #define PIN_STARTBUTTON A1
 #define PIN_AUTOBUTTON A5
 #define PIN_AUTOLED A4
-#define PIN_MOTORLED A2 
+#define PIN_MOTORLED A2
 
 #define PIN_MSTOP 13
 #define PIN_MSTART 12
@@ -68,6 +64,27 @@
 #define PIN_DTR 4
 #define PIN_RING 2
 #define PIN_3PHASELED A3
+
+	#define PIN_LOWSENSOR 6
+	#define PIN_MIDSENSOR 7
+	#define PIN_HIGHSENSOR 5
+#ifdef ENABLE_WATER
+	#define HIGHLEVEL 0x03
+	#define MIDLEVEL 0x02
+	#define LOWLEVEL 0x01
+	#define CRITICALLEVEL 0x00
+	#define preventOverFlowAddress 50
+
+	#ifdef ENABLE_GP
+		#undef PIN_AUTOLED
+		#undef PIN_AUTOBUTTON
+		#define OVERHEADCRITICALLEVEL 0x00
+		#define OVERHEADMIDLEVEL 0x01
+		#define OVERHEADHIGHLEVEL 0x02
+		#define PIN_OLOWSENSOR A5
+		#define PIN_OHIGHSENSOR A4
+	#endif
+#endif
 
 // #define PIN_PHASE1 9
 // #define PIN_PHASE2 10
@@ -92,15 +109,31 @@
 #define bypassAddress 54
 #define eventStageAddress 58
 
+#define SEND_TO_M2M_MASTER 0x02
 
+#ifdef ENABLE_M2M
+	#define SEND_TO_M2M_REMOTE 0x01
+
+	#define m2mSettingAddress 62
+	#define m2mRemotePresentAddress 66 
+	#define m2mRemoteVerifyAddress 70
+	#define m2mRemoteNumberAddress 74
+
+	#define ME_CLEARED 0x00
+	#define ME_WAITREGISTER 0x01
+	#define ME_SERVICING 0x02
+	#define ME_NOTAVAILABLE 0x03
+#endif
+
+#define m2mPresentAddress 88
+#define m2mVerifyAddress 92
+#define m2mNumberAddress 96
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304
 
 // #define balNumberPresentAddress 150
 // #define balNumberAddress 154 // leave 18 bytes for storing bal number
-
-
 //NOT TO CHANGE____ ASSOCIATED WITH BOOTLOADER 
 #define simCCIDPresentAddress 800
 #define simCCIDLengthAddress 804

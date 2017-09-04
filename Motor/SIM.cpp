@@ -78,6 +78,16 @@ void SIM::anotherConstructor()
   isMsgFromAdmin = false;
   eventStaged=false;
   stagedEventType = 'N'; 
+
+  #ifdef ENABLE_M2M
+    m2mAck=false;
+    m2mEventCalls=m2mEventNo=0;
+    // m2mEventCalls=stagedM2MEventNo=m2mEventNo=0;
+    m2mEventStaged=false;
+    m2mEvent=false;
+
+    keyPressed=false;
+  #endif
   // acceptCommands();
 }
 
@@ -338,13 +348,18 @@ bool SIM::startGPRS(String apn)
   	// cmd=m1;
   	// cmd=cmd+"ConType\",\"GPRS\"\r\n";
     String cmd=F(STR_SAPBR_PARAM);
-    cmd = cmd + F(STR_SAPBR_GPRS);
+    cmd.concat(F(STR_SAPBR_GPRS));
+    // cmd = cmd + F(STR_SAPBR_GPRS);
     if(extendedSendCommand(cmd,50))
     {
         cmd = F(STR_SAPBR_PARAM);
-        cmd = cmd + F(STR_SAPBR_APN);
-        cmd = cmd + apn;
-        cmd = cmd + "\"\r\n";
+        cmd.concat(F(STR_SAPBR_APN));
+        cmd.concat(apn);
+        cmd.concat("\"\r\n");
+        
+        // cmd = cmd + F(STR_SAPBR_APN);
+        // cmd = cmd + apn;
+        // cmd = cmd + "\"\r\n";
         //AT+SAPBR=3,1,"APN","bsnlnet"
         if(extendedSendCommand(cmd,50))
         {
@@ -374,8 +389,10 @@ bool SIM::connectToFTP(String ipaddress)
   {
     //AT+FTPSERV="43.252.117.34"
     cmd=F("AT+FTPSERV=\"");
-    cmd=cmd+ipaddress;
-    cmd=cmd+"\"\r\n";
+    cmd.concat(ipaddress);
+    cmd.concat("\"\r\n");
+    // cmd=cmd+ipaddress;
+    // cmd=cmd+"\"\r\n";
     if(sendBlockingATCommand(cmd,true))
     {
       // AT+FTPUN="FTP-User"
@@ -397,14 +414,19 @@ bool SIM::setFile(String filename)
 		String m1=F("AT+FTPGET");
     String cmd;
     cmd=m1;
-    cmd=cmd + "NAME=\"";   //m.bin\"\r\n;
-    cmd=cmd + filename;
-    cmd= cmd + "\"\r\n";
+    cmd.concat("NAME=\"");
+    cmd.concat(filename);
+    cmd.concat("\"\r\n");
+
+    // cmd=cmd + "NAME=\"";   //m.bin\"\r\n;
+    // cmd=cmd + filename;
+    // cmd= cmd + "\"\r\n";
 
     if(sendBlockingATCommand(cmd,true))
     {
     		cmd=m1;
-    		cmd=m1+"PATH=\"/\"\r\n";
+        cmd.concat("PATH=\"/\"\r\n");
+    		// cmd=m1+"PATH=\"/\"\r\n";
         if(sendBlockingATCommand(cmd),true)
             return true;  
     }
@@ -484,13 +506,18 @@ bool SIM::downloadFirmware()
     String m1="+FTPGETTOFS";
     String cmd;
     String v1= m1 + ": 0,";
-    v1 = v1 + size;
-    v1 = v1 + "\r";
+    v1.concat(size);
+    v1.concat("\r");
+    // v1 = v1 + size;
+    // v1 = v1 + "\r";
 
     // AT+FTPGETTOFS=0,"m.hex"\r\n
     cmd="AT"; 
-    cmd=cmd+m1;
-    cmd=cmd+ "=0,\"m.hex\"\r\n";
+    cmd.concat(m1);
+    cmd.concat("=0,\"m.hex\"\r\n");
+
+    // cmd=cmd+m1;
+    // cmd=cmd+ "=0,\"m.hex\"\r\n";
     temp=millis();
     sendCommand(cmd,false);
     while(millis()-temp<120000L)
@@ -670,7 +697,8 @@ bool SIM::checkPrgReq(String str,bool noMsg)
       eeprom1->saveProgramSize(str.toInt());
       String tempStr;
       tempStr = F("OK : ");
-      tempStr = tempStr + str;
+      tempStr.concat(str);
+      // tempStr = tempStr + str;
       if(!noMsg) sendSMS(tempStr,true);
       if(p==0x02)
         initRestartSeq();
@@ -684,9 +712,6 @@ void SIM::stopCallWaiting()
 {
     sendBlockingATCommand(F("AT+CCWA=0,0\r\n"));
 }
-
-
-// void(CTestFncPtr::*Switch)(char * charData);
 
 bool SIM::getBlockingResponse(String &cmd,bool (SIM::*func)(String &))
 {
@@ -706,6 +731,48 @@ bool SIM::getBlockingResponse(String &cmd,bool (SIM::*func)(String &))
   }
   return false;
 }
+
+#ifdef ENABLE_M2M
+
+void SIM::verifyRemoteNumber()
+{
+    sendSMS(F("VMM01"),true,SEND_TO_M2M_REMOTE);
+}
+     
+// void SIM::operateOnStagedM2MEvent()
+// {
+//   if(obtainNewEvent && millis()-tempEventStageTime>(30000L))
+//   {
+//       freezeIncomingCalls = true;
+//       acceptCommands();
+//       m2mEventNo=stagedM2MEventNo;
+//       m2mEvent=true;
+//       m2mEventStaged=false;
+//       makeResponseAction();
+//   }
+// }
+
+void SIM::registerM2MEvent(byte eventNo)
+{
+  if (!initialized)
+  {
+    motor1->setM2MEventState(eventNo,ME_CLEARED);
+    return;
+  }
+
+  if (currentStatus == 'N' && currentCallStatus == 'N' && obtainNewEvent && !eventStaged && !m2mEventStaged)
+  {    
+      freezeIncomingCalls = true;
+      acceptCommands();
+      motor1->setM2MEventState(eventNo,ME_SERVICING);
+      m2mEvent=true;
+      m2mEventNo = eventNo;
+      m2mEventCalls=0;
+      makeResponseAction();
+      return;
+  }
+}
+#endif
 
 void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alterNumber=false)
 {
@@ -749,7 +816,11 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
     {
       eeprom1->saveAutoStartSettings(false);
       #ifdef ENABLE_WATER
-        eeprom1->savePreventOverFlowSettings(false);
+        #ifdef ENABLE_M2M
+          eeprom1->saveM2MSettings(false);
+        #else
+          eeprom1->savePreventOverFlowSettings(false);
+        #endif
       #endif
       eeprom1->saveEventStageSettings(0);
       eeprom1->saveBypassSettings(false);
@@ -821,16 +892,32 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
        done=true;
     } 
     #ifdef ENABLE_WATER
-    else if (str.startsWith(F("OVFON"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
-    {
-       eeprom1->savePreventOverFlowSettings(true);  //set DND to False in EEPROM
-       done=true;
-    } 
-    else if (str.startsWith(F("OVFOFF"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
-    {
-       eeprom1->savePreventOverFlowSettings(false);  //set DND to False in EEPROM
-       done=true;
-    } 
+      #ifndef ENABLE_M2M
+      else if (str.startsWith(F("OVFON"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
+      {
+         eeprom1->savePreventOverFlowSettings(true);  //set DND to False in EEPROM
+         done=true;
+      } 
+      else if (str.startsWith(F("OVFOFF"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
+      {
+         eeprom1->savePreventOverFlowSettings(false);  //set DND to False in EEPROM
+         done=true;
+      } 
+      #else    
+      else if (str.startsWith(F("M2MON")))
+      {
+        if(eeprom1->m2mRemotePresent && !eeprom1->m2mRemoteVerified)
+        {
+          noMsg=true;
+          verifyRemoteNumber(); 
+        }
+      }
+      else if (str.startsWith(F("M2MOFF")))
+      {
+        eeprom1->saveM2MSettings(false);  //set DND to False in EEPROM
+        done=true;
+      }
+      #endif
     #endif
     else if (str.startsWith(F("STATUS")))//stringContains(str, F("STATUS"), 6, str.length() - 1))
     {
@@ -875,7 +962,8 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
         if (data > 5) data = 5;
         eeprom1->saveEventStageSettings(data);  //Store in EEPROM the EVENT STAGE 
         tempStr = F("STAGE");
-        tempStr = tempStr + data;
+        tempStr.concat(data);
+        // tempStr = tempStr + data;
         done=true;
       }
     }
@@ -888,7 +976,8 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
         if (data > 1200) data = 1200;
         eeprom1->saveStarDeltaTimer(data);
         tempStr = F("STARTIME");
-        tempStr = tempStr + data;
+        tempStr.concat(data);
+        // tempStr = tempStr + data;
         done=true;
       }
     }
@@ -901,14 +990,14 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
         if (data > 28800) data = 28800;
         eeprom1->saveAutoStartTimeSettings(data);  //Store in EEPROM the AUTO START TIME
         tempStr = F("AUTOTIME");
-        tempStr = tempStr + data;
+        tempStr.concat(data);
+        // tempStr = tempStr + data;
         done=true;
       }
     }
     else if (stringContains(str, F("BAL"), 3, str.length() - 1))
     {
       processed=true;
-      
       String s2;
       s2 = F("AT+CUSD=1,\"");
       s2.concat(str);
@@ -916,42 +1005,64 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       sendCUSDResponse = true;
       sendCommand(s2, true);
     }
-    else if (stringContains(str, "M-", 2, 12))
+    else
     {
-      if (str.length() == 10 && isNumeric(str))
-      {
-        bool t = eeprom1->removeNumber(str);
-        if(t) done=true;
+        if (stringContains(str, "M-", 2, 12))
+        {
+          if (isNumeric(str))
+          {
+            bool t = eeprom1->removeNumber(str);
+            if(t) done=true;
 #ifndef disable_debug
-        _NSerial->print("Rem:");
-        _NSerial->println((bool)t);
+            _NSerial->print("Rem:");
+            _NSerial->println((bool)t);
 #endif
-      }
-    }
-    else if (stringContains(str, "M+", 2, 12))
-    {
-      if (str.length() == 10 && isNumeric(str))
-      {
-        bool t = eeprom1->addNumber(str);
-        if(t) done=true;
+          }
+        }
+        else if (stringContains(str, "M+", 2, 12))
+        {
+          if (isNumeric(str))
+          {
+            bool t = eeprom1->addNumber(str);
+            if(t) done=true;
 #ifndef disable_debug
-        _NSerial->print("Add:");
-        _NSerial->println((bool)t);
+            _NSerial->print("Add:");
+            _NSerial->println((bool)t);
 #endif
-      }
-    }
-    else if (stringContains(str, "AM+", 3, 13))
-    {
-      if (str.length() == 10 && isNumeric(str))
-      {
-        bool t = eeprom1->addAlternateNumber(str);
-        if(t) done=true;
+          }
+        }
+        else if (stringContains(str, "AM+", 3, 13))
+        {
+          if (isNumeric(str))
+          {
+            bool t = eeprom1->addAlternateNumber(str);
+            if(t) done=true;
 #ifndef disable_debug
-        _NSerial->print("Add:");
-        _NSerial->println((bool)t);
+            _NSerial->print("Add:");
+            _NSerial->println((bool)t);
 #endif
-      }
+          }
+        }  
+        else if (stringContains(str, "MM+", 3, 13))
+        {
+          if (isNumeric(str))
+          {
+            eeprom1->addM2MNumber(str);
+            done=true;
+          }
+        }  
+#ifdef ENABLE_M2M
+        else if (stringContains(str, "MR+", 3, 13))
+        {
+          if (isNumeric(str))
+          {
+            eeprom1->addM2MRemoteNumber(str);
+            done=true;
+          }
+        }  
+#endif
     }
+
     // else if (stringContains(str, F("NET"), 3, str.length() - 1))
     // {
     //   processed=true;
@@ -965,8 +1076,9 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       if(done)
         temp2 = F("OK : ");
       else
-        temp2 = F("ERROR : ");        
-      temp2 = temp2 + tempStr;
+        temp2 = F("ERROR : ");  
+      temp2.concat(tempStr);      
+      // temp2 = temp2 + tempStr;
       sendSMS(temp2,true);
     }
 }
@@ -1048,6 +1160,27 @@ void SIM::gotMsgBody(String &str)
     else
       operateOnMsg(str, admin,noMsg,alterNumber);
   }
+  else if(eeprom1->isM2MNumber(str))    //only used to verify the remote and m2m numbers. by m2m remote
+  {
+    str = readString(); //_SSerial->readStringUntil('\n');
+    if(str.startsWith(F("VMM01")))
+    {
+      eeprom1->setM2MVerify(true);
+      sendSMS(F("VMR02"),true,SEND_TO_M2M_MASTER);
+    }
+  }
+  #ifdef ENABLE_M2M
+  else if(eeprom1->isM2MRemoteNumber(str))    // to be used by M2M Master.
+  {
+    str = readString(); 
+    if(str.startsWith(F("VMR02")))
+    {
+      eeprom1->setM2MRemoteVerified(true);
+      eeprom1->saveM2MSettings(true);
+      sendSMS(str,true);
+    }
+  }
+  #endif
   delAllMsg();
 }
 
@@ -1258,7 +1391,7 @@ bool SIM::isRinging(String str)
 
 bool SIM::isDTMF(String &str)
 {
-  return stringContains(str, "+DTMF: ", 7, 8);
+  return(stringContains(str, "+DTMF: ", 7, 8));
 }
 
 bool SIM::isCut(String str)
@@ -1311,16 +1444,26 @@ char SIM::callState(String str)
 
 void SIM::makeCall()
 {
-  inCall=true;  
+  inCall=true;
   acceptCommands();
   _SSerial->flush();
 
   String command;
   command = "ATD+91";
+  #ifdef ENABLE_M2M
+    if(m2mEvent)
+    {
+      command.concat(eeprom1->getM2MRemoteNumber());
+    }
+    else
+    {
+      command.concat(eeprom1->getActiveNumber());
+    }
+  #else
   command.concat(eeprom1->getActiveNumber());
+  #endif
   command.concat(";");
   sendCommand(command, true);
-
   delay(1);
   // unsigned long temp = millis();
   // while (millis() - temp < 100)
@@ -1350,11 +1493,42 @@ void SIM::endCall()
   sendCommand("", true);
   _SSerial->flush();
   freezeIncomingCalls = false;
+
+  #ifdef ENABLE_M2M
+  if(m2mEvent)
+  {
+    m2mEventCalls++;
+    if(m2mAck)
+    {
+      motor1->setM2MEventState(m2mEventNo,ME_CLEARED);
+    }
+    else
+    {
+      if(m2mEventCalls<2)
+      {
+        tempEventStageTime=millis();
+        stagedEventType=m2mEventNo;
+        // tempM2MEventStageTime=millis();
+        // stagedM2MEventNo=m2mEventNo;
+        m2mEventStaged=true;
+      }
+      else
+      {
+        motor1->setM2MEventState(m2mEventNo,ME_NOTAVAILABLE);
+      }
+    }
+    m2mEvent = false;
+  }
+
+  keyPressed=false;
+  m2mAck=false;
+  #endif
   // callDialled = false;
   // callAlerted = false;
   // attemptsToCall=0;
 
   // eeprom1->inCall(false);
+
   callAccepted = false;
   responseToAction = false;
   currentStatus = 'N';
@@ -1385,7 +1559,7 @@ void SIM::acceptCall()
   playSound('M');
 }
 
-void SIM::sendSMS(String msg = "", bool predefMsg = false)
+void SIM::sendSMS(String msg = "", bool predefMsg = false, byte isM2M)
 {
   inCall=true;
   _SSerial->flush();
@@ -1412,18 +1586,31 @@ void SIM::sendSMS(String msg = "", bool predefMsg = false)
   }
   else
     responseString = msg;
-
   // _NSerial->println(responseString);
-
 // #ifndef disable_debug
   // _NSerial->println("SMS");
 // #endif
   String command;
   command = "AT+CMGS=\"+91";
-  if (isMsgFromAdmin)
-    command.concat(adminNumber);
-  else
-    command.concat(eeprom1->getActiveNumber());
+  
+
+  if(isM2M==SEND_TO_M2M_MASTER)
+  {
+    command.concat(eeprom1->getM2MNumber());
+  }
+  #ifdef ENABLE_M2M
+  else if(isM2M==SEND_TO_M2M_REMOTE)
+  {
+    command.concat(eeprom1->getM2MRemoteNumber());
+  }
+  #endif
+  else 
+  {
+    if (isMsgFromAdmin)
+      command.concat(adminNumber);
+    else
+      command.concat(eeprom1->getActiveNumber());
+  }
 
   command.concat("\"");
 
@@ -1457,49 +1644,88 @@ void SIM::delay(byte time)
   while (millis() - temp < time*100)
   {}
 }
-void SIM::operateDTMF(String str)
+
+void SIM::operateDTMF(String s)
 {
-  if (str == "1") //Motor On
+  char str=s.charAt(0);
+
+  #ifdef ENABLE_M2M
+  if(m2mEvent)
   {
-    currentOperation = 'S';
-    subDTMF();
-    motor1->startMotor(true);
+    if(str == 'A')
+    {
+      m2mAck=true;
+      endCall();
+    }
   }
-  else if (str == "2") //Motor Off
+  else
+  #endif
   {
-    currentOperation = 'O';
-    subDTMF();
-    motor1->stopMotor(true);
-  }
-  else if (str == "3") //Status
-  {
-    currentOperation = 'T';
-    subDTMF();
-    motor1->statusOnCall();
-  }
-#ifdef ENABLE_WATER
-  else if (str == "4") //Status
-  {
-    currentOperation = 'W';
-    subDTMF();
-    motor1->waterStatusOnCall();
-  }
-#endif
-  else if (str == "8") //Set AUTOTIMER ON
-  {
-    subDTMF();
-    eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
-    motor1->resetAutoStart(true);
-      responseToAction = true;
-      playSound('8');     // playFile AutoStart is On
-  }
-  else if (str == "9") //Set AUTOTIMER OFF
-  {
-    subDTMF();
-    eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
-    motor1->resetAutoStart(true);
-      responseToAction = true;
-      playSound('9'); //playFile autoStart is turned oFF
+    if (str == '1') //Motor On
+    {
+      currentOperation = 'S';
+      subDTMF();
+      motor1->startMotor(true);
+    }
+    else if (str == '2') //Motor Off
+    {
+      currentOperation = 'O';
+      subDTMF();
+      motor1->stopMotor(true);
+    }
+    else if (str == '3') //Status
+    {
+      currentOperation = 'T';
+      subDTMF();
+      motor1->statusOnCall();
+    }
+  #ifdef ENABLE_WATER
+    else if (str == '4') //underground status
+    {
+      currentOperation = 'W';
+      subDTMF();
+      motor1->waterStatusOnCall();
+    }
+  #ifdef ENABLE_GP
+    else if (str == '5') //overHead Status
+    {
+      currentOperation = 'V';
+      subDTMF();
+      motor1->overHeadWaterStatusOnCall();
+    }
+  #endif
+  #endif
+    else if(str=='D')
+    {
+      currentOperation = '1';   //m2m 1
+      eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
+      motor1->resetAutoStart(true);
+      motor1->startMotor();
+      sendDTMFTone(0xFF);
+    }
+    else if(str=='C')
+    {
+      currentOperation = '2';   //m2m 2
+      eeprom1->saveAutoStartSettings(false);  //set AutoStart to false in EEPROM
+      motor1->stopMotor(false,false,true);
+      sendDTMFTone(0xFF);
+    }
+    else if (str == '8') //Set AUTOTIMER ON
+    {
+      subDTMF();
+      eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
+      motor1->resetAutoStart(true);
+        responseToAction = true;
+        playSound('8');     // playFile AutoStart is On
+    }
+    else if (str == '9') //Set AUTOTIMER OFF
+    {
+      subDTMF();
+      eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
+      motor1->resetAutoStart(true);
+        responseToAction = true;
+        playSound('9'); //playFile autoStart is turned oFF
+    }
   }
 }
 
@@ -1615,7 +1841,11 @@ bool SIM::registerEvent(char eventType)
     return true;
   }
 
+  #ifdef ENABLE_M2M
+  if (currentStatus == 'N' && currentCallStatus == 'N' && obtainNewEvent && !eventStaged && !m2mEventStaged)
+  #else
   if (currentStatus == 'N' && currentCallStatus == 'N' && obtainNewEvent && !eventStaged)
+  #endif
   {    
 #ifndef disable_debug
     _NSerial->print("E:");
@@ -1714,8 +1944,8 @@ void SIM::setMotorMGRResponse(char response)
     else
       playSound(response);  //other response than specified, handled by class SIM.
   }
-  else if (currentOperation == 'W')
-  {
+  else      //for all other currentOperation i.e. underground status, overhead status etc.
+  { 
     playSound(response);
   }
 }
@@ -1801,14 +2031,68 @@ void SIM::checkRespSMS(char t1)
 
 void SIM::operateOnStagedEvent()
 {
-  if(obtainNewEvent && millis()-tempEventStageTime>((eeprom1->EVENTSTAGE)*60000L))
+  #ifdef ENABLE_M2M
+    byte temp1;
+    if(m2mEventStaged)
+    {
+      temp1=1;
+    } 
+    else if(eventStaged)
+    {
+      temp1=eeprom1->EVENTSTAGE;
+    }
+  #else
+    byte temp1=eeprom1->EVENTSTAGE;
+  #endif 
+
+  freezeIncomingCalls = true;
+  acceptCommands();
+
+  if(obtainNewEvent && millis()-tempEventStageTime>(temp1*60000L))
   {
-      freezeIncomingCalls = true;
-      acceptCommands();
-      actionType=stagedEventType;
-      eventStaged=false;
+      #ifdef ENABLE_M2M
+        if(eventStaged)
+        {
+          actionType=stagedEventType;
+          eventStaged=false;
+        }
+        else if(m2mEventStaged)
+        {
+          m2mEventNo=stagedEventType;
+          m2mEvent=true;
+          m2mEventStaged=false;
+        }
+      #else
+          actionType=stagedEventType;
+          eventStaged=false;
+      #endif
       makeResponseAction();
   }
+}
+
+void SIM::sendDTMFTone(byte eventNo)
+{
+  String str=F("AT+VTS=\"");
+
+  if(eventNo==0xFF)
+  {
+    str.concat("A");
+  }
+  #ifdef ENABLE_M2M
+  else if(eventNo==0)
+  {
+    str.concat("D");
+  }
+  else if(eventNo==1)
+  {
+    str.concat("C");
+  }
+  #endif
+  str.concat(F("\",2"));
+
+   _SSerial->flush();
+  sendCommand(str, true);
+  _SSerial->flush();
 }
 
 void SIM::update()
@@ -1824,19 +2108,39 @@ void SIM::update()
   if (currentStatus == 'N' && currentCallStatus == 'N')
   {
     setObtainEvent();
+    
+    #ifdef ENABLE_M2M
+    if(eventStaged || m2mEventStaged)
+    {
+      operateOnStagedEvent();
+    }
+    #else
     if(eventStaged)
     {
       operateOnStagedEvent();
     }
+    #endif
   }
   else if (currentStatus == 'I' || currentStatus == 'R')
   {
+   
     if (callTimerExpire())
     {
       char t1 = actionType;
       endCall();
       checkRespSMS(t1);
     }
+
+    #ifdef ENABLE_M2M
+    if(m2mEvent && callAccepted)
+    {
+        if(!keyPressed &&  millis() - callCutWait > 2000)
+        {
+          keyPressed=true;
+          sendDTMFTone(m2mEventNo);
+        }
+    }
+    #endif
 
     if (playSoundElligible())
       triggerPlaySound();
@@ -1932,7 +2236,12 @@ void SIM::update()
         currentStatus = 'I';
         currentCallStatus = 'O';
         callAccepted = true;
-        playSound(actionType);
+        #ifdef ENABLE_M2M
+          if (!m2mEvent)
+            playSound(actionType);
+        #else
+          playSound(actionType);
+        #endif
       }
     }
     else if (currentStatus == 'I' && currentCallStatus == 'O') //IN CALL OUTGOING CALL

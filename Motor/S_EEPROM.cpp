@@ -18,14 +18,15 @@ S_EEPROM::S_EEPROM()
 {
     numbersCount = 0;
     PROGSIZE=0;
+    #ifndef ENABLE_GP
     pinMode(PIN_AUTOLED,OUTPUT);
+    #endif
 }
 
 byte S_EEPROM::checkExists(String &number)
 {
   if (numbersCount > 0)
   {
- 
       // if (alterNumber == number)
       if(isPrimaryNumber(number))
         return 0;
@@ -50,6 +51,18 @@ byte S_EEPROM::checkExists(String &number)
     //     return i + 1;
     // }
   }
+  if(m2mVerified && isM2MNumber(number))
+  {
+      return 0xFE;
+  }          
+
+  #ifdef ENABLE_M2M
+  if(m2mRemoteVerified && isM2MRemoteNumber(number))
+  {
+      return 0xFE;
+  }          
+  #endif
+  
   return 0xFF;
 }
 
@@ -95,6 +108,14 @@ bool S_EEPROM::addNumber(String &number)
 //   return b;
 // }
 
+bool S_EEPROM::isM2MNumber(String number)
+{
+    if(m2mPresent && number == read_StringEE(m2mNumberAddress, 10))
+      return true;
+  
+  return false;
+}
+
 bool S_EEPROM::isAlterNumber(String number)
 {
   if(numbersCount>0)
@@ -111,13 +132,22 @@ bool S_EEPROM::isPrimaryNumber(String number)
   {
       if(read_StringEE(mobileNumberAddress,10)==number)
         return true;
-        return isAlterNumber(number);
+      
+      return isAlterNumber(number);
     // if (primaryNumber == str)
       // return true;
     // if (alterNumberSetting && alterNumber == str)
       // return true;
   }
   return false;
+}
+
+String S_EEPROM::getM2MNumber()
+{
+  if(m2mPresent)
+    return(read_StringEE(m2mNumberAddress,10));
+
+  return "";
 }
 
 String S_EEPROM::getActiveNumber()
@@ -128,6 +158,34 @@ String S_EEPROM::getActiveNumber()
   }
   else
     return (adminNumber); //="AT+CMGS=\"+917698439201\"";
+}
+
+void S_EEPROM::addM2MNumber(String &number)
+{
+  m2mPresent=true;
+  EEPROM.put(m2mPresentAddress, m2mPresent);
+  write_StringEE(m2mNumberAddress, number);
+  setM2MVerify(false);
+}
+
+void S_EEPROM::setM2MVerify(bool temp)
+{
+  m2mVerified=temp;
+  EEPROM.put(m2mVerifyAddress, m2mVerified);
+}
+
+void S_EEPROM::loadM2MClientSettings()
+{
+  EEPROM.get(m2mVerifyAddress, m2mVerified);
+  if (m2mVerified == 0xFF)
+    setM2MVerify(false);
+
+  EEPROM.get(m2mPresentAddress, m2mPresent);
+  if (m2mPresent == 0xFF)
+  {
+    m2mPresent=false;
+    EEPROM.put(m2mPresentAddress, m2mPresent);
+  }
 }
 
 bool S_EEPROM::addAlternateNumber(String &number)
@@ -150,7 +208,7 @@ bool S_EEPROM::removeNumber(String &number)
   else
   {
     byte loc = checkExists(number);    
-    if (loc != 0xFF && loc != 0x00)
+    if (loc != 0xFF && loc != 0xFE && loc != 0x00)
     {
 
       // secondary[loc - 1] = "";
@@ -233,7 +291,9 @@ void S_EEPROM::saveAutoStartSettings(bool temp)
 {
   AUTOSTART = (byte)temp;
   EEPROM.put(autoStartAddress, AUTOSTART);
-  setAutoLed();
+  #ifndef ENABLE_GP
+    setAutoLed();
+  #endif
 }
 
 void S_EEPROM::saveProgramSize(unsigned long int temp)
@@ -287,6 +347,7 @@ void S_EEPROM::updateFirmware(bool temp,bool verify)
     // saveTempSettings(50);
 // }
 
+#ifndef ENABLE_GP
 void S_EEPROM::setAutoLed()
 {
   if(AUTOSTART)
@@ -294,17 +355,21 @@ void S_EEPROM::setAutoLed()
   else
     digitalWrite(PIN_AUTOLED,LOW);
 }
+#endif
 
 void S_EEPROM::loadAutoStartSettings()
 {
   EEPROM.get(autoStartAddress, AUTOSTART);
   if (AUTOSTART == 0xFF)
     saveAutoStartSettings(false);
-  setAutoLed();
+  #ifndef ENABLE_GP
+    setAutoLed();
+  #endif
 }
 
 #ifdef ENABLE_WATER
 
+#ifndef ENABLE_M2M
 void S_EEPROM::loadPreventOverFlowSettings()
 {
   EEPROM.get(preventOverFlowAddress, PREVENTOVERFLOW);
@@ -317,6 +382,7 @@ void S_EEPROM::savePreventOverFlowSettings(bool temp)
   PREVENTOVERFLOW = (byte)temp;
   EEPROM.put(preventOverFlowAddress, PREVENTOVERFLOW);
 }
+#endif
 
 #endif
 
@@ -358,6 +424,65 @@ void S_EEPROM::loadBypassSettings()
     saveBypassSettings(false);
 }
 
+#ifdef ENABLE_M2M
+
+String S_EEPROM::getM2MRemoteNumber()
+{
+  if(m2mRemotePresent)
+    return(read_StringEE(m2mRemoteNumberAddress,10));
+
+  return "";
+}
+
+void S_EEPROM::setM2MRemoteVerified(bool temp)
+{
+  m2mRemoteVerified=temp;
+  EEPROM.put(m2mRemoteVerifyAddress,m2mRemoteVerified); 
+}
+
+bool S_EEPROM::isM2MRemoteNumber(String &number)
+{
+    if(m2mRemotePresent && number == read_StringEE(m2mRemoteNumberAddress, 10))
+      return true;
+
+  return false;
+}
+
+void S_EEPROM::addM2MRemoteNumber(String &number)
+{
+  m2mRemotePresent=true;
+  EEPROM.put(m2mRemotePresentAddress,m2mRemotePresent);
+  write_StringEE(m2mRemoteNumberAddress, number);
+
+  setM2MRemoteVerified(false);
+  saveM2MSettings(false);
+}
+
+void S_EEPROM::saveM2MSettings(bool temp)
+{
+  M2M = (byte)temp;
+  EEPROM.put(m2mSettingAddress, M2M);
+}
+
+void S_EEPROM::loadM2MSettings()
+{
+  EEPROM.get(m2mSettingAddress, M2M);
+  if (M2M == 0xFF)
+    saveM2MSettings(false);
+
+  EEPROM.get(m2mRemotePresentAddress,m2mRemotePresent);
+  if (m2mRemotePresent == 0xFF)
+  {
+    m2mRemotePresent=false;
+    EEPROM.put(m2mRemotePresentAddress, m2mRemotePresent);
+  }
+
+  EEPROM.get(m2mRemoteVerifyAddress,m2mRemoteVerified);
+  if(m2mRemoteVerified==0xFF)
+    setM2MRemoteVerified(false);
+}
+
+#endif
 
 void S_EEPROM::loadResponseSettings()
 {
@@ -453,6 +578,8 @@ void S_EEPROM::loadAllData()
   loadEventStageSettings();
   loadBypassSettings();
 
+  loadM2MClientSettings();
+
   loadAutoStartSettings();
   loadAutoStartTimeSettings();
   loadDNDSettings();
@@ -461,7 +588,11 @@ void S_EEPROM::loadAllData()
   loadCCID();
   loadStarDeltaTimer();
   #ifdef ENABLE_WATER
+    #ifndef ENABLE_M2M 
     loadPreventOverFlowSettings();
+    #else
+    loadM2MSettings();
+    #endif
   #endif
   // loadNumbers();
   // loadAlterNumber();

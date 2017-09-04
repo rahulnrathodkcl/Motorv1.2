@@ -78,17 +78,20 @@ void setup() {
   }
 
   PCICR |= (1 << PCIE0);    // set PCIE0 to enable PCMSK0 scan
-  PCICR |= (1 << PCIE1);    // set PCIE0 to enable PCMSK0 scan
+  PCICR |= (1 << PCIE1);    // set PCIE0 to enable PCMSK1 scan
   PCMSK0 |= (1 << PCINT1);  // set PCINT1 to trigger an interrupt on state change
   PCMSK1 |= (1 << PCINT8);    //set PCINT8 to trigger interrupt (OFF BUTTON)
   PCMSK1 |= (1 << PCINT9);    //set PCINT9 to trigger interrupt (ON BUTTON)
-  PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)
+  PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)  OR (OVERHEAD LOW SENSOR)
 
   #ifdef ENABLE_WATER
-  PCICR |= (1 << PCIE2);    // set PCIE0 to enable PCMSK0 scan
+  PCICR |= (1 << PCIE2);    // set PCIE0 to enable PCMSK2 scan
   PCMSK2 |= (1 << PCINT21);    //set PCINT21 to trigger interrupt (Low Sensor)
   PCMSK2 |= (1 << PCINT22);    //set PCINT22 to trigger interrupt (Mid Sensor)
   PCMSK2 |= (1 << PCINT23);    //set PCINT23 to trigger interrupt (High Sensor)
+    #ifdef ENABLE_GP
+      PCMSK1 |= (1 << PCINT12);   //set PCINT12 to trigger interrupt on overheadHigh sensor.
+    #endif
   #endif
 
   noInterrupts();
@@ -157,6 +160,10 @@ void IVR_RING()
 ISR(PCINT1_vect)
 {
   motor1.buttonEventOccured=true;
+  #ifdef ENABLE_GP
+    motor1.tempWaterEventTime=millis();
+    motor1.waterEventOccured=true;      
+  #endif
 }
 
 #ifdef ENABLE_WATER
@@ -425,6 +432,11 @@ void loop() {
       eeprom1.discardUpdateStatus();
 
       motor1.eventOccured = true;
+      #ifdef ENABLE_WATER
+      motor1.tempWaterEventTime=millis();
+      motor1.waterEventOccured=true;
+      #endif
+
       motor1.resetAutoStart();
       // motor1.getMotorState();
 
