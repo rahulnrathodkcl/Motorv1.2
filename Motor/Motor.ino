@@ -432,6 +432,11 @@ void loop() {
       eeprom1.discardUpdateStatus();
 
       motor1.eventOccured = true;
+      #ifdef ENABLE_WATER
+      motor1.tempWaterEventTime=millis();
+      motor1.waterEventOccured=true;
+      #endif
+
       motor1.resetAutoStart();
       // motor1.getMotorState();
 
