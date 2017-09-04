@@ -88,7 +88,6 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
 
   AllPhaseState(false); // allPhase = false;
   motorState(false);// mFeedback = false;
-  ACFeedbackState(false); // acFeedback = false;
   ACPowerState(false);//  phaseAC = false;
 
   #ifdef ENABLE_WATER
@@ -189,7 +188,9 @@ void Motor_MGR::updateOverHeadWaterSensorState(bool &olow,bool &ohigh)
 byte Motor_MGR::getOverHeadWaterSensorState()
 {
 	bool olow,ohigh;
-	readOverHeadWaterSensorState(olow,ohigh);
+	olow=overHeadLowSensorState();
+	ohigh=overHeadHighSensorState();
+	// readOverHeadWaterSensorState(olow,ohigh);
 	byte ans=0;
 	if(!olow)
 	{
@@ -199,7 +200,7 @@ byte Motor_MGR::getOverHeadWaterSensorState()
 			ans++;
 		}
 	}
-	updateOverHeadWaterSensorState(olow,ohigh);
+	// updateOverHeadWaterSensorState(olow,ohigh);
 	return ans;
 }
 
@@ -231,15 +232,15 @@ void Motor_MGR::setWaterDefaults()
 		pinMode(PIN_OLOWSENSOR,INPUT_PULLUP);
 		pinMode(PIN_OHIGHSENSOR,INPUT_PULLUP);
 		overHeadLowSensorState(false);
-		overHeadHighSensorState(false);
+		overHeadHighSensorState(true);
 	#endif
 
-	waterEventBufferTime=200; 		// 200x100= 20,000ms = 20s
+	waterEventBufferTime=150; 		// 200x100= 20,000ms = 20s
 	waterEventOccured=false;
 
 	lowSensorState(false);
 	midSensorState(false);
-	highSensorState(false);
+	highSensorState(true);
 
 	#ifdef ENABLE_GP
 		byte j=19;
@@ -259,6 +260,14 @@ void Motor_MGR::setWaterDefaults()
 	simEvent[17] = 'V';
 	simEvent[18] = 'W';
   #endif
+
+	#ifdef ENABLE_M2M
+	m2mEvent[0] = ME_CLEARED;
+	m2mEvent[1] = ME_CLEARED;
+	
+	mapTable[0] = 13;
+	mapTable[1] = 15;
+	#endif
 }
 
 void Motor_MGR::readWaterSensorState(bool &low,bool &mid,bool &high)
@@ -290,8 +299,11 @@ void Motor_MGR::updateWaterSensorState(bool &low,bool &mid,bool &high)
 byte Motor_MGR::getWaterSensorState()
 {
 	bool l,m,h;
-	readWaterSensorState(l,m,h);
+	l=lowSensorState();
+	m=midSensorState();
+	h=highSensorState();
 
+	// readWaterSensorState(l,m,h);
 	byte ans=0;
 
 	if(!l) 
@@ -306,7 +318,7 @@ byte Motor_MGR::getWaterSensorState()
 			}
 		}
 	}
-	updateWaterSensorState(l,m,h);
+	// updateWaterSensorState(l,m,h);
 	return ans;
 }
 
@@ -362,42 +374,96 @@ void Motor_MGR::operateOnWaterEvent()
   	{
   		stopMotor(false,true);
 		simEventTemp[12] = sim1->registerEvent('I'); //report To SIM Motor Off due to insufficient water level
+	
+		#ifdef ENABLE_M2M	
+		if(eeprom1->M2M && mid && !midSensorState())
+		{
+  			m2mEvent[0] = ME_WAITREGISTER;
+		}
+		#endif
+  	}
+  	else if(!low && !mid && !high && highSensorState())
+  	{
+  		#ifdef ENABLE_M2M
+			if(eeprom1->M2M)
+			{
+	  			m2mEvent[1] = ME_WAITREGISTER;
+			}
+			else
+			{
+				simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
+			}
+  		#else
+	  		if(eeprom1->PREVENTOVERFLOW)
+	  		{
+	  			stopMotor(false,true);
+				simEventTemp[14] = sim1->registerEvent('H'); //report To SIM well is full, so stopped motor
+	  		}
+	  		else
+	  		{
+				simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
+	  		}
+  		#endif
+  	}
+  	else if(!low && mid && !midSensorState())	//decrease in water level
+  	{
+		#ifdef ENABLE_M2M
+			if(eeprom1->M2M)
+			{
+  				m2mEvent[0] = ME_WAITREGISTER;
+			}
+			else
+			{
+				simEventTemp[13] = sim1->registerEvent('D'); //report To SIM water level is decrease..
+			}
+  		#else
+			simEventTemp[13] = sim1->registerEvent('D'); //report To SIM water level is decrease..
+		#endif
   	}
   	else if (!low && !mid && midSensorState())  //increase in water level
   	{
 		simEventTemp[16] = sim1->registerEvent('Z'); //report To SIM water level is increasing..
   	}
-  	else if(!low && mid && !midSensorState())	//decrease in water level
+  	#ifdef ENABLE_GP
+  	if(!(olow==overHeadLowSensorState() && ohigh==overHeadHighSensorState()))
   	{
-		simEventTemp[13] = sim1->registerEvent('D'); //report To SIM water level is decrease..
-  	}
-  	else if(!low && !mid && !high && highSensorState())
-  	{
-  		if(eeprom1->PREVENTOVERFLOW)
+  		if(!olow && !ohigh && overHeadHighSensorState())		//overhead tank is full
   		{
   			stopMotor(false,true);
-			simEventTemp[14] = sim1->registerEvent('H'); //report To SIM well is full, so stopped motor
+			simEventTemp[17] = sim1->registerEvent('V'); //report To SIM Motor Off due to overhead tank full
   		}
-  		else
+  		else if (olow && ohigh && !overHeadLowSensorState())
   		{
-			simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
+			simEventTemp[18] = sim1->registerEvent('W'); //report To SIM , overhead tank empty.
   		}
   	}
-  	#ifdef ENABLE_GP
-  	else if(!olow && !ohigh && overHeadHighSensorState())		//overhead tank is full
-  	{
-  		stopMotor(false,true);
-		simEventTemp[17] = sim1->registerEvent('V'); //report To SIM Motor Off due to overhead tank full
-  	}
-  	else if (olow && ohigh && !overHeadLowSensorState())
-  	{
-		simEventTemp[18] = sim1->registerEvent('W'); //report To SIM , overhead tank empty.
-  	}
+
   	#endif
   }
   else    //motor is off
   {
-  	if(!low && !mid && midSensorState()) 		//water is increasing, reached mid sensor
+	#ifdef ENABLE_M2M
+	if(eeprom1->M2M && (mid && !midSensorState() || (mid && !midSensorState() && low && !lowSensorState())))	//decrease in water level when M2M On
+  	{
+  		m2mEvent[0] = ME_WAITREGISTER;
+  	}
+	#endif
+  	else if(!low && !mid && !high && highSensorState()) //well is full
+  	{
+		#ifdef ENABLE_M2M
+			if(eeprom1->M2M)
+			{
+	  			m2mEvent[1] = ME_WAITREGISTER;
+			}
+			else
+			{
+				simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
+			}
+  		#else
+			simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
+		#endif
+  	}
+  	else if(!low && !mid && midSensorState()) 		//water is increasing, reached mid sensor
   	{
   		#ifdef ENABLE_GP
   			if(ohigh)
@@ -411,7 +477,7 @@ void Motor_MGR::operateOnWaterEvent()
   		#endif
   	}
   	#ifdef ENABLE_GP
-  	else if (olow && !low)// overhead tank is empty, and underground not low
+  	if (olow && !overHeadLowSensorState() && !low)// overhead tank is empty, and underground not low
   	{
 		  	if(eeprom1->AUTOSTART)			//autoStart is ON
 			{
@@ -423,10 +489,6 @@ void Motor_MGR::operateOnWaterEvent()
 			}
   	}
   	#endif
-  	else if(!low && !mid && !high && highSensorState())
-  	{
-		simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
-  	}
   }
   #ifdef ENABLE_GP
   	updateOverHeadWaterSensorState(olow,ohigh);
@@ -437,8 +499,8 @@ void Motor_MGR::operateOnWaterEvent()
 
 bool Motor_MGR::getMotorState()
 {
-  bool p1, p2, p3, p4;
-  readSensorState(p1, p2, p3, p4);
+  bool p1, p2, p3;
+  readSensorState(p1, p2, p3);
   // ACPowerState(p4);
 
   // if(p3 && !phaseAC)
@@ -446,18 +508,17 @@ bool Motor_MGR::getMotorState()
   // else if(!p3 && phaseAC)
   // 	// battery1->lostACPower();
   // motorState(p2);
-  updateSensorState(p1, p2, p3, p4);
+  updateSensorState(p1, p2, p3);
   return p2;
 }
 
-void Motor_MGR::readSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
+void Motor_MGR::readSensorState(bool &p1, bool &p2, bool &p3)
 {
   eventOccured = false;
   noInterrupts();
   p1 = digitalRead(PIN_3PHASE);
   p2 = !digitalRead(PIN_MFEEDBACK);
-  p3 = 0;//!digitalRead(PIN_ACFEEDBACK);
-  p4 = digitalRead(PIN_ACPHASE);
+  p3 = digitalRead(PIN_ACPHASE);
   interrupts();
 
 #ifndef disable_debug
@@ -472,12 +533,12 @@ void Motor_MGR::readSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
 #endif
 }
 
-void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4)
+void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3)
 {
   AllPhaseState(p1); // allPhase = p1;
   motorState(p2); // mFeedback = p2;
-  ACFeedbackState(p3); // acFeedback = p3;
-  ACPowerState(p4); // phaseAC = p4;
+
+  ACPowerState(p3); // phaseAC = p4;
 
   if (!ACPowerState() || !AllPhaseState())// if (!phaseAC || !allPhase)
 	startTimerOn = false;
@@ -569,16 +630,6 @@ inline void Motor_MGR::motorState(bool b)
   	digitalWrite(PIN_MOTORLED,LOW);
 }
 
-bool Motor_MGR::ACFeedbackState()
-{
-  return acFeedback;
-}
-
-inline void Motor_MGR::ACFeedbackState(bool b)
-{
-  acFeedback = b;
-}
-
 bool Motor_MGR::ACPowerState()
 {
   return phaseAC;
@@ -601,8 +652,8 @@ inline void Motor_MGR::AllPhaseState(bool b)
 
 void Motor_MGR::operateOnEvent()
 {
-  bool t3Phase, tMotor, tacFeedback, tacPhase;
-  readSensorState(t3Phase, tMotor, tacFeedback, tacPhase);
+  bool t3Phase, tMotor, tacPhase;
+  readSensorState(t3Phase, tMotor, tacPhase);
 
   if((t3Phase == AllPhaseState()) && (tMotor == motorState()) && (tacPhase == ACPowerState()))
   	return;
@@ -676,7 +727,7 @@ void Motor_MGR::operateOnEvent()
 	  waitStableLineTimer = millis();
 	}
   }
-  updateSensorState(t3Phase, tMotor, tacFeedback, tacPhase);
+  updateSensorState(t3Phase, tMotor, tacPhase);
 }
 
 byte Motor_MGR::checkLineSensors()
@@ -687,8 +738,6 @@ byte Motor_MGR::checkLineSensors()
   _NSerial->println(AllPhaseState());
   _NSerial->print("MF:");
   _NSerial->println(motorState());
-  // _NSerial->print("ACF:");
-  // _NSerial->println(ACFeedbackState());
   _NSerial->print("PAC:");
   _NSerial->println(ACPowerState());
 #endif
@@ -743,13 +792,6 @@ void Motor_MGR::operateOnStableLine()
 	if (!eeprom1->DND)		//if DND off
 	  simEventTemp[5] = sim1->registerEvent('L'); //register To SIM AC Power OFF
   }
-
-  // else if (!semiState && temp == AC_1PH)		//Got Power in 1 phase
-  // {
-	// semiState = true;
-	// if (!eeprom1->DND)	//if DND off then
-	  // simEventTemp[10] = sim1->registerEvent('A'); //register TO SIM 1 phase power ON
-  // }
 }
 
 bool Motor_MGR::startMotorTimerOver()
@@ -848,7 +890,13 @@ void Motor_MGR::startMotor(bool commanded)
   else
   {
 	if (commanded)
+	{
 	  sim1->setMotorMGRResponse('L');	//cannot start motor due to some problem
+	}
+	else
+	{
+		simEventTemp[0] = sim1->registerEvent('N');//register To SIM motor not started due to ANY REASON
+	}
   }
 }
 
@@ -913,10 +961,8 @@ void Motor_MGR::terminateStopRelay()
 	  {
 		simEventTemp[1] = sim1->registerEvent('P');
 	  }
-	  //register to SIM cannot turn off motor due to some problem
 	}
 	offButtonPressed=false;
-
   }
 }
 
@@ -993,6 +1039,34 @@ void Motor_MGR::statusOnCall()
 	  sim1->setMotorMGRResponse('O');	//motor off, light on
   }
 }
+
+#ifdef ENABLE_M2M
+
+void Motor_MGR::setM2MEventState(byte eventNo, byte state)
+{
+	if(m2mEvent[eventNo]==ME_SERVICING)
+	{
+		if(state==ME_NOTAVAILABLE)
+		{
+			state=ME_CLEARED;
+			simEventTemp[mapTable[eventNo]]=false;	//regsiter relevant Normal Event
+		}
+	}
+	m2mEvent[eventNo]=state;		
+}
+
+void Motor_MGR::M2MEventManager()
+{
+	byte lim=2;
+	for(byte j = 0 ; j<lim; j++)
+	{
+		if(m2mEvent[j]==ME_WAITREGISTER)
+		{
+			sim1->registerM2MEvent(j);
+		}
+	}
+}
+#endif
 
 void Motor_MGR::SIMEventManager()
 {
@@ -1108,6 +1182,9 @@ void Motor_MGR::update()
 	terminateStopRelay();
 
   SIMEventManager();
+  #ifdef ENABLE_M2M
+  	M2MEventManager();
+  #endif
 
   // enterSleep=checkSleepElligible();
 }

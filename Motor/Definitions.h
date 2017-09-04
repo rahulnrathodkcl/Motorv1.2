@@ -21,12 +21,19 @@
 #define WATCHDOG_OFF    (0)
 
 #define MAXNUMBERS 15
-// #define WATCHDOG_16MS   (_BV(WDE))
-// #define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
 
 #define disable_debug 
 #define ENABLE_WATER
 #define ENABLE_GP
+#define ENABLE_M2M
+
+
+#ifdef ENABLE_M2M
+	#ifndef ENABLE_WATER
+		#undef ENABLE_M2M
+	#endif
+#endif
+
 // #define software_SIM
 // #ifdef disable_debug
 // #undef software_SIM
@@ -102,15 +109,31 @@
 #define bypassAddress 54
 #define eventStageAddress 58
 
+#define SEND_TO_M2M_MASTER 0x02
 
+#ifdef ENABLE_M2M
+	#define SEND_TO_M2M_REMOTE 0x01
+
+	#define m2mSettingAddress 62
+	#define m2mRemotePresentAddress 66 
+	#define m2mRemoteVerifyAddress 70
+	#define m2mRemoteNumberAddress 74
+
+	#define ME_CLEARED 0x00
+	#define ME_WAITREGISTER 0x01
+	#define ME_SERVICING 0x02
+	#define ME_NOTAVAILABLE 0x03
+#endif
+
+#define m2mPresentAddress 88
+#define m2mVerifyAddress 92
+#define m2mNumberAddress 96
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304
 
 // #define balNumberPresentAddress 150
 // #define balNumberAddress 154 // leave 18 bytes for storing bal number
-
-
 //NOT TO CHANGE____ ASSOCIATED WITH BOOTLOADER 
 #define simCCIDPresentAddress 800
 #define simCCIDLengthAddress 804

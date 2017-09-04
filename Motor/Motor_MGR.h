@@ -29,6 +29,11 @@ class Motor_MGR
             bool simEventTemp[17];
             char simEvent[17];
         #endif
+
+        #ifdef ENABLE_M2M
+            byte m2mEvent[2];
+            byte mapTable[2];
+        #endif
     #else
         bool simEventTemp[12];
         char simEvent[12];
@@ -40,7 +45,6 @@ class Motor_MGR
 
     bool allPhase;
     bool mFeedback;
-    bool acFeedback;
     bool phaseAC;
 
     bool startTimerOn;
@@ -106,11 +110,10 @@ class Motor_MGR
     #endif
 
     void anotherConstructor(SIM* sim1, S_EEPROM* eeprom1);
-    void readSensorState(bool &p1, bool &p2, bool &p3, bool &p4);
-    void updateSensorState(bool &p1, bool &p2, bool &p3, bool &p4);
+    void readSensorState(bool &p1, bool &p2, bool &p3);
+    void updateSensorState(bool &p1, bool &p2, bool &p3);
     void triggerAutoStart();
     void motorState(bool);
-    void ACFeedbackState(bool);
     void ACPowerState(bool);
     void AllPhaseState(bool);
 
@@ -134,6 +137,10 @@ class Motor_MGR
     void terminateStopRelay();
     void terminateStartRelay();
     void terminateStarDeltaTimer();
+    #ifdef ENABLE_M2M
+        void M2MEventManager();
+    #endif
+
     void SIMEventManager();
     void setLED(bool);
 
@@ -175,10 +182,13 @@ class Motor_MGR
         void waterStatusOnCall();
     #endif
 
+    #ifdef ENABLE_M2M
+        void setM2MEventState(byte eventNo, byte state);
+    #endif
+
     void resetAutoStart(bool setChange = false);
 
     bool motorState();
-    bool ACFeedbackState();
     bool ACPowerState();
     bool AllPhaseState();
     byte checkLineSensors();
