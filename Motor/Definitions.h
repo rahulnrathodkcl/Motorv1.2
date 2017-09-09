@@ -23,9 +23,9 @@
 #define MAXNUMBERS 15
 
 #define disable_debug 
-#define ENABLE_WATER
-#define ENABLE_GP
-#define ENABLE_M2M
+// #define ENABLE_WATER
+// #define ENABLE_GP
+// #define ENABLE_M2M
 
 
 #ifdef ENABLE_M2M
