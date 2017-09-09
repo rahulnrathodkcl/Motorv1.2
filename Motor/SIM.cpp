@@ -1833,6 +1833,9 @@ void SIM::makeResponseAction()
 
 bool SIM::registerEvent(char eventType)
 {
+  if(eeprom1->numbersCount==0)
+    return true;
+
   if (!initialized)
   {
 #ifndef disable_debug
@@ -1840,6 +1843,9 @@ bool SIM::registerEvent(char eventType)
 #endif
     return true;
   }
+
+    if(!eventStaged && actionType==eventType)
+      return true;
 
   #ifdef ENABLE_M2M
   if (currentStatus == 'N' && currentCallStatus == 'N' && obtainNewEvent && !eventStaged && !m2mEventStaged)

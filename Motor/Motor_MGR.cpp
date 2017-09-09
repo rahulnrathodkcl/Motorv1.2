@@ -447,8 +447,10 @@ void Motor_MGR::operateOnWaterEvent()
   	{
   		m2mEvent[0] = ME_WAITREGISTER;
   	}
-	#endif
   	else if(!low && !mid && !high && highSensorState()) //well is full
+  	#else
+  	if(!low && !mid && !high && highSensorState()) //well is full
+	#endif
   	{
 		#ifdef ENABLE_M2M
 			if(eeprom1->M2M)
