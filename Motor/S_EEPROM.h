@@ -146,5 +146,6 @@ class S_EEPROM
     bool addAlternateNumber(String &number);
     bool removeNumber(String &number);
     void clearNumbers(bool admin);
+    String getIndexedNumber(byte index);
 };
 #endif

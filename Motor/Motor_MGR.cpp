@@ -70,10 +70,10 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   stopTimerTime = 600;
   stopTimerOn = false;
 
-  waitCheckACTime = 20;
-  waitCheckACTimerOn = false;
+  // waitCheckACTime = 20;
+  // waitCheckACTimerOn = false;
 
-  singlePhasingTime = 10;
+  singlePhasingTime = 1;
   singlePhasingTimerOn = false;
 
   startSequenceTimerTime = 20;
@@ -83,7 +83,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   stopSequenceTimerTime = 20;
   stopSequenceOn = false;
 
-  waitStableLineTime = 50;
+  waitStableLineTime = 30;
   waitStableLineOn = false;
 
   AllPhaseState(false); // allPhase = false;
@@ -93,7 +93,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   #ifdef ENABLE_WATER
   	setWaterDefaults();
   #endif
-
+  	
 lastPressTime=0;
 
 
@@ -188,9 +188,9 @@ void Motor_MGR::updateOverHeadWaterSensorState(bool &olow,bool &ohigh)
 byte Motor_MGR::getOverHeadWaterSensorState()
 {
 	bool olow,ohigh;
-	olow=overHeadLowSensorState();
-	ohigh=overHeadHighSensorState();
-	// readOverHeadWaterSensorState(olow,ohigh);
+	// olow=overHeadLowSensorState();
+	// ohigh=overHeadHighSensorState();
+	readOverHeadWaterSensorState(olow,ohigh);
 	byte ans=0;
 	if(!olow)
 	{
@@ -272,7 +272,7 @@ void Motor_MGR::setWaterDefaults()
 
 void Motor_MGR::readWaterSensorState(bool &low,bool &mid,bool &high)
 {
-	waterEventOccured = false;
+	// waterEventOccured = false;
   	noInterrupts();
   	low = digitalRead(PIN_LOWSENSOR);
 	mid = digitalRead(PIN_MIDSENSOR);
@@ -299,11 +299,11 @@ void Motor_MGR::updateWaterSensorState(bool &low,bool &mid,bool &high)
 byte Motor_MGR::getWaterSensorState()
 {
 	bool l,m,h;
-	l=lowSensorState();
-	m=midSensorState();
-	h=highSensorState();
+	// l=lowSensorState();
+	// m=midSensorState();
+	// h=highSensorState();
 
-	// readWaterSensorState(l,m,h);
+	readWaterSensorState(l,m,h);
 	byte ans=0;
 
 	if(!l) 
@@ -355,6 +355,8 @@ void Motor_MGR::operateOnWaterEvent()
 		bool olow,ohigh;
 		readOverHeadWaterSensorState(olow,ohigh);
 	#endif
+
+	waterEventOccured=false;
 
 	if((low == lowSensorState()) && (mid == midSensorState()) && (high == highSensorState()))		// no changes in sensor state
 	{
@@ -806,10 +808,10 @@ bool Motor_MGR::stopMotorTimerOver()
   return (millis() - tempStopTimer >= (stopTimerTime * 100));
 }
 
-bool Motor_MGR::waitCheckACTimerOver()
-{
-  return (waitCheckACTimerOn && (millis() - tempWaitCheckACTimer > (waitCheckACTime * 100)));
-}
+// bool Motor_MGR::waitCheckACTimerOver()
+// {
+//   return (waitCheckACTimerOn && (millis() - tempWaitCheckACTimer > (waitCheckACTime * 100)));
+// }
 
 void Motor_MGR::unknownMotorOff()
 {
@@ -1106,8 +1108,8 @@ bool Motor_MGR::checkSleepElligible()
 			break;
 		}
 	}
-	return (!ACPowerState() && event && !waitStableLineOn && !waitCheckACTimerOn && !singlePhasingTimerOn
-			&& !startTimerOn && !stopTimerOn && !startSequenceOn && !stopSequenceOn);
+	return (!ACPowerState() && event && !waitStableLineOn && !singlePhasingTimerOn
+			&& !startTimerOn && !stopTimerOn && !startSequenceOn && !stopSequenceOn); 	//!waitCheckACTimerOn &&
 }
 
 void Motor_MGR::operateOnButtonEvent()
@@ -1158,9 +1160,9 @@ void Motor_MGR::update()
 	if (waitStableLineOver())
 	  operateOnStableLine();
 
-  if (waitCheckACTimerOn)
-	if (waitCheckACTimerOver())
-	  unknownMotorOff();
+ //  if (waitCheckACTimerOn)
+	// if (waitCheckACTimerOver())
+	//   unknownMotorOff();
 
   if (singlePhasingTimerOn)
 	if (singlePhasingTimerOver())
