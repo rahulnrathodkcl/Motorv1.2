@@ -7,12 +7,22 @@ String S_EEPROM::getNumbers()
   String str="";
   for(byte i=0;i<numbersCount;i++)
   {
-    str=str+read_StringEE(mobileNumberAddress + (i*11),10);
-    str=str+"\n";    
+    str.concat(read_StringEE(mobileNumberAddress + (i*11),10));
+    str.concat("\n");
   }
   return str;
 }
 // #endif
+
+String S_EEPROM::getIndexedNumber(byte index)
+{
+  String str="";
+  if(numbersCount>index)
+  {
+    str=read_StringEE(mobileNumberAddress + (index*11),10);
+  }
+  return str;
+}
 
 S_EEPROM::S_EEPROM()
 {
@@ -541,7 +551,7 @@ String S_EEPROM::getDeviceId()
   String str= F("ID:");
   unsigned long int temp;
   EEPROM.get(deviceIdAddress,temp);
-  str = str + temp;
+  str.concat(temp);
   return str;
 }
 

@@ -79,6 +79,8 @@ void SIM::anotherConstructor()
   eventStaged=false;
   stagedEventType = 'N'; 
 
+  retryOn=false;
+
   #ifdef ENABLE_M2M
     m2mAck=false;
     m2mEventCalls=m2mEventNo=0;
@@ -505,7 +507,8 @@ bool SIM::downloadFirmware()
     //  +FTPGETTOFS: 0,2396
     String m1="+FTPGETTOFS";
     String cmd;
-    String v1= m1 + ": 0,";
+    String v1= m1;
+    v1.concat(": 0,");
     v1.concat(size);
     v1.concat("\r");
     // v1 = v1 + size;
@@ -658,7 +661,7 @@ bool SIM::checkPrgReq(String str,bool noMsg)
   {
       if(currentStatus=='N')
         endCall();
-      if(!noMsg) sendSMS("SUP",true);
+      if(!noMsg) sendSMS(F("SUP"),true);
       // bool verify=false;
       // if(stringContains(str,"V",1,str.length()-1))
       //   verify=true;
@@ -666,7 +669,7 @@ bool SIM::checkPrgReq(String str,bool noMsg)
       if(prepareForFirmwareUpdate(str))
       {
           isMsgFromAdmin=true;
-          if(!noMsg) sendSMS("DC",true);
+          if(!noMsg) sendSMS(F("DC"),true);
           stopGPRS();
           initRestartSeq();
       }
@@ -881,16 +884,18 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       eeprom1->saveDNDSettings(false);  //set DND to False in EEPROM
       done=true;
     }
-    else if (str.startsWith(F("RESPC")))  //stringContains(str, F("RESPC"), 5, str.length() - 1))
+    else if (str.startsWith(F("RESP")))  //stringContains(str, F("RESPC"), 5, str.length() - 1))
     {
-      eeprom1->saveResponseSettings('C');  //set DND to False in EEPROM
-      done=true;
+      if(str.length()>4)
+      {
+          char c = str.charAt(4);
+          if(c=='C' || c=='A' || c=='T')
+          {
+            eeprom1->saveResponseSettings(c);  //save specific RESPONSE settings
+            done=true;
+          }
+      }
     }
-    else if (str.startsWith(F("RESPA"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
-    {
-       eeprom1->saveResponseSettings('A');  //set DND to False in EEPROM
-       done=true;
-    } 
     #ifdef ENABLE_WATER
       #ifndef ENABLE_M2M
       else if (str.startsWith(F("OVFON"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
@@ -1457,10 +1462,24 @@ void SIM::makeCall()
     }
     else
     {
-      command.concat(eeprom1->getActiveNumber());
+        if(retryOn)
+        {
+          command.concat(eeprom1->getIndexedNumber(1));
+        }
+        else
+        {
+          command.concat(eeprom1->getActiveNumber());
+        }
     }
   #else
-  command.concat(eeprom1->getActiveNumber());
+  if(retryOn)
+  {
+    command.concat(eeprom1->getIndexedNumber(1));
+  }
+  else
+  {
+    command.concat(eeprom1->getActiveNumber());
+  }
   #endif
   command.concat(";");
   sendCommand(command, true);
@@ -1495,34 +1514,57 @@ void SIM::endCall()
   freezeIncomingCalls = false;
 
   #ifdef ENABLE_M2M
-  if(m2mEvent)
+    if(currentStatus == 'I' && currentCallStatus == 'O' && !m2mEvent) //if outgoing call
+  #else
+    if(currentStatus == 'I' && currentCallStatus == 'O') //if outgoing call
+  #endif
   {
-    m2mEventCalls++;
-    if(m2mAck)
+    if(retryOn)
     {
-      motor1->setM2MEventState(m2mEventNo,ME_CLEARED);
-    }
+      retryOn=false;
+    } 
     else
     {
-      if(m2mEventCalls<2)
+      if(!callAccepted && eeprom1->RESPONSE=='T' && eeprom1->numbersCount>1)
       {
+        retryOn=true;
+        eventStaged=true;
         tempEventStageTime=millis();
-        stagedEventType=m2mEventNo;
-        // tempM2MEventStageTime=millis();
-        // stagedM2MEventNo=m2mEventNo;
-        m2mEventStaged=true;
+        stagedEventType=actionType;
+      }
+    }
+  }
+
+    #ifdef ENABLE_M2M
+    if(currentStatus == 'I' && currentCallStatus == 'O' && m2mEvent)
+    {
+      m2mEventCalls++;
+      if(m2mAck)
+      {
+        motor1->setM2MEventState(m2mEventNo,ME_CLEARED);
       }
       else
       {
-        motor1->setM2MEventState(m2mEventNo,ME_NOTAVAILABLE);
+        if(m2mEventCalls<2)
+        {
+          tempEventStageTime=millis();
+          stagedEventType=m2mEventNo;
+          // tempM2MEventStageTime=millis();
+          // stagedM2MEventNo=m2mEventNo;
+          m2mEventStaged=true;
+        }
+        else
+        {
+          motor1->setM2MEventState(m2mEventNo,ME_NOTAVAILABLE);
+        }
       }
+      m2mEvent = false;
     }
-    m2mEvent = false;
-  }
 
-  keyPressed=false;
-  m2mAck=false;
-  #endif
+    keyPressed=false;
+    m2mAck=false;
+    #endif
+
   // callDialled = false;
   // callAlerted = false;
   // attemptsToCall=0;
@@ -1571,14 +1613,14 @@ void SIM::sendSMS(String msg = "", bool predefMsg = false, byte isM2M)
     {
       case 'S':
         responseString = STR_MOTOR;
-        responseString += STR_ON;
+        responseString.concat(STR_ON);
         break;
       case 'O':
       case 'U':
       case 'C':
       case 'F':
         responseString = STR_MOTOR;
-        responseString += STR_OFF;
+        responseString.concat(STR_OFF);
         break;
       default:
         return;
@@ -1827,7 +1869,7 @@ bool SIM::callTimerExpire()
 
 void SIM::makeResponseAction()
 {
-  if (eeprom1->RESPONSE == 'A' || eeprom1->RESPONSE == 'C')
+  if (eeprom1->RESPONSE == 'A' || eeprom1->RESPONSE == 'C' || eeprom1->RESPONSE == 'T')
     makeCall();
 }
 
@@ -2005,19 +2047,19 @@ String SIM::makeStatusMsg(byte battery, byte network)
       else
         resp = F("AUTOOFF");
 
-      resp = resp + "\nAC:";
-      resp = resp + (t3==AC_3PH ? F(" ON\n") : (t3==AC_2PH ? F(" 2 PHASE\n") : F(" OFF\n")));
-      resp = resp + F("Motor:");
-      resp = resp + (t5 ? F(" ON\n") : F(" OFF\n"));
+      resp.concat("\nAC:");
+      resp.concat((t3==AC_3PH ? F(" ON\n") : (t3==AC_2PH ? F(" 2 PHASE\n") : F(" OFF\n"))));
+      resp.concat(F("Motor:"));
+      resp.concat((t5 ? F(" ON\n") : F(" OFF\n")));
       if(battery!=0xFF)
       {
-        resp = resp + F("\nBat%:");
-        resp = resp + battery;        
+        resp.concat(F("\nBat%:"));
+        resp.concat(battery);
       }
       if(network!=0xFF)
       {
-        resp = resp + F("\nNetwork:");
-        resp = resp + network;        
+        resp.concat(F("\nNetwork:"));
+        resp.concat(network);
       }
       return resp;
 }
@@ -2054,7 +2096,7 @@ void SIM::operateOnStagedEvent()
   freezeIncomingCalls = true;
   acceptCommands();
 
-  if(obtainNewEvent && millis()-tempEventStageTime>(temp1*60000L))
+  if(obtainNewEvent && ((millis()-tempEventStageTime>(temp1*60000L)) || retryOn))
   {
       #ifdef ENABLE_M2M
         if(eventStaged)

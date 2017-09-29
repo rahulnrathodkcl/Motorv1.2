@@ -53,6 +53,8 @@ class SIM
     byte nr;
     bool callAccepted;
 
+    bool retryOn;
+
     // bool makeResponse;
     #ifdef ENABLE_M2M
 

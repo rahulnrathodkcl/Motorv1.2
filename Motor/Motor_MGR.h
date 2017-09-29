@@ -54,9 +54,9 @@ class Motor_MGR
     unsigned long int tempStopTimer;
     unsigned int stopTimerTime;
 
-    bool waitCheckACTimerOn;
-    unsigned long tempWaitCheckACTimer;
-    byte waitCheckACTime;
+    // bool waitCheckACTimerOn;
+    // unsigned long tempWaitCheckACTimer;
+    // byte waitCheckACTime;
 
     bool singlePhasingTimerOn;
     unsigned long int tempSinglePhasingTimer;
