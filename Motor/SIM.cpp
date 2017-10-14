@@ -78,7 +78,7 @@ void SIM::anotherConstructor()
   isMsgFromAdmin = false;
   eventStaged=false;
   stagedEventType = 'N'; 
-
+  isRegisteredNumber=false;
   retryOn=false;
 
   #ifdef ENABLE_M2M
@@ -889,7 +889,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       if(str.length()>4)
       {
           char c = str.charAt(4);
-          if(c=='C' || c=='A' || c=='T')
+          if(c=='C' || c=='A' || c=='T' || c=='N')
           {
             eeprom1->saveResponseSettings(c);  //save specific RESPONSE settings
             done=true;
@@ -1133,7 +1133,7 @@ inline bool SIM::isMsgBody(String &str)
 
 inline bool SIM::isAdmin(String str)
 {
-  return (str == adminNumber);
+  return (str == adminNumber || str==adminNumber1 || str==adminNumber2 || str==adminNumber3 || str==adminNumber4);
 }
 
 void SIM::gotMsgBody(String &str)
@@ -1143,7 +1143,6 @@ void SIM::gotMsgBody(String &str)
 
   if (admin || eeprom1->isPrimaryNumber(str) || alterNumber)
   {
-
     str = readString(); //_SSerial->readStringUntil('\n');
 #ifndef disable_debug
     _NSerial->print("MSG:");
@@ -1576,6 +1575,7 @@ void SIM::endCall()
   currentStatus = 'N';
   currentCallStatus = 'N';
 
+  isRegisteredNumber=false;
   obtainEventTimer = millis();
   obtainNewEvent = false;
   //  starPresent=false;
@@ -1592,6 +1592,7 @@ void SIM::setObtainEvent()
 
 void SIM::acceptCall()
 {
+  isRegisteredNumber=false;   //clear flag for next call, in case any error occures and endCall() is not called for ending the call
   callAccepted = true;
   _SSerial->flush();
   sendCommand("ATA", true);
@@ -1801,14 +1802,24 @@ void SIM::operateRing()
 
     if (str.length() >= 10 && isNumeric(str))
     {
-      if (nr > 1 && !checkNumber(str))
-        endCall();
+      if(nr>1)
+      {
+          if(!isRegisteredNumber)           //if (nr > 1 && !checkNumber(str))
+            isRegisteredNumber = checkNumber(str);  //   endCall();
+      }
     }
   }
-  else if (nr == 3)
+  else if (nr >= 3)
   {
-    callCutWait = millis();
-    acceptCall();
+    if(isRegisteredNumber)
+    {
+      callCutWait = millis();
+      acceptCall();      
+    }
+    else
+    {
+      endCall();
+    }
   }
 }
 
@@ -1869,14 +1880,16 @@ bool SIM::callTimerExpire()
 
 void SIM::makeResponseAction()
 {
-  if (eeprom1->RESPONSE == 'A' || eeprom1->RESPONSE == 'C' || eeprom1->RESPONSE == 'T')
+  if (eeprom1->RESPONSE == 'A' || eeprom1->RESPONSE == 'C' || eeprom1->RESPONSE == 'T' || (m2mEvent && eeprom1->RESPONSE=='N'))
     makeCall();
 }
 
 bool SIM::registerEvent(char eventType)
 {
-  if(eeprom1->numbersCount==0)
+  if(eeprom1->numbersCount==0 || eeprom1->RESPONSE=='N')
+  {
     return true;
+  }
 
   if (!initialized)
   {
@@ -1886,8 +1899,8 @@ bool SIM::registerEvent(char eventType)
     return true;
   }
 
-    if(!eventStaged && actionType==eventType)
-      return true;
+  if(!eventStaged && actionType==eventType)
+    return true;
 
   #ifdef ENABLE_M2M
   if (currentStatus == 'N' && currentCallStatus == 'N' && obtainNewEvent && !eventStaged && !m2mEventStaged)
@@ -2093,11 +2106,11 @@ void SIM::operateOnStagedEvent()
     byte temp1=eeprom1->EVENTSTAGE;
   #endif 
 
-  freezeIncomingCalls = true;
-  acceptCommands();
 
   if(obtainNewEvent && ((millis()-tempEventStageTime>(temp1*60000L)) || retryOn))
   {
+      freezeIncomingCalls = true;
+      acceptCommands();
       #ifdef ENABLE_M2M
         if(eventStaged)
         {

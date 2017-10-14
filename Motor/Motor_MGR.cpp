@@ -646,7 +646,17 @@ inline void Motor_MGR::ACPowerState(bool b)
 
 bool Motor_MGR::AllPhaseState()
 {
-  return allPhase;
+	if(eeprom1->BYPASS)
+	{
+		if(!allPhase || ACPowerState() || (ACPowerState() && allPhase))
+			return true;
+		else
+			return false;
+	}
+	else
+	{
+  		return allPhase;
+	}
 }
 
 inline void Motor_MGR::AllPhaseState(bool b)

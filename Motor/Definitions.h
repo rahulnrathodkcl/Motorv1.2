@@ -12,6 +12,11 @@
 
 
 #define adminNumber F("7041196959")
+#define adminNumber1 F("7698439201")
+#define adminNumber2 F("7383614214")
+#define adminNumber3 F("7383622678")
+#define adminNumber4 F("9586135978")
+
 #define STR_SAPBR_PARAM "AT+SAPBR=3,1,\""
 #define STR_SAPBR_GPRS "ConType\",\"GPRS\"\r\n"
 #define STR_SAPBR_APN "APN\",\""

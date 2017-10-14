@@ -19,6 +19,7 @@ class SIM
     S_EEPROM* eeprom1;
     Motor_MGR* motor1;
 
+    bool isRegisteredNumber;
     bool responseToAction;
     // String adminNumber;
     byte soundWaitTime; //x100 = mSec
