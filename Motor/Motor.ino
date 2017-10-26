@@ -103,14 +103,11 @@ void setup() {
   Serial.begin(19200);
 #ifndef disable_debug
   USART1->begin(19200);
+  if (b & _BV(BORF))
+  {
+    USART1->println(F("BO Reset"));
+  }
 #endif
-
-    if (b & _BV(BORF))
-    {
-    #ifndef disable_debug
-      USART1->println(F("BO Reset"));
-    #endif
-    }
 
   pinMode(PIN_3PHASELED,OUTPUT);
   
@@ -265,7 +262,6 @@ void printData()
 
 bool checkSleepElligible()
 {
-
   return (!turnOffTimerOn && !motor1.ACPowerState() && motor1.checkSleepElligible() && sim1.checkSleepElligible());
 }
 
@@ -275,7 +271,7 @@ void flashLed()
     {
         led=!led;
         if(led) digitalWrite(PIN_3PHASELED,HIGH);
-        if(!led) digitalWrite(PIN_3PHASELED,LOW);
+        else if(!led) digitalWrite(PIN_3PHASELED,LOW);
         temp=millis();
     }
 }
@@ -364,32 +360,34 @@ void loop() {
   {
     if(millis()-tempTurnoffTime>10000)
     {
+      turnOffTimerOn=false;
       if(!batStatus && sim1.checkNotInCall())
       {
-        turnOffTimerOn=false;
         #ifndef disable_debug
         USART1->println(F("OFF"));
         #endif
         digitalWrite(PIN_TURNOFF,LOW);  
       }
-      else
-        turnOffTimerOn=false;
+      // else
+        // turnOffTimerOn=false;
     }    
   }
 
   if(batLevelChange)
   {
     batLevelChange=false;
-    if(!batStatus)// && sim1.checkNotInCall() && !sim1.busy())
-      {
-        #ifndef disable_debug
-          USART1->println(F("LOW B 1"));
-        #endif
-        gotLowBatEvent=true;
-      }
-    else
+    // gotLowBatEvent=!batStatus;
+    // if(!batStatus)// && sim1.checkNotInCall() && !sim1.busy())
+    //   {
+    //     #ifndef disable_debug
+    //       USART1->println(F("LOW B 1"));
+    //     #endif
+    //     gotLowBatEvent=true;
+    //   }
+    // else
+    if(!(gotLowBatEvent=!batStatus))
     {
-      gotLowBatEvent=false;
+      // gotLowBatEvent=false;
       digitalWrite(PIN_TURNOFF,HIGH);
       if(!initTurnOn)
         initTurnOn=true;
@@ -440,8 +438,8 @@ void loop() {
       motor1.resetAutoStart();
       // motor1.getMotorState();
 
-      PCICR |= (1 << PCIE0);   // set PCIE0 to enable PCMSK0 scan
-      PCMSK0 |= (1 << PCINT1); // set PCINT1 to trigger an interrupt on state change
+      // PCICR |= (1 << PCIE0);   // set PCIE0 to enable PCMSK0 scan
+      // PCMSK0 |= (1 << PCINT1); // set PCINT1 to trigger an interrupt on state change
       PCMSK0 |= (1 << PCINT2);// set PCINT2 to trigger an interrupt on state change
       PCMSK0 |= (1 << PCINT3);// set PCINT3 to trigger an interrupt on state change
       attachInterrupt(digitalPinToInterrupt(PIN_ACPHASE), IVR_PHASE, CHANGE);

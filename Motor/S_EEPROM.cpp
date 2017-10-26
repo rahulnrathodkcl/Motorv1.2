@@ -180,7 +180,7 @@ void S_EEPROM::addM2MNumber(String &number)
 
 void S_EEPROM::setM2MVerify(bool temp)
 {
-  m2mVerified=temp;
+  m2mVerified= (byte)temp;
   EEPROM.put(m2mVerifyAddress, m2mVerified);
 }
 
@@ -312,7 +312,7 @@ void S_EEPROM::saveProgramSize(unsigned long int temp)
   PROGSIZE = temp;
   EEPROM.put(prgSizeAddress, PROGSIZE);
 }
-
+  
 void S_EEPROM::saveAutoStartTimeSettings(unsigned short int temp)
 {
   AUTOSTARTTIME = temp;
@@ -335,6 +335,25 @@ void S_EEPROM::saveResponseSettings(char temp)
 {
   RESPONSE = temp;
   EEPROM.put(responseAddress, RESPONSE);
+}
+
+void S_EEPROM::saveNoCallSettings(bool value,byte startHour,byte startMinute,byte stopHour,byte stopMinute)
+{
+    NOCALL = value;
+    EEPROM.put(noCallAddress,NOCALL);
+    if(NOCALL)
+    {
+      NCSTARTHOUR = startHour;
+      NCSTARTMINUTE = startMinute;
+      NCSTOPHOUR = stopHour;
+      NCSTOPMINUTE = stopMinute;
+
+      EEPROM.put(noCallStartTimeHourAddress,NCSTARTHOUR);
+      EEPROM.put(noCallStartTimeMinuteAddress,NCSTARTMINUTE);
+
+      EEPROM.put(noCallStopTimeHourAddress,NCSTOPHOUR);
+      EEPROM.put(noCallStopTimeMinuteAddress,NCSTOPMINUTE);
+    }
 }
 
 void S_EEPROM::updateFirmware(bool temp,bool verify)
@@ -446,11 +465,11 @@ String S_EEPROM::getM2MRemoteNumber()
 
 void S_EEPROM::setM2MRemoteVerified(bool temp)
 {
-  m2mRemoteVerified=temp;
+  m2mRemoteVerified=(byte)temp;
   EEPROM.put(m2mRemoteVerifyAddress,m2mRemoteVerified); 
 }
 
-bool S_EEPROM::isM2MRemoteNumber(String &number)
+bool S_EEPROM::isM2MRemoteNumber(String number)
 {
     if(m2mRemotePresent && number == read_StringEE(m2mRemoteNumberAddress, 10))
       return true;
@@ -498,7 +517,22 @@ void S_EEPROM::loadResponseSettings()
 {
   EEPROM.get(responseAddress, RESPONSE);
   if ((byte)RESPONSE == 0xFF)
-    saveResponseSettings('C');
+    saveResponseSettings('T');
+}
+
+void S_EEPROM::loadNoCallSettings()
+{
+  EEPROM.get(noCallAddress,NOCALL);
+  if ((byte)NOCALL == 0xFF)
+    saveNoCallSettings(false);
+
+  if(NOCALL)
+  {
+    EEPROM.get(noCallStartTimeHourAddress,NCSTARTHOUR);
+    EEPROM.get(noCallStartTimeMinuteAddress,NCSTARTMINUTE);
+    EEPROM.get(noCallStopTimeHourAddress,NCSTOPHOUR);
+    EEPROM.get(noCallStopTimeMinuteAddress,NCSTOPMINUTE);
+  }
 }
 
 // void S_EEPROM::loadAlterNumberSettings()
@@ -594,6 +628,7 @@ void S_EEPROM::loadAllData()
   loadAutoStartTimeSettings();
   loadDNDSettings();
   loadResponseSettings();
+  loadNoCallSettings();
   loadNumberSettings();
   loadCCID();
   loadStarDeltaTimer();

@@ -11,7 +11,6 @@
   simEventTemp[7]		: _motor has started  							S
   simEventTemp[8]		: _motor has turned off							O
   simEventTemp[9]		: lost AC power in 1 phase						A
- 
 */
 
 #ifndef disable_debug
@@ -67,13 +66,13 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   eventOccured = false;
   startTimerOn = false;
 
-  stopTimerTime = 600;
-  stopTimerOn = false;
+  // stopTimerTime = 600;
+  // stopTimerOn = false;
 
   // waitCheckACTime = 20;
   // waitCheckACTimerOn = false;
 
-  singlePhasingTime = 1;
+  singlePhasingTime = 15;
   singlePhasingTimerOn = false;
 
   startSequenceTimerTime = 20;
@@ -83,8 +82,9 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   stopSequenceTimerTime = 20;
   stopSequenceOn = false;
 
-  waitStableLineTime = 30;
+  waitStableLineTime = 20;
   waitStableLineOn = false;
+
 
   AllPhaseState(false); // allPhase = false;
   motorState(false);// mFeedback = false;
@@ -95,6 +95,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   #endif
   	
 lastPressTime=0;
+lastButtonEvent=0;
 
 
   for (byte i = 0; i < 12; i++)
@@ -345,7 +346,8 @@ void Motor_MGR::waterStatusOnCall()
 
 void Motor_MGR::operateOnWaterEvent()
 {
-	if(millis()-tempWaterEventTime<(waterEventBufferTime*100))	
+
+	if(millis()-tempWaterEventTime<((unsigned long) waterEventBufferTime*100))	
 		return;
 	
 	bool low,mid,high;
@@ -426,30 +428,30 @@ void Motor_MGR::operateOnWaterEvent()
   	{
 		simEventTemp[16] = sim1->registerEvent('Z'); //report To SIM water level is increasing..
   	}
-  	#ifdef ENABLE_GP
-  	if(!(olow==overHeadLowSensorState() && ohigh==overHeadHighSensorState()))
-  	{
-  		if(!olow && !ohigh && overHeadHighSensorState())		//overhead tank is full
-  		{
-  			stopMotor(false,true);
-			simEventTemp[17] = sim1->registerEvent('V'); //report To SIM Motor Off due to overhead tank full
-  		}
-  		else if (olow && ohigh && !overHeadLowSensorState())
-  		{
-			simEventTemp[18] = sim1->registerEvent('W'); //report To SIM , overhead tank empty.
-  		}
-  	}
 
+  	#ifdef ENABLE_GP
+	  	if(!(olow==overHeadLowSensorState() && ohigh==overHeadHighSensorState()))
+	  	{
+	  		if(!olow && !ohigh && overHeadHighSensorState())		//overhead tank is full
+	  		{
+	  			stopMotor(false,true);
+				simEventTemp[17] = sim1->registerEvent('V'); //report To SIM Motor Off due to overhead tank full
+	  		}
+	  		else if (olow && ohigh && !overHeadLowSensorState())
+	  		{
+				simEventTemp[18] = sim1->registerEvent('W'); //report To SIM , overhead tank empty.
+	  		}
+	  	}
   	#endif
   }
   else    //motor is off
   {
 	#ifdef ENABLE_M2M
-	if(eeprom1->M2M && (mid && !midSensorState() || (mid && !midSensorState() && low && !lowSensorState())))	//decrease in water level when M2M On
-  	{
-  		m2mEvent[0] = ME_WAITREGISTER;
-  	}
-  	else if(!low && !mid && !high && highSensorState()) //well is full
+		if(eeprom1->M2M && ((mid && !midSensorState()) || (mid && !midSensorState() && low && !lowSensorState())))	//decrease in water level when M2M On
+	  	{
+	  		m2mEvent[0] = ME_WAITREGISTER;
+	  	}
+  		else if(!low && !mid && !high && highSensorState()) //well is full
   	#else
   	if(!low && !mid && !high && highSensorState()) //well is full
 	#endif
@@ -480,18 +482,19 @@ void Motor_MGR::operateOnWaterEvent()
 			  	triggerAutoStart();
   		#endif
   	}
+
   	#ifdef ENABLE_GP
-  	if (olow && !overHeadLowSensorState() && !low)// overhead tank is empty, and underground not low
-  	{
-		  	if(eeprom1->AUTOSTART)			//autoStart is ON
-			{
-			 	triggerAutoStart();
-			}
-			else
-			{
-				simEventTemp[18] = sim1->registerEvent('W'); //report To SIM overhead tank is empty.
-			}
-  	}
+  		if (olow && !overHeadLowSensorState() && !low)// overhead tank is empty, and underground not low
+  		{
+			  	if(eeprom1->AUTOSTART)			//autoStart is ON
+				{
+				 	triggerAutoStart();
+				}
+				else
+				{
+					simEventTemp[18] = sim1->registerEvent('W'); //report To SIM overhead tank is empty.
+				}
+  		}
   	#endif
   }
   #ifdef ENABLE_GP
@@ -505,20 +508,13 @@ bool Motor_MGR::getMotorState()
 {
   bool p1, p2, p3;
   readSensorState(p1, p2, p3);
-  // ACPowerState(p4);
-
-  // if(p3 && !phaseAC)
-  // 	// battery1->gotACPower();
-  // else if(!p3 && phaseAC)
-  // 	// battery1->lostACPower();
-  // motorState(p2);
-  updateSensorState(p1, p2, p3);
+  motorState(p2);
+  // updateSensorState(p1, p2, p3);
   return p2;
 }
 
 void Motor_MGR::readSensorState(bool &p1, bool &p2, bool &p3)
 {
-  eventOccured = false;
   noInterrupts();
   p1 = digitalRead(PIN_3PHASE);
   p2 = !digitalRead(PIN_MFEEDBACK);
@@ -541,8 +537,9 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3)
 {
   AllPhaseState(p1); // allPhase = p1;
   motorState(p2); // mFeedback = p2;
-
   ACPowerState(p3); // phaseAC = p4;
+  
+  setLED(AllPhaseState());
 
   if (!ACPowerState() || !AllPhaseState())// if (!phaseAC || !allPhase)
 	startTimerOn = false;
@@ -648,7 +645,7 @@ bool Motor_MGR::AllPhaseState()
 {
 	if(eeprom1->BYPASS)
 	{
-		if(!allPhase || ACPowerState() || (ACPowerState() && allPhase))
+		if(!allPhase || ACPowerState())
 			return true;
 		else
 			return false;
@@ -668,6 +665,7 @@ void Motor_MGR::operateOnEvent()
 {
   bool t3Phase, tMotor, tacPhase;
   readSensorState(t3Phase, tMotor, tacPhase);
+  eventOccured = false;
 
   if((t3Phase == AllPhaseState()) && (tMotor == motorState()) && (tacPhase == ACPowerState()))
   	return;
@@ -813,10 +811,10 @@ bool Motor_MGR::startMotorTimerOver()
   return (millis() - tempStartTimer >= (((unsigned long int)eeprom1->AUTOSTARTTIME * 1000)));
 }
 
-bool Motor_MGR::stopMotorTimerOver()
-{
-  return (millis() - tempStopTimer >= (stopTimerTime * 100));
-}
+// bool Motor_MGR::stopMotorTimerOver()
+// {
+  // return (millis() - tempStopTimer >= (stopTimerTime * 100));
+// }
 
 // bool Motor_MGR::waitCheckACTimerOver()
 // {
@@ -833,7 +831,15 @@ void Motor_MGR::unknownMotorOff()
 
 bool Motor_MGR::singlePhasingTimerOver()
 {
-  return (singlePhasingTimerOn && millis() - tempSinglePhasingTimer > (singlePhasingTime * 100));
+	// if(digitalRead(PIN_3PHASE)==LOW)
+	// {
+  		return (singlePhasingTimerOn && millis() - tempSinglePhasingTimer > ((unsigned int)singlePhasingTime * 100));
+	// }
+	// else
+	// {
+	// 	singlePhasingTimerOn=false;
+	// 	return false;
+	// }
 }
 
 inline void Motor_MGR::operateOnSinglePhasing()
@@ -898,14 +904,14 @@ void Motor_MGR::startMotor(bool commanded)
 	else
 	{
 	  if (commanded)
-		sim1->setMotorMGRResponse('O');
+		sim1->setMotorMGRResponse('1');		//motor is already on
 	}
   }
   else
   {
 	if (commanded)
 	{
-	  sim1->setMotorMGRResponse('L');	//cannot start motor due to some problem
+	  sim1->setMotorMGRResponse('N');	//cannot start motor due to some problem
 	}
 	else
 	{
@@ -938,7 +944,7 @@ void Motor_MGR::stopMotor(bool commanded, bool forceStop,bool offButton)
   else
   {
 	if (commanded)
-	  sim1->setMotorMGRResponse('O');
+	  sim1->setMotorMGRResponse('2');	//motor is already off
   }
 }
 
@@ -956,7 +962,7 @@ void Motor_MGR::terminateStopRelay()
 	  if (gotOffCommand)
 	  {
 		gotOffCommand = false;
-		sim1->setMotorMGRResponse('D');		//motor has stopped
+		sim1->setMotorMGRResponse('O');		//motor has stopped
 	  }
 	  else if(offButtonPressed)
 	  {
@@ -969,7 +975,7 @@ void Motor_MGR::terminateStopRelay()
 	  if (gotOffCommand)
 	  {
 		gotOffCommand = false;
-		sim1->setMotorMGRResponse('L');		//cannot turn off motor
+		sim1->setMotorMGRResponse('P');		//cannot turn off motor
 	  }
 	  else
 	  {
@@ -1008,22 +1014,23 @@ void Motor_MGR::terminateStartRelay()
 	// _NSerial->println("Over");
 // #endif
 
+	bool motor = getMotorState();
 	if (gotOnCommand)
 	{
 	  gotOnCommand = false;
-	  if (getMotorState())
+	  if (motor)
 	  {
-		sim1->setMotorMGRResponse('D'); // motor has started
+		sim1->setMotorMGRResponse('S'); // motor has started
 	  }
 	  else
 	  {
 		stopMotor(false, true);
-		sim1->setMotorMGRResponse('L');	//cannot start motor due to some problem
+		sim1->setMotorMGRResponse('N');	//cannot start motor due to some problem
 	  }
 	}
 	else
 	{
-	  if (getMotorState())
+	  if (motor)
 		simEventTemp[7] = sim1->registerEvent('S');// ;//register To SIM Motor has started
 	  else
 	  {
@@ -1036,22 +1043,27 @@ void Motor_MGR::terminateStartRelay()
 
 void Motor_MGR::statusOnCall()
 {
-  bool temp = getMotorState();
-  if (temp)
-	sim1->setMotorMGRResponse('D');	//motor is on
-  else
-  {
 	byte b = checkLineSensors();
-
 	if (b == AC_OFF)
+	{
 	  sim1->setMotorMGRResponse('L');	//motor off, no light
-		// else if (b == AC_1PH)	// power only in 1 phase
-	  // sim1->setMotorMGRResponse('A');	//motor off, no light
+	}
 	else if (b == AC_2PH)	//power only in 2 phase
+	{
 	  sim1->setMotorMGRResponse('A');
+	}
 	else if (b == AC_3PH)
-	  sim1->setMotorMGRResponse('O');	//motor off, light on
-  }
+	{
+		bool temp = getMotorState();
+	  	if (temp)
+	  	{
+			sim1->setMotorMGRResponse('1');	//motor is on
+	  	}
+		else
+		{
+		  	sim1->setMotorMGRResponse('3');	//motor off, light on
+		}
+	}
 }
 
 #ifdef ENABLE_M2M
@@ -1071,14 +1083,21 @@ void Motor_MGR::setM2MEventState(byte eventNo, byte state)
 
 void Motor_MGR::M2MEventManager()
 {
-	byte lim=2;
-	for(byte j = 0 ; j<lim; j++)
+	byte j=2;
+	while(j--)
 	{
 		if(m2mEvent[j]==ME_WAITREGISTER)
 		{
 			sim1->registerM2MEvent(j);
 		}
 	}
+	// for(byte j = 0 ; j<2; j++)
+	// {
+	// 	if(m2mEvent[j]==ME_WAITREGISTER)
+	// 	{
+	// 		sim1->registerM2MEvent(j);
+	// 	}
+	// }
 }
 #endif
 
@@ -1086,18 +1105,23 @@ void Motor_MGR::SIMEventManager()
 {
 	#ifdef ENABLE_WATER
 		#ifdef ENABLE_GP
-		byte j=19;
+		byte i=19;
 		#else
-		byte j=17;
+		byte i=17;
 		#endif
 	#else
-		byte j=12;
+		byte i=12;
 	#endif
-  for (byte i = 0; i < j; i++)
-  {
-	if (!simEventTemp[i])
-	  simEventTemp[i] = sim1->registerEvent(simEvent[i]);
-  }
+	while(i--)
+	{
+		if (!simEventTemp[i])
+		  simEventTemp[i] = sim1->registerEvent(simEvent[i]);
+	}
+ //  for (byte i = 0; i < j; i++)
+ //  {
+	// if (!simEventTemp[i])
+	//   simEventTemp[i] = sim1->registerEvent(simEvent[i]);
+ //  }
 }
 
 void Motor_MGR::setLED(bool t)
@@ -1108,18 +1132,37 @@ void Motor_MGR::setLED(bool t)
 
 bool Motor_MGR::checkSleepElligible()
 {
+	#ifdef ENABLE_WATER
+		#ifdef ENABLE_GP
+		byte j=19;
+		#else
+		byte j=17;
+		#endif
+	#else
+		byte j=12;
+	#endif
 	bool event=true;
-	byte i=12;
-	while(--i)
+	// byte i=12;
+	while(j--)
 	{
-		if(!simEventTemp[i]) 
+		if(!simEventTemp[j]) 
 		{
 			event=false;
 			break;
 		}
 	}
-	return (!ACPowerState() && event && !waitStableLineOn && !singlePhasingTimerOn
-			&& !startTimerOn && !stopTimerOn && !startSequenceOn && !stopSequenceOn); 	//!waitCheckACTimerOn &&
+	#ifdef ENABLE_M2M
+	if(event && m2mEvent[0] == ME_WAITREGISTER || m2mEvent[1]==ME_WAITREGISTER)
+		event=false;
+	#endif
+	
+	#ifdef ENABLE_WATER
+	return (!ACPowerState() && !eventOccured && !waterEventOccured && event && !waitStableLineOn && !singlePhasingTimerOn
+			&& !startTimerOn && !startSequenceOn && !stopSequenceOn); 	//!waitCheckACTimerOn &&
+	#else
+		return (!ACPowerState() && !eventOccured && event && !waitStableLineOn && !singlePhasingTimerOn
+			&& !startTimerOn && !startSequenceOn && !stopSequenceOn); 	//!waitCheckACTimerOn &&
+	#endif
 }
 
 void Motor_MGR::operateOnButtonEvent()
@@ -1127,16 +1170,68 @@ void Motor_MGR::operateOnButtonEvent()
 	buttonEventOccured=false;
 
 	if(digitalRead(PIN_STARTBUTTON)==LOW)
-		startMotor();
+	{
+		lastPressTime=millis();
+		lastButtonEvent=BTNEVENTSTART;
+	}
 	else if (digitalRead(PIN_STOPBUTTON)==LOW)
-		stopMotor(false,false,true);
+	{
+		lastPressTime=millis();
+		lastButtonEvent=BTNEVENTSTOP;
+	}
 	#ifndef ENABLE_GP
 	else if(digitalRead(PIN_AUTOBUTTON)==LOW)
 	{
-		if(millis() - lastPressTime > 500)
-		{
-			lastPressTime=millis();
+		lastButtonEvent=BTNEVENTAUTO;
+		lastPressTime=millis();
+	}
+	#endif	
 
+	#ifndef ENABLE_GP
+		byte pin = PIN_AUTOBUTTON;
+		if(lastButtonEvent == BTNEVENTSTART)  pin = PIN_STARTBUTTON;
+	#else
+		byte pin = PIN_STARTBUTTON;
+	#endif
+		if(lastButtonEvent == BTNEVENTSTOP)  pin = PIN_STOPBUTTON;
+	
+	if(digitalRead(pin)==HIGH)
+		lastButtonEvent=0;
+
+	// bool b= digitalRead(PIN_AUTOBUTTON);
+	// if(!b)		//auto button is pressed
+	// {
+	// 	if(millis() - lastPressTime > 500)
+	// 	{
+	// 		lastPressTime=millis();
+	// 	}
+	// }
+	// else if(b)		//auto button is released
+	// {
+	// 	if(millis()- lastPressTime > 100)		// operate on auto button press, only if pressed for more than 100 mills
+	// 	{
+	// }
+	// #endif
+}
+
+inline void Motor_MGR::buttonFilter()
+{
+	if(lastButtonEvent>0 && millis() - lastPressTime > 100)
+	{
+		if(lastButtonEvent==BTNEVENTSTART && digitalRead(PIN_STARTBUTTON)==LOW)
+		{
+				lastButtonEvent=0;
+				startMotor();
+		}
+		else if(lastButtonEvent==BTNEVENTSTOP && digitalRead(PIN_STOPBUTTON)==LOW)
+		{
+			lastButtonEvent=0;
+			stopMotor(false,false,true);
+		}
+		#ifndef ENABLE_GP
+		else if(lastButtonEvent==BTNEVENTAUTO && digitalRead(PIN_AUTOBUTTON)==LOW)
+		{
+			lastButtonEvent=0;
 	    	eeprom1->saveAutoStartSettings(!eeprom1->AUTOSTART);  //set AutoStart to True in EEPROM
 			resetAutoStart(true);
 			if(eeprom1->AUTOSTART)
@@ -1144,8 +1239,8 @@ void Motor_MGR::operateOnButtonEvent()
 			else
 				simEventTemp[11] = sim1->registerEvent('9');
 		}
+		#endif
 	}
-	#endif
 }
 
 void Motor_MGR::update()
@@ -1158,6 +1253,9 @@ void Motor_MGR::update()
 		if(buttonEventOccured)
 			operateOnButtonEvent();
 
+		if(lastButtonEvent) 
+			buttonFilter();
+
 		#ifdef ENABLE_WATER
 			if(waterEventOccured)
 				operateOnWaterEvent();
@@ -1166,25 +1264,40 @@ void Motor_MGR::update()
  //  if (!startSequenceOn && !stopSequenceOn && eventOccured)
 	// operateOnEvent();
 
-  if (waitStableLineOn)
-	if (waitStableLineOver())
+  if (waitStableLineOn && waitStableLineOver())
 	  operateOnStableLine();
+	// if ()
 
  //  if (waitCheckACTimerOn)
 	// if (waitCheckACTimerOver())
 	//   unknownMotorOff();
 
-  if (singlePhasingTimerOn)
-	if (singlePhasingTimerOver())
-	  operateOnSinglePhasing();
+	if(singlePhasingTimerOn)
+	{
+		bool b = digitalRead(PIN_3PHASE);
+		if(!b)		//3 phase pin is low
+		{
+			if(singlePhasingTimerOver())
+			{
+				operateOnSinglePhasing();
+			}
+		}
+		else
+		{
+			singlePhasingTimerOn=false;
+		}
+	}
+  // if (singlePhasingTimerOn && singlePhasingTimerOver())
+	 //  operateOnSinglePhasing();
+	// if ()
 
   if (startTimerOn)
 	if (startMotorTimerOver())
 	  startMotor();
 
-  if (stopTimerOn)
-	if (stopMotorTimerOver())
-	  stopMotor();
+ //  if (stopTimerOn)
+	// if (stopMotorTimerOver())
+	//   stopMotor();
 
   if (startSequenceOn)
 	terminateStartRelay();

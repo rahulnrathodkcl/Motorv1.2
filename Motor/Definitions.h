@@ -10,6 +10,9 @@
 #define TURN_ON true
 #define TURN_OFF false
 
+#define BTNEVENTSTART 1
+#define BTNEVENTSTOP 2
+#define BTNEVENTAUTO 3
 
 #define adminNumber F("7041196959")
 #define adminNumber1 F("7698439201")
@@ -30,8 +33,7 @@
 #define disable_debug 
 #define ENABLE_WATER
 #define ENABLE_GP
-#define ENABLE_M2M
-
+// #define ENABLE_M2M
 
 #ifdef ENABLE_M2M
 	#ifndef ENABLE_WATER
@@ -133,6 +135,12 @@
 #define m2mPresentAddress 88
 #define m2mVerifyAddress 92
 #define m2mNumberAddress 96
+
+#define noCallAddress 150
+#define noCallStartTimeHourAddress 152
+#define noCallStartTimeMinuteAddress 154
+#define noCallStopTimeHourAddress 156
+#define noCallStopTimeMinuteAddress 158
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304
