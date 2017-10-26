@@ -24,6 +24,7 @@ class S_EEPROM
     void loadDNDSettings();
     void loadBypassSettings();
     void loadResponseSettings();
+    void loadNoCallSettings();
     void loadCCID();
     void loadStarDeltaTimer();
 
@@ -66,6 +67,11 @@ class S_EEPROM
     byte AUTOSTART;
     byte BYPASS;
 
+    byte NCSTARTHOUR;
+    byte NCSTARTMINUTE;
+    byte NCSTOPHOUR;
+    byte NCSTOPMINUTE;
+    byte NOCALL;
 
     byte EVENTSTAGE;
     
@@ -103,7 +109,7 @@ class S_EEPROM
         #else
             void saveM2MSettings(bool);
             void addM2MRemoteNumber(String &number);
-            bool isM2MRemoteNumber(String &number);
+            bool isM2MRemoteNumber(String number);
 
             String getM2MRemoteNumber();
             void setM2MRemoteVerified(bool temp);
@@ -120,6 +126,7 @@ class S_EEPROM
     void saveBypassSettings(bool);
     void saveDNDSettings(bool);
     void saveResponseSettings(char);
+    void saveNoCallSettings(bool value,byte startHour=0,byte startMinute=0, byte stopHour=0, byte stopMinute=0);
     unsigned long int getProgramSize();
     byte getUpdateStatus();
     void discardUpdateStatus();

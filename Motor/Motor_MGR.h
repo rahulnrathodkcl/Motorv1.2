@@ -50,9 +50,9 @@ class Motor_MGR
     bool startTimerOn;
     unsigned long int tempStartTimer;
 
-    bool stopTimerOn;
-    unsigned long int tempStopTimer;
-    unsigned int stopTimerTime;
+    // bool stopTimerOn;
+    // unsigned long int tempStopTimer;
+    // unsigned int stopTimerTime;
 
     // bool waitCheckACTimerOn;
     // unsigned long tempWaitCheckACTimer;
@@ -76,7 +76,8 @@ class Motor_MGR
     byte waitStableLineTime;
 
     unsigned long lastPressTime;
-
+    byte lastButtonEvent;
+    
     #ifdef ENABLE_WATER
         bool lowLevelSensor;
         bool midLevelSensor;
@@ -124,9 +125,7 @@ class Motor_MGR
     void operateOnStableLine();
 
     bool startMotorTimerOver();
-    bool stopMotorTimerOver();
-
-
+    // bool stopMotorTimerOver();
     // void setACPowerState(bool b);
 
     bool singlePhasingTimerOver();
@@ -143,6 +142,7 @@ class Motor_MGR
 
     void SIMEventManager();
     void setLED(bool);
+    inline void buttonFilter();
 
 
 #ifndef disable_debug

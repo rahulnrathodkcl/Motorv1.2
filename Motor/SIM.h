@@ -19,6 +19,13 @@ class SIM
     S_EEPROM* eeprom1;
     Motor_MGR* motor1;
 
+    #ifndef ENABLE_M2M
+    unsigned long lastSetTime;
+    byte globalMinutes;
+    byte globalHours;
+    #endif
+
+    bool isRegisteredNumber;
     bool responseToAction;
     // String adminNumber;
     byte soundWaitTime; //x100 = mSec
@@ -53,19 +60,15 @@ class SIM
     byte nr;
     bool callAccepted;
 
-    bool retryOn;
-
+    byte retries;
     // bool makeResponse;
     #ifdef ENABLE_M2M
-
     bool m2mAck;
     byte m2mEventCalls;
     
-
     bool m2mEventStaged;
     // unsigned long tempM2MEventStageTime;
     // byte stagedM2MEventNo;
-
     bool m2mEvent;
     byte m2mEventNo;
 
@@ -122,11 +125,14 @@ class SIM
 
     bool isCCID(String &str);
     bool isCUSD(String &str);
+
+    bool isCCLK(String &Str);
+
     bool isCBC(String &);
     bool isCSQ(String &);
     bool sendBlockingATCommand(String,bool =false);
     String readString();
-    bool matchString(String, String);
+    // bool matchString(String, String);
     bool stringContains(String &sstr, String mstr, byte sstart, byte sstop);
     bool isRinging(String);
     bool isDTMF(String &s);
@@ -173,6 +179,12 @@ class SIM
     void operateOnStagedEvent();
     void sendDTMFTone(byte);
 
+    #ifndef ENABLE_M2M
+    void setTime();
+    void updateTime();
+    bool checkNoCallTime();
+    #endif
+    // inline bool checkValidTime(byte &,byte &);
     
 #ifndef disable_debug
 #ifdef software_SIM

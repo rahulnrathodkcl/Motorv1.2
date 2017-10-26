@@ -10,8 +10,16 @@
 #define TURN_ON true
 #define TURN_OFF false
 
+#define BTNEVENTSTART 1
+#define BTNEVENTSTOP 2
+#define BTNEVENTAUTO 3
 
 #define adminNumber F("7041196959")
+#define adminNumber1 F("7698439201")
+#define adminNumber2 F("7383614214")
+#define adminNumber3 F("7383622678")
+#define adminNumber4 F("9586135978")
+
 #define STR_SAPBR_PARAM "AT+SAPBR=3,1,\""
 #define STR_SAPBR_GPRS "ConType\",\"GPRS\"\r\n"
 #define STR_SAPBR_APN "APN\",\""
@@ -25,8 +33,7 @@
 #define disable_debug 
 #define ENABLE_WATER
 #define ENABLE_GP
-#define ENABLE_M2M
-
+// #define ENABLE_M2M
 
 #ifdef ENABLE_M2M
 	#ifndef ENABLE_WATER
@@ -128,6 +135,12 @@
 #define m2mPresentAddress 88
 #define m2mVerifyAddress 92
 #define m2mNumberAddress 96
+
+#define noCallAddress 150
+#define noCallStartTimeHourAddress 152
+#define noCallStartTimeMinuteAddress 154
+#define noCallStopTimeHourAddress 156
+#define noCallStopTimeMinuteAddress 158
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304
