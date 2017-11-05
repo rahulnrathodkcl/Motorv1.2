@@ -134,6 +134,9 @@ class S_EEPROM
     void saveProgramSize(unsigned long int);
     void updateFirmware(bool,bool);
 
+    bool getLowVolt();
+    void setLowVolt(bool);
+
     void setCCID(String &);
     bool getCCID(String &);
 

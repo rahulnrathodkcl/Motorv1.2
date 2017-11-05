@@ -46,15 +46,15 @@ SIM::SIM(HardwareSerial* serial)
 
 void SIM::anotherConstructor()
 {
- #ifndef ENABLE_M2M
-  lastSetTime=0;
-  #endif
+ // #ifndef ENABLE_M2M
+ //  lastSetTime=0;
+ //  #endif
   // adminNumber = "7041196959";
   initialized = false;
   inCall=false;
   // balStr.reserve(12);
 
-  acceptCommandsTime = 200;
+  acceptCommandsTime = 150;
   commandsAccepted = false;
 
   // pinMode(PIN_RING,INPUT);
@@ -723,6 +723,8 @@ void SIM::stopCallWaiting()
 #ifndef ENABLE_M2M
 bool SIM::checkNoCallTime()
 {
+  byte globalHours, globalMinutes;
+  getSystemTime(globalHours,globalMinutes);
   if(globalHours >= (eeprom1->NCSTARTHOUR) && globalHours <=(eeprom1->NCSTOPHOUR))
   {
     if(eeprom1->NCSTARTHOUR==eeprom1->NCSTOPHOUR)
@@ -1011,19 +1013,26 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       eeprom1->saveNoCallSettings(false);
       done=true;
     }
+    else if(str.startsWith(F("GETTIME")))
+    {
+      byte globalHours,globalMinutes;
+      getSystemTime(globalHours,globalMinutes);
+      String strTime = F("TIME:");
+      strTime.concat(globalHours);
+      strTime.concat(globalMinutes);
+      sendSMS(strTime, true);
+      processed=true;
+    }
     else if(stringContains(str,F("SETTIME"),7,11))
     {
-      byte tempTime = (str.substring(0,2)).toInt();
-      if(tempTime>=0 && tempTime<24)
-      {
-        globalHours=tempTime;
-        tempTime = (str.substring(2,4)).toInt();
-        if(tempTime>=0 && tempTime<60)
-        {
-          globalMinutes=(str.substring(2,4)).toInt();
-          done=true;
-        }
-      }
+      // "yy/MM/dd,hh:mm:ss±zz"
+      String strTime = F("AT+CCLK=\"17/10/30,");
+      strTime.concat(str.substring(0,2));
+      strTime.concat(":");
+      strTime.concat(str.substring(2,4));
+      strTime.concat(":00+22");
+      done=true;
+      
     }
     else if(stringContains(str,F("NCTIME"),6,15))
     {
@@ -1051,7 +1060,6 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
             }
           }
         }
-        
       }
     }
     #endif
@@ -1322,9 +1330,9 @@ bool SIM::initialize()
             sendBlockingATCommand(F("AT+CSCLK=1\r\n"));   //slow clocking mode
             sendBlockingATCommand(F("AT+CLTS=1\r\n"));    //enable time update by network
             sendBlockingATCommand(F("AT&W\r\n"));
-            #ifndef ENABLE_M2M
-              setTime();
-            #endif
+            // #ifndef ENABLE_M2M
+            //   setTime();
+            // #endif
 
     #ifndef disable_debug
             _NSerial->println("INIT");
@@ -1901,7 +1909,7 @@ inline void SIM::subDTMF()
 void SIM::operateRing()
 {
   nr++;
-  if (nr <= 3)
+  if (nr <= 4)
   {
     if (nr == 1)
     {
@@ -1926,19 +1934,19 @@ void SIM::operateRing()
             isRegisteredNumber = checkNumber(str);  //   endCall();
       }
     }
-
-    if(isRegisteredNumber)
-    {
-      callCutWait = millis();
-      acceptCall();      
-    }
   }
-  else if (nr >= 4)
+  else if (nr >= 5)
   {
     if(!isRegisteredNumber)
     {
       endCall();
     }
+  }
+  
+  if(isRegisteredNumber)
+  {
+    callCutWait = millis();
+    acceptCall();      
   }
 }
 
@@ -2297,43 +2305,70 @@ void SIM::sendDTMFTone(byte eventNo)
 }
 
 
+unsigned short int SIM::getBatVolt()
+{
+  unsigned short int retVal=0;
+  String str = F("AT+CBC");
+  // +CBC: 0,76,4010
+        // batPer = (str.substring(0,str.lastIndexOf(","))).toInt();
+
+  if(getBlockingResponse(str,&SIM::isCBC))
+  {
+    byte temp2 = str.lastIndexOf(",");
+    retVal = (str.substring(temp2+1,temp2+4)).toInt();
+  }
+  return retVal;
+}
+
 #ifndef ENABLE_M2M
-void SIM::setTime()
+// void SIM::setSystemTime(String time)
+// {
+//     globalHours=(time.substring(0,2)).toInt();
+//     globalMinutes=(time.substring(2,4)).toInt();
+//     globalSeconds=0;
+// }
+
+
+void SIM::getSystemTime(byte &Hours, byte &Minutes)
 {
   String time = F("AT+CCLK?");
   if(getBlockingResponse(time,&SIM::isCCLK))
   {
     // +CCLK: "17/10/17,15:12:50+22"
-    globalHours=(time.substring(0,2)).toInt();
-    globalMinutes=(time.substring(3,5)).toInt();
+    Hours=(time.substring(0,2)).toInt();
+    Minutes=(time.substring(3,5)).toInt();
+    // globalSeconds=0;
   }
 }
 
-void SIM::updateTime()
-{
-  if(millis()-lastSetTime>=60000L)
-  {
-    lastSetTime=millis();
-    globalMinutes++;
-    if(globalMinutes>=60)
-    {
-      globalMinutes-=60;
-      globalHours++;
-      if(globalHours>23)
-      {
-          globalHours=0;
-          setTime();
-      }
-    }
-  } 
-}
+// void SIM::updateTime()
+// {
+//   // triggerTimeUpdate=false;
+//   globalSeconds+=8;
+//   if(globalSeconds>59)
+//   {
+//     globalSeconds-=60;
+//     globalMinutes++;
+//     if(globalMinutes>59)
+//     {
+//       globalMinutes-=60;
+//       globalHours++;
+//       if(globalHours>23)
+//       {
+//           globalHours=0;
+//           // setTime();
+//       }
+//     }
+//   }
+// }
 #endif
 
 void SIM::update()
 {
-  #ifndef ENABLE_M2M
-    updateTime();
-  #endif
+  // #ifndef ENABLE_M2M
+    // if(triggerTimeUpdate)
+      // updateTime();
+  // #endif
 
   if(inInterrupt && checkEventGone())
     inInterrupt=false;

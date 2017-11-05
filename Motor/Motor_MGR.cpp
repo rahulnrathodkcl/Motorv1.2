@@ -192,6 +192,7 @@ byte Motor_MGR::getOverHeadWaterSensorState()
 	// olow=overHeadLowSensorState();
 	// ohigh=overHeadHighSensorState();
 	readOverHeadWaterSensorState(olow,ohigh);
+	
 	byte ans=0;
 	if(!olow)
 	{
@@ -539,7 +540,7 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3)
   motorState(p2); // mFeedback = p2;
   ACPowerState(p3); // phaseAC = p4;
   
-  setLED(AllPhaseState());
+  setLED(AllPhaseState() && ACPowerState());
 
   if (!ACPowerState() || !AllPhaseState())// if (!phaseAC || !allPhase)
 	startTimerOn = false;

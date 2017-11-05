@@ -2,30 +2,34 @@
 #include "Motor_MGR.h"
 #include "SIM.h"
 #include "S_EEPROM.h"
+#define sleepWaitTime 10000
 
 S_EEPROM eeprom1;
 
-bool batStatus;
-bool batLevelChange=false;
-
-
+// bool batStatus;
+// bool batLevelChange=false;
 String str;
 bool simDebugMode = false;
 bool initialized = false;
 // bool checkedUpdate=false;
 bool initCFUN=false;
 
+unsigned long lastBatCheckTime;
+byte batSignals;
+volatile bool checkBat=false;
+volatile bool wdtEvent=false;
+bool initTurnOn=false;
+volatile byte wdtovr;
+
 unsigned short temp=0;
 bool led=true;
 bool initSleepSeqeunce=false;
 unsigned long tempSleepWait=0;
-unsigned short sleepWaitTime=20000;
 
 
 unsigned long tempTurnoffTime=0;
 bool turnOffTimerOn=false;
-bool gotLowBatEvent=false;
-bool initTurnOn=false;
+// bool gotLowBatEvent=false;
 
 // Function Pototype
 // void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
@@ -62,24 +66,44 @@ Motor_MGR motor1(&sim1, &eeprom1);
 
 void setup() {
   byte b=MCUSR;
-  pinMode(PIN_TURNOFF,OUTPUT);
-  digitalWrite(PIN_TURNOFF,LOW);
-  pinMode(PIN_BATLEVEL,INPUT_PULLUP);
 
-  if(digitalRead(PIN_BATLEVEL)==LOW)
-  {
-    batStatus=false;
-    digitalWrite(PIN_TURNOFF,LOW);
-  }
+  pinMode(PIN_TURNOFF,OUTPUT);
+  if(eeprom1.getLowVolt())
+    digitalWrite(PIN_TURNOFF,LOW);     // pull down gate of mosfet to start it
   else
+    digitalWrite(PIN_TURNOFF,HIGH);     // pull down gate of mosfet to start it
+
+
+  eeprom1.loadAllData();
+  sim1.setClassReference(&eeprom1, &motor1);
+   Serial.begin(19200);
+#ifndef disable_debug
+  USART1->begin(19200);
+  if (b & _BV(BORF))
   {
-    digitalWrite(PIN_TURNOFF,HIGH);
-    batStatus=true;
+    USART1->println(F("BO Reset"));
   }
+#endif
+
+
+ 
+  // digitalWrite(PIN_TURNOFF,LOW);
+  // pinMode(PIN_BATLEVEL,INPUT_PULLUP);
+
+  // if(digitalRead(PIN_BATLEVEL)==LOW)
+  // {
+  //   batStatus=false;
+  //   digitalWrite(PIN_TURNOFF,LOW);
+  // }
+  // else
+  // {
+  //   digitalWrite(PIN_TURNOFF,HIGH);
+  //   batStatus=true;
+  // }
 
   PCICR |= (1 << PCIE0);    // set PCIE0 to enable PCMSK0 scan
   PCICR |= (1 << PCIE1);    // set PCIE0 to enable PCMSK1 scan
-  PCMSK0 |= (1 << PCINT1);  // set PCINT1 to trigger an interrupt on state change
+  // PCMSK0 |= (1 << PCINT1);  // set PCINT1 to trigger an interrupt on state change
   PCMSK1 |= (1 << PCINT8);    //set PCINT8 to trigger interrupt (OFF BUTTON)
   PCMSK1 |= (1 << PCINT9);    //set PCINT9 to trigger interrupt (ON BUTTON)
   PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)  OR (OVERHEAD LOW SENSOR)
@@ -96,22 +120,13 @@ void setup() {
 
   noInterrupts();
   watchdogConfig(WATCHDOG_OFF);
+  watchdogConfig(I_WATCHDOG_8S);
   // wdt_init();
   // put your setup code here, to run once:
   interrupts();
 
-  Serial.begin(19200);
-#ifndef disable_debug
-  USART1->begin(19200);
-  if (b & _BV(BORF))
-  {
-    USART1->println(F("BO Reset"));
-  }
-#endif
-
   pinMode(PIN_3PHASELED,OUTPUT);
   
-  eeprom1.loadAllData();
   // pinMode(8,OUTPUT);
   // pinMode(12,OUTPUT);
   // pinMode(A1,OUTPUT);
@@ -131,12 +146,11 @@ void setup() {
   // attachInterrupt(digitalPinToInterrupt(PIN_PHASE2),IVR_PHASE,CHANGE);
   // attachInterrupt(digitalPinToInterrupt(PIN_ACPHASE),IVR_PHASE,CHANGE);
 
-  sim1.setClassReference(&eeprom1, &motor1);
+
 #ifndef disable_debug
   USART1->println("ST");
 #endif
 }
-
 
 void watchdogConfig(uint8_t x) {
   WDTCSR = _BV(WDCE) | _BV(WDE);
@@ -173,15 +187,14 @@ ISR(PCINT2_vect)
 
 ISR(PCINT0_vect)
 {
-  byte b = digitalRead(PIN_BATLEVEL);
-  if(b==batStatus)
+  // byte b = digitalRead(PIN_BATLEVEL);
+  // if(b==batStatus)
     motor1.eventOccured = true;
-  else
-  {
-    batStatus=b;
-    batLevelChange=true;
-  }
-
+  // else
+  // {
+  //   batStatus=b;
+  //   batLevelChange=true;
+  // }
   #ifndef disable_debug
     USART1->println("PCI");
   #endif
@@ -194,6 +207,21 @@ ISR(BADISR_vect)
   USART1->println("!");
   USART1->println(MCUSR);
 #endif
+}
+
+ISR(WDT_vect)
+{
+  wdtEvent=true;
+  wdtovr++;         //add 8 seconds to the wdt run time
+  if(wdtovr>45)       // wdt run for more than 5 minutes than
+  {
+    if(!motor1.ACPowerState())
+      checkBat=true;
+    wdtovr=0;
+  }
+  // #ifndef ENABLE_M2M
+  //   sim1.updateTime();     // update no call time 
+  // #endif
 }
 
 // ISR(PCINT2_vect)
@@ -297,6 +325,7 @@ void operateOnSleepElligible()
       #endif
         byte cnt=6;
         bool led=false;
+        // wdtovr=0;
         do
         {
             led=!led;
@@ -309,7 +338,13 @@ void operateOnSleepElligible()
             while(millis()-tempSleepWait<200)
             {}
         }while(--cnt);               
-        gotoSleep();
+        
+        do                // loop for going to sleep after waking up at 8s due to wdt, until 5minutes have completed.
+        {
+            wdtEvent=false;
+            gotoSleep();
+        } while(wdtEvent && !checkBat);
+        
         initSleepSeqeunce=false;      //after wakeup 
 
         // sim1.setNetLight(L_REGULAR);
@@ -318,7 +353,6 @@ void operateOnSleepElligible()
         USART1->print(F("WakeUp :"));
         USART1->println(millis());
       #endif
-
     }
 }
 
@@ -351,62 +385,116 @@ void gotoSleep()
   power_all_enable();
 }
 
+inline void stopCheckBattery()
+{
+  checkBat=false;
+  batSignals=0;
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
-    // if(digitalRead(PIN_BATLEVEL)==HIGH)
-      // digitalWrite(PIN_TURNOFF,HIGH);
+  // if(digitalRead(PIN_BATLEVEL)==HIGH)
+  // digitalWrite(PIN_TURNOFF,HIGH);
+  if(checkBat)
+  {
+      if(sim1.checkNotInCall() && !sim1.busy())
+      {
+        if(millis()-lastBatCheckTime>1000)
+        {
+          bool gotLowBatEvent = (bool)(sim1.getBatVolt()<=BVTHRESHOLD);
+          batSignals++;
+          lastBatCheckTime=millis();
+          if(!gotLowBatEvent)
+          {
+            stopCheckBattery();
+          }
+          else if(batSignals>2)
+          {
+            tempTurnoffTime=millis();
+            turnOffTimerOn=true;
+            stopCheckBattery();
+          }
+        }
+      }
+  }
 
   if(turnOffTimerOn)
   {
     if(millis()-tempTurnoffTime>10000)
     {
       turnOffTimerOn=false;
-      if(!batStatus && sim1.checkNotInCall())
+      if(sim1.checkNotInCall() && sim1.getBatVolt()<=BVTHRESHOLD)
       {
         #ifndef disable_debug
         USART1->println(F("OFF"));
         #endif
         digitalWrite(PIN_TURNOFF,LOW);  
       }
-      // else
-        // turnOffTimerOn=false;
     }    
   }
 
-  if(batLevelChange)
-  {
-    batLevelChange=false;
-    // gotLowBatEvent=!batStatus;
-    // if(!batStatus)// && sim1.checkNotInCall() && !sim1.busy())
-    //   {
-    //     #ifndef disable_debug
-    //       USART1->println(F("LOW B 1"));
-    //     #endif
-    //     gotLowBatEvent=true;
-    //   }
-    // else
-    if(!(gotLowBatEvent=!batStatus))
-    {
-      // gotLowBatEvent=false;
-      digitalWrite(PIN_TURNOFF,HIGH);
-      if(!initTurnOn)
-        initTurnOn=true;
-    }
-  }
+  // if(batLevelChange)
+  // {
+  //   batLevelChange=false;
+  //   // gotLowBatEvent=!batStatus;
+  //   // if(!batStatus)// && sim1.checkNotInCall() && !sim1.busy())
+  //   //   {
+  //   //     #ifndef disable_debug
+  //   //       USART1->println(F("LOW B 1"));
+  //   //     #endif
+  //   //     gotLowBatEvent=true;
+  //   //   }
+  //   // else
+  //   if(!(gotLowBatEvent=!batStatus))
+  //   {
+  //     // gotLowBatEvent=false;
+  //     digitalWrite(PIN_TURNOFF,HIGH);
+  //     if(!initTurnOn)
+  //       initTurnOn=true;
+  //   }
+  // }
 
-  if(gotLowBatEvent && sim1.checkNotInCall() && !sim1.busy())
-  {
-        gotLowBatEvent=false;
-        tempTurnoffTime=millis();
-        turnOffTimerOn=true;
-        #ifndef disable_debug
-        USART1->println(F("LOW"));
-        #endif
-  }
+  // if(gotLowBatEvent && sim1.checkNotInCall() && !sim1.busy())
+  // {
+  //       gotLowBatEvent=false;
+  //       tempTurnoffTime=millis();
+  //       turnOffTimerOn=true;
+  //       #ifndef disable_debug
+  //       USART1->println(F("LOW"));
+  //       #endif
+  // }
 
   if (!initialized)
-  {  
-    if(!initCFUN && millis() >= 2000)
+  {
+    if(!initTurnOn && millis()>=8000)
+    {
+      unsigned short int bVoltage = sim1.getBatVolt();
+      if((bVoltage>BVTHRESHOLD))     // if sufficient battery voltage
+      {
+        digitalWrite(PIN_TURNOFF,HIGH);     // pull down gate of mosfet to start it
+        initTurnOn=true;
+        eeprom1.setLowVolt(false);
+        // digitalWrite(PIN_AUTOLED,HIGH);
+        // delay(200);
+        // digitalWrite(PIN_AUTOLED,LOW);
+      }
+      else
+      {
+        eeprom1.setLowVolt(true);
+        // digitalWrite(PIN_MOTORLED,HIGH);
+        // delay(200);
+        // digitalWrite(PIN_MOTORLED,LOW);
+        // if(bVoltage==0)
+        // {
+        //   delay(200);
+        //   digitalWrite(PIN_MOTORLED,HIGH);
+        //   delay(200);
+        //   digitalWrite(PIN_MOTORLED,LOW);
+        // }
+        digitalWrite(PIN_TURNOFF,LOW);     // pull down gate of mosfet to start it
+      }
+    }
+    if(!initCFUN && millis() >= 3000)
     {
       sim1.startSIMAfterUpdate();
       initCFUN=true;
@@ -511,7 +599,9 @@ void loop() {
   motor1.update();
 
   if(checkSleepElligible())
+  {
     operateOnSleepElligible();
+  }
   else
   {
     initSleepSeqeunce=false;

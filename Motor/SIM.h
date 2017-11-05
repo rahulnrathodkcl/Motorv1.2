@@ -19,11 +19,12 @@ class SIM
     S_EEPROM* eeprom1;
     Motor_MGR* motor1;
 
-    #ifndef ENABLE_M2M
-    unsigned long lastSetTime;
-    byte globalMinutes;
-    byte globalHours;
-    #endif
+    // #ifndef ENABLE_M2M
+    // unsigned long lastSetTime;
+    // byte globalMinutes;
+    // byte globalHours;
+    // byte globalSeconds;
+    // #endif
 
     bool isRegisteredNumber;
     bool responseToAction;
@@ -180,8 +181,7 @@ class SIM
     void sendDTMFTone(byte);
 
     #ifndef ENABLE_M2M
-    void setTime();
-    void updateTime();
+    void getSystemTime(byte &h, byte &m);
     bool checkNoCallTime();
     #endif
     // inline bool checkValidTime(byte &,byte &);
@@ -204,6 +204,9 @@ class SIM
 
   public:
 
+    // #ifndef ENABLE_M2M
+    //     bool triggerTimeUpdate;
+    // #endif
     bool initialized;
     // -- Used with interrupt RING
     bool inInterrupt;
@@ -223,6 +226,7 @@ class SIM
     SIM(HardwareSerial* serial);
 #endif
 #endif
+    unsigned short int getBatVolt();
     void startSIMAfterUpdate();
     void sendUpdateStatus(byte);
     void sendCommand(char cmd, bool newline);
@@ -240,6 +244,7 @@ class SIM
     void setCallBackFunctions(void (*ImdEvent)(bool));
     bool busy();
     // void setNetLight(byte);
+    // void updateTime();
 
     void setMotorMGRResponse(char status);
     bool checkSleepElligible();

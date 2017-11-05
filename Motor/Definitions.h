@@ -10,6 +10,8 @@
 #define TURN_ON true
 #define TURN_OFF false
 
+#define BVTHRESHOLD 363
+
 #define BTNEVENTSTART 1
 #define BTNEVENTSTOP 2
 #define BTNEVENTAUTO 3
@@ -27,13 +29,16 @@
 #define STR_SAPBR_STOP "AT+SAPBR=0,1\r\n"
 
 #define WATCHDOG_OFF    (0)
+#define I_WATCHDOG_8S     (_BV(WDP3) | _BV(WDP0) | _BV(WDIE))
+#define I_WATCHDOG_4S     (_BV(WDP3) | _BV(WDIE))
+
 
 #define MAXNUMBERS 15
 
 #define disable_debug 
-#define ENABLE_WATER
-#define ENABLE_GP
-#define ENABLE_M2M
+// #define ENABLE_WATER
+// #define ENABLE_GP
+// #define ENABLE_M2M
 
 #ifdef ENABLE_M2M
 	#ifndef ENABLE_WATER
@@ -63,7 +68,7 @@
 #define PIN_3PHASE 10
 #define PIN_MFEEDBACK 11
 #define PIN_ACFEEDBACK 12
-#define PIN_BATLEVEL 9
+// #define PIN_BATLEVEL 9
 #define PIN_TURNOFF 8
 
 #define PIN_ACPHASE 3
@@ -141,6 +146,7 @@
 #define noCallStartTimeMinuteAddress 154
 #define noCallStopTimeHourAddress 156
 #define noCallStopTimeMinuteAddress 158
+#define lowVoltAddress 160
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304

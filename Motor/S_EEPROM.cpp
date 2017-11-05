@@ -548,6 +548,18 @@ void S_EEPROM::loadNoCallSettings()
 //   // }
 // }
 
+bool S_EEPROM::getLowVolt()
+{
+  byte temp;
+  EEPROM.get(lowVoltAddress, temp);
+  return (bool)temp;
+}
+
+void S_EEPROM::setLowVolt(bool temp)
+{
+    EEPROM.put(lowVoltAddress,(byte)temp);
+}
+
 void S_EEPROM::loadCCID()
 {
   EEPROM.get(simCCIDPresentAddress, simCCIDPresent);
