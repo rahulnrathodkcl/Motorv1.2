@@ -575,7 +575,7 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3)
   		#ifndef ENABLE_GP
 	    digitalWrite(PIN_AUTOLED,HIGH); 	//AUTO LED is turned on.
   		#endif
-		if (AllPhaseState())				//auto start is on , and AC is Present in 3 phase, so , can start with switch or external force.
+		if (AllPhaseState() && !stopSequenceOn)				//auto start is on , and AC is Present in 3 phase, so , can start with switch or external force.
 		{
 			digitalWrite(PIN_MSTOP,LOW);
 		}

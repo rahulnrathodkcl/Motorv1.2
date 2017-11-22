@@ -66,6 +66,7 @@ Motor_MGR motor1(&sim1, &eeprom1);
 
 void setup() {
   byte b=MCUSR;
+  pinMode(PIN_BATLEVEL,INPUT_PULLUP);
 
   pinMode(PIN_TURNOFF,OUTPUT);
   if(eeprom1.getLowVolt())
@@ -88,7 +89,6 @@ void setup() {
 
  
   // digitalWrite(PIN_TURNOFF,LOW);
-  // pinMode(PIN_BATLEVEL,INPUT_PULLUP);
 
   // if(digitalRead(PIN_BATLEVEL)==LOW)
   // {

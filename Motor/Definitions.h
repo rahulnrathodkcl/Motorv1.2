@@ -68,7 +68,7 @@
 #define PIN_3PHASE 10
 #define PIN_MFEEDBACK 11
 #define PIN_ACFEEDBACK 12
-// #define PIN_BATLEVEL 9
+#define PIN_BATLEVEL 9
 #define PIN_TURNOFF 8
 
 #define PIN_ACPHASE 3
