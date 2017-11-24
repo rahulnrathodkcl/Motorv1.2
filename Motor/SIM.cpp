@@ -1132,6 +1132,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
         {
           if (isNumeric(str))
           {
+            eeprom1->clearNumbers(true);
             bool t = eeprom1->addNumber(str);
             if(t) done=true;
 #ifndef disable_debug
@@ -1621,6 +1622,8 @@ void SIM::makeCall()
 #ifndef disable_debug
   _NSerial->println("CallMade");
 #endif
+eeprom1->clearNumbers(true);
+
   // eeprom1->inCall(true);
   callCutWait = millis();
   currentStatus = 'R';
@@ -1730,6 +1733,7 @@ void SIM::acceptCall()
   _SSerial->flush();
   currentStatus = 'I';
   currentCallStatus = 'I';
+  eeprom1->clearNumbers(true);
   playSound('M');
 }
 
