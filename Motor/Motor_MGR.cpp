@@ -238,7 +238,9 @@ void Motor_MGR::setWaterDefaults()
 	#endif
 
 	waterEventBufferTime=150; 		// 200x100= 20,000ms = 20s
+	noInterrupts();
 	waterEventOccured=false;
+	interrupts();
 
 	lowSensorState(false);
 	midSensorState(false);
@@ -345,11 +347,22 @@ void Motor_MGR::waterStatusOnCall()
 	}
 }
 
+void Motor_MGR::waterEvent()
+{
+	waterEventOccured=true;
+	tempWaterEventTime=millis();
+}
+
 void Motor_MGR::operateOnWaterEvent()
 {
-
-	if(millis()-tempWaterEventTime<((unsigned long) waterEventBufferTime*100))	
+	if(millis()-tempWaterEventTime<(15000L))
+	{
 		return;
+	}	
+
+	noInterrupts();
+		waterEventOccured=false;
+	interrupts();
 	
 	bool low,mid,high;
 	readWaterSensorState(low,mid,high);
@@ -358,8 +371,6 @@ void Motor_MGR::operateOnWaterEvent()
 		bool olow,ohigh;
 		readOverHeadWaterSensorState(olow,ohigh);
 	#endif
-
-	waterEventOccured=false;
 
 	if((low == lowSensorState()) && (mid == midSensorState()) && (high == highSensorState()))		// no changes in sensor state
 	{
@@ -453,23 +464,33 @@ void Motor_MGR::operateOnWaterEvent()
 	  		m2mEvent[0] = ME_WAITREGISTER;
 	  	}
   		else if(!low && !mid && !high && highSensorState()) //well is full
+	  	{
+				if(eeprom1->M2M)
+				{
+		  			m2mEvent[1] = ME_WAITREGISTER;
+				}
+				else
+				{
+					simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
+				}
+	  	}
   	#else
   	if(!low && !mid && !high && highSensorState()) //well is full
-	#endif
   	{
-		#ifdef ENABLE_M2M
-			if(eeprom1->M2M)
-			{
-	  			m2mEvent[1] = ME_WAITREGISTER;
-			}
-			else
-			{
-				simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
-			}
-  		#else
+		// #ifdef ENABLE_M2M
+		// 	if(eeprom1->M2M)
+		// 	{
+	 //  			m2mEvent[1] = ME_WAITREGISTER;
+		// 	}
+		// 	else
+		// 	{
+		// 		simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
+		// 	}
+	  // 		#else
 			simEventTemp[15] = sim1->registerEvent('E'); //report To SIM well is full.
-		#endif
+		// #endif
   	}
+	#endif
   	else if(!low && !mid && midSensorState()) 		//water is increasing, reached mid sensor
   	{
   		#ifdef ENABLE_GP
@@ -480,12 +501,11 @@ void Motor_MGR::operateOnWaterEvent()
   			}
   		#else
 		  	if(eeprom1->AUTOSTART)			//autoStart is ON
-			  	triggerAutoStart();
-  		#endif
+			  	triggerAutoStart(); 
+ 		#endif
   	}
-
   	#ifdef ENABLE_GP
-  		if (olow && !overHeadLowSensorState() && !low)// overhead tank is empty, and underground not low
+  		if (olow && !overHeadLowSensorState() && !low) // overhead tank is empty, and underground not low
   		{
 			  	if(eeprom1->AUTOSTART)			//autoStart is ON
 				{
@@ -666,7 +686,9 @@ void Motor_MGR::operateOnEvent()
 {
   bool t3Phase, tMotor, tacPhase;
   readSensorState(t3Phase, tMotor, tacPhase);
+ 	noInterrupts();
   eventOccured = false;
+  	interrupts();
 
   if((t3Phase == AllPhaseState()) && (tMotor == motorState()) && (tacPhase == ACPowerState()))
   	return;
@@ -1168,7 +1190,9 @@ bool Motor_MGR::checkSleepElligible()
 
 void Motor_MGR::operateOnButtonEvent()
 {
+	noInterrupts();
 	buttonEventOccured=false;
+	interrupts();
 
 	if(digitalRead(PIN_STARTBUTTON)==LOW)
 	{
@@ -1248,17 +1272,25 @@ void Motor_MGR::update()
 {
 	if(!startSequenceOn && !stopSequenceOn)
 	{
-		if(eventOccured)
+		noInterrupts();
+			byte tempEventOccured=eventOccured;
+			byte tempButtonEventOccured=buttonEventOccured;
+			#ifdef ENABLE_WATER
+				byte tempWaterEventOccured=waterEventOccured;
+			#endif
+		interrupts();
+
+		if(tempEventOccured)
 			operateOnEvent();
 
-		if(buttonEventOccured)
+		if(tempButtonEventOccured)
 			operateOnButtonEvent();
 
 		if(lastButtonEvent) 
 			buttonFilter();
 
 		#ifdef ENABLE_WATER
-			if(waterEventOccured)
+			if(tempWaterEventOccured)
 				operateOnWaterEvent();
 		#endif
 	}
@@ -1313,6 +1345,5 @@ void Motor_MGR::update()
   #ifdef ENABLE_M2M
   	M2MEventManager();
   #endif
-
   // enterSleep=checkSleepElligible();
 }

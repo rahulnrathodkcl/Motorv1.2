@@ -165,12 +165,12 @@ class Motor_MGR
     Motor_MGR(SIM* sim1, S_EEPROM* eeprom1);
 #endif
 
-    bool eventOccured;
-    bool buttonEventOccured;
+    volatile bool eventOccured;
+    volatile bool buttonEventOccured;
     
     #ifdef ENABLE_WATER
-        bool waterEventOccured;  
-        unsigned long tempWaterEventTime;
+        volatile bool waterEventOccured;  
+        volatile unsigned long tempWaterEventTime;
         bool lowSensorState();
         bool midSensorState();
         bool highSensorState();
@@ -187,6 +187,7 @@ class Motor_MGR
     #endif
 
     void resetAutoStart(bool setChange = false);
+    void waterEvent();
 
     bool motorState();
     bool ACPowerState();

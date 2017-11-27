@@ -172,16 +172,18 @@ ISR(PCINT1_vect)
 {
   motor1.buttonEventOccured=true;
   #ifdef ENABLE_GP
-    motor1.tempWaterEventTime=millis();
-    motor1.waterEventOccured=true;      
+  motor1.waterEvent();
+    // motor1.tempWaterEventTime=millis();
+    // motor1.waterEventOccured=true;      
   #endif
 }
 
 #ifdef ENABLE_WATER
 ISR(PCINT2_vect)
 {
-  motor1.tempWaterEventTime=millis();
-  motor1.waterEventOccured=true;
+  motor1.waterEvent();
+  // motor1.tempWaterEventTime=millis();
+  // motor1.waterEventOccured=true;
 }
 #endif
 
@@ -519,8 +521,9 @@ void loop() {
 
       motor1.eventOccured = true;
       #ifdef ENABLE_WATER
-      motor1.tempWaterEventTime=millis();
-      motor1.waterEventOccured=true;
+      noInterrupts();
+        motor1.waterEvent();
+      interrupts();
       #endif
 
       motor1.resetAutoStart();
