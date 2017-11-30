@@ -80,16 +80,18 @@ class Motor_MGR
     
     #ifdef ENABLE_WATER
         byte undergroundLevel;
+        byte tempUndergroundLevel;
         // bool lowLevelSensor;
         // bool midLevelSensor;
         // bool highLevelSensor;
 
         #ifdef ENABLE_GP
             byte overheadLevel;
+            byte tempOverheadLevel;
             // bool oLowLevelSensor;
             // bool oHighLevelSensor;
         #endif
-        byte waterEventBufferTime;
+        // byte waterEventBufferTime;
     
         void readWaterSensorState(bool &low,bool &mid,bool &high);
         void updateUndergroundLevel(byte level);
@@ -109,7 +111,6 @@ class Motor_MGR
         // void highSensorState(bool);
         void setWaterDefaults();
         byte getWaterSensorState();
-        void operateOnWaterEvent();
     #endif
 
     void anotherConstructor(SIM* sim1, S_EEPROM* eeprom1);
@@ -172,15 +173,18 @@ class Motor_MGR
     
     #ifdef ENABLE_WATER
         volatile bool waterEventOccured;  
-        unsigned long tempWaterEventTime;
+        // unsigned long tempWaterEventTime;
         // bool lowSensorState();
         // bool midSensorState();
         // bool highSensorState();
-        void waterStatusOnCall();
+        bool checkWater();
+        void waterStatusOnCall(bool current=false);
+        void operateOnWaterEvent();
+
         #ifdef ENABLE_GP
             // bool overHeadLowSensorState();
             // bool overHeadHighSensorState();
-            void overHeadWaterStatusOnCall();
+            void overHeadWaterStatusOnCall(bool current=false);
         #endif
 
         #ifdef ENABLE_M2M
@@ -190,7 +194,7 @@ class Motor_MGR
 
 
     void resetAutoStart(bool setChange = false);
-    void waterEvent();
+    // void waterEvent();
 
     bool motorState();
     bool ACPowerState();

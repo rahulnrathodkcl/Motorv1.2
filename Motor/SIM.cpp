@@ -1856,6 +1856,12 @@ void SIM::operateDTMF(String s)
       subDTMF();
       motor1->waterStatusOnCall();
     }
+    // else if (str == '6') //underground status
+    // {
+    //   currentOperation = 'W';
+    //   subDTMF();
+    //   motor1->waterStatusOnCall(true);
+    // }
   #ifdef ENABLE_GP
     else if (str == '5') //overHead Status
     {
@@ -1863,6 +1869,12 @@ void SIM::operateDTMF(String s)
       subDTMF();
       motor1->overHeadWaterStatusOnCall();
     }
+    // else if (str == '7') //overHead Status
+    // {
+    //   currentOperation = 'V';
+    //   subDTMF();
+    //   motor1->overHeadWaterStatusOnCall(true);
+    // }
   #endif
   #endif
     else if(str=='D')
@@ -2174,7 +2186,7 @@ bool SIM::checkNotInCall()
 {
  return ( !sendCUSDResponse     &&  currentStatus=='N'  
   &&  currentCallStatus=='N'  &&  obtainNewEvent
-  &&  !freezeIncomingCalls);
+  &&  !freezeIncomingCalls && !busy());
 }
 
 // void SIM::setNetLight(byte light)

@@ -2,7 +2,7 @@
 #include "Motor_MGR.h"
 #include "SIM.h"
 #include "S_EEPROM.h"
-#define sleepWaitTime 10000
+#define sleepWaitTime 18000
 
 S_EEPROM eeprom1;
 
@@ -108,15 +108,15 @@ void setup() {
   PCMSK1 |= (1 << PCINT9);    //set PCINT9 to trigger interrupt (ON BUTTON)
   PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)  OR (OVERHEAD LOW SENSOR)
 
-  #ifdef ENABLE_WATER
-  PCICR |= (1 << PCIE2);    // set PCIE0 to enable PCMSK2 scan
-  PCMSK2 |= (1 << PCINT21);    //set PCINT21 to trigger interrupt (Low Sensor)
-  PCMSK2 |= (1 << PCINT22);    //set PCINT22 to trigger interrupt (Mid Sensor)
-  PCMSK2 |= (1 << PCINT23);    //set PCINT23 to trigger interrupt (High Sensor)
-    #ifdef ENABLE_GP
-      PCMSK1 |= (1 << PCINT12);   //set PCINT12 to trigger interrupt on overheadHigh sensor.
-    #endif
-  #endif
+  // #ifdef ENABLE_WATER
+  // PCICR |= (1 << PCIE2);    // set PCIE0 to enable PCMSK2 scan
+  // PCMSK2 |= (1 << PCINT21);    //set PCINT21 to trigger interrupt (Low Sensor)
+  // PCMSK2 |= (1 << PCINT22);    //set PCINT22 to trigger interrupt (Mid Sensor)
+  // PCMSK2 |= (1 << PCINT23);    //set PCINT23 to trigger interrupt (High Sensor)
+  //   #ifdef ENABLE_GP
+  //     PCMSK1 |= (1 << PCINT12);   //set PCINT12 to trigger interrupt on overheadHigh sensor.
+  //   #endif
+  // #endif
 
   noInterrupts();
   watchdogConfig(WATCHDOG_OFF);
@@ -171,21 +171,21 @@ void IVR_RING()
 ISR(PCINT1_vect)
 {
   motor1.buttonEventOccured=true;
-  #ifdef ENABLE_GP
-  motor1.waterEvent();
+  // #ifdef ENABLE_GP
+  // motor1.waterEvent();
     // motor1.tempWaterEventTime=millis();
     // motor1.waterEventOccured=true;      
-  #endif
+  // #endif
 }
 
-#ifdef ENABLE_WATER
-ISR(PCINT2_vect)
-{
-  motor1.waterEvent();
-  // motor1.tempWaterEventTime=millis();
-  // motor1.waterEventOccured=true;
-}
-#endif
+// #ifdef ENABLE_WATER
+// ISR(PCINT2_vect)
+// {
+//   motor1.waterEvent();
+//   // motor1.tempWaterEventTime=millis();
+//   // motor1.waterEventOccured=true;
+// }
+// #endif
 
 ISR(PCINT0_vect)
 {
@@ -341,12 +341,23 @@ void operateOnSleepElligible()
             {}
         }while(--cnt);               
         
+
         do                // loop for going to sleep after waking up at 8s due to wdt, until 5minutes have completed.
         {
             wdtEvent=false;
             gotoSleep();
-        } while(wdtEvent && !checkBat);
+            #ifdef ENABLE_WATER
+            if(motor1.checkWater())
+              break;
+            #endif
+        } 
+          while(wdtEvent && !checkBat);
+        // #ifdef ENABLE_WATER
+        //   while(wdtEvent && !checkBat && !motor1.waterEventOccured);
+        // #else
+        // #endif
         
+        wdtEvent=false;
         initSleepSeqeunce=false;      //after wakeup 
 
         // sim1.setNetLight(L_REGULAR);
@@ -521,9 +532,11 @@ void loop() {
 
       motor1.eventOccured = true;
       #ifdef ENABLE_WATER
-      noInterrupts();
-        motor1.waterEvent();
-      interrupts();
+      motor1.operateOnWaterEvent();
+      // motor1.waterEventOccured=true;
+      // noInterrupts();
+        // motor1.waterEvent();
+      // interrupts();
       #endif
 
       motor1.resetAutoStart();
@@ -598,8 +611,14 @@ void loop() {
   }
 #endif
 
-  sim1.update();
+  if(wdtEvent)
+  {
+    wdtEvent=false;
+    motor1.checkWater();
+  }
+
   motor1.update();
+  sim1.update();
 
   if(checkSleepElligible())
   {
