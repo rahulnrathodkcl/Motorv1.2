@@ -79,35 +79,38 @@ class Motor_MGR
     byte lastButtonEvent;
     
     #ifdef ENABLE_WATER
-        bool lowLevelSensor;
-        bool midLevelSensor;
-        bool highLevelSensor;
+        byte undergroundLevel;
+        byte tempUndergroundLevel;
+        // bool lowLevelSensor;
+        // bool midLevelSensor;
+        // bool highLevelSensor;
 
         #ifdef ENABLE_GP
-            bool oLowLevelSensor;
-            bool oHighLevelSensor;
+            byte overheadLevel;
+            byte tempOverheadLevel;
+            // bool oLowLevelSensor;
+            // bool oHighLevelSensor;
         #endif
-        byte waterEventBufferTime;
+        // byte waterEventBufferTime;
     
         void readWaterSensorState(bool &low,bool &mid,bool &high);
-        void updateWaterSensorState(bool &low,bool &mid,bool &high);
+        void updateUndergroundLevel(byte level);
+        // void updateWaterSensorState(bool &low,bool &mid,bool &high);
         #ifdef ENABLE_GP
-            void overHeadLowSensorState(bool);
-            void overHeadHighSensorState(bool);
+            // void overHeadLowSensorState(bool);
+            // void overHeadHighSensorState(bool);
 
             void readOverHeadWaterSensorState(bool &olow,bool &ohigh);
-            void updateOverHeadWaterSensorState(bool &olow,bool &ohigh);            
+            void updateOverheadLevel(byte level);
+
+            // void updateOverHeadWaterSensorState(bool &olow,bool &ohigh);            
             byte getOverHeadWaterSensorState();
         #endif
-    
-        void lowSensorState(bool);
-        void midSensorState(bool);
-        void highSensorState(bool);
-
+        // void lowSensorState(bool);
+        // void midSensorState(bool);
+        // void highSensorState(bool);
         void setWaterDefaults();
         byte getWaterSensorState();
-
-        void operateOnWaterEvent();
     #endif
 
     void anotherConstructor(SIM* sim1, S_EEPROM* eeprom1);
@@ -170,24 +173,28 @@ class Motor_MGR
     
     #ifdef ENABLE_WATER
         volatile bool waterEventOccured;  
-        volatile unsigned long tempWaterEventTime;
-        bool lowSensorState();
-        bool midSensorState();
-        bool highSensorState();
+        // unsigned long tempWaterEventTime;
+        // bool lowSensorState();
+        // bool midSensorState();
+        // bool highSensorState();
+        bool checkWater();
+        void waterStatusOnCall(bool current=false);
+        void operateOnWaterEvent();
+
         #ifdef ENABLE_GP
-            bool overHeadLowSensorState();
-            bool overHeadHighSensorState();
-            void overHeadWaterStatusOnCall();
+            // bool overHeadLowSensorState();
+            // bool overHeadHighSensorState();
+            void overHeadWaterStatusOnCall(bool current=false);
         #endif
-        void waterStatusOnCall();
+
+        #ifdef ENABLE_M2M
+            void setM2MEventState(byte eventNo, byte state);
+        #endif
     #endif
 
-    #ifdef ENABLE_M2M
-        void setM2MEventState(byte eventNo, byte state);
-    #endif
 
     void resetAutoStart(bool setChange = false);
-    void waterEvent();
+    // void waterEvent();
 
     bool motorState();
     bool ACPowerState();
