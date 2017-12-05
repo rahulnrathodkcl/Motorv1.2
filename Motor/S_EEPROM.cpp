@@ -29,7 +29,9 @@ S_EEPROM::S_EEPROM()
     numbersCount = 0;
     PROGSIZE=0;
     #ifndef ENABLE_GP
-    pinMode(PIN_AUTOLED,OUTPUT);
+      #ifndef ENABLE_CURRENT
+        pinMode(PIN_AUTOLED,OUTPUT);
+      #endif
     #endif
 }
 
@@ -302,7 +304,9 @@ void S_EEPROM::saveAutoStartSettings(bool temp)
   AUTOSTART = (byte)temp;
   EEPROM.put(autoStartAddress, AUTOSTART);
   #ifndef ENABLE_GP
+    #ifndef ENABLE_CURRENT
     setAutoLed();
+    #endif
   #endif
 }
 
@@ -337,6 +341,8 @@ void S_EEPROM::saveResponseSettings(char temp)
   EEPROM.put(responseAddress, RESPONSE);
 }
 
+#ifndef ENABLE_CURRENT
+#ifndef ENABLE_M2M
 void S_EEPROM::saveNoCallSettings(bool value,byte startHour,byte startMinute,byte stopHour,byte stopMinute)
 {
     NOCALL = value;
@@ -355,6 +361,9 @@ void S_EEPROM::saveNoCallSettings(bool value,byte startHour,byte startMinute,byt
       EEPROM.put(noCallStopTimeMinuteAddress,NCSTOPMINUTE);
     }
 }
+#endif
+#endif
+
 
 void S_EEPROM::updateFirmware(bool temp,bool verify)
 {
@@ -377,6 +386,7 @@ void S_EEPROM::updateFirmware(bool temp,bool verify)
 // }
 
 #ifndef ENABLE_GP
+#ifndef ENABLE_CURRENT
 void S_EEPROM::setAutoLed()
 {
   if(AUTOSTART)
@@ -385,6 +395,7 @@ void S_EEPROM::setAutoLed()
     digitalWrite(PIN_AUTOLED,LOW);
 }
 #endif
+#endif
 
 void S_EEPROM::loadAutoStartSettings()
 {
@@ -392,7 +403,9 @@ void S_EEPROM::loadAutoStartSettings()
   if (AUTOSTART == 0xFF)
     saveAutoStartSettings(false);
   #ifndef ENABLE_GP
-    setAutoLed();
+    #ifndef ENABLE_CURRENT
+      setAutoLed();
+    #endif
   #endif
 }
 
@@ -513,6 +526,67 @@ void S_EEPROM::loadM2MSettings()
 
 #endif
 
+#ifdef ENABLE_CURRENT
+void S_EEPROM::loadCurrentSettings()
+{
+  EEPROM.get(currentDetectionAddress, CURRENTDETECTION);
+  if(CURRENTDETECTION = 0xFF)
+    setCurrentDetection(false);
+
+  EEPROM.get(underloadPerAddress,UNDERLOADPER);
+  if(UNDERLOADPER==0xFF)
+    setUnderloadPer(75);
+
+  EEPROM.get(overloadPerAddress,OVERLOADPER);
+  if(OVERLOADPER==0xFF)
+    setUnderloadPer(125);
+
+  EEPROM.get(overloadAddress,OVERLOADVALUE);
+
+  EEPROM.get(underloadAddress,UNDERLOADVALUE);
+}
+
+bool S_EEPROM::setOverloadPer(byte overloadPerValue)
+{
+  if(overloadPerValue>100)
+  {
+    OVERLOADPER = overloadPerValue;
+    EEPROM.put(overloadPerAddress,OVERLOADPER);
+    return true;
+  }
+  return false;
+}
+
+bool S_EEPROM::setUnderloadPer(byte underloadPerValue)
+{
+  if(underloadPerValue>0 && underloadPerValue <100)
+  {
+    UNDERLOADPER =underloadPerValue;
+    EEPROM.put(underloadPerAddress,UNDERLOADPER);
+    return true;
+  }
+  return false;
+}
+
+void S_EEPROM::setCurrentDetection(bool cValue)
+{
+  CURRENTDETECTION = cValue;
+  EEPROM.put(currentDetectionAddress,CURRENTDETECTION);
+}
+
+void S_EEPROM::setOverloadValue(unsigned short int overValue)
+{
+  OVERLOADVALUE = overValue;
+  EEPROM.put(overloadAddress,OVERLOADVALUE);
+}
+
+void S_EEPROM::setUnderloadValue(unsigned short int underValue)
+{
+  UNDERLOADVALUE = underValue;
+  EEPROM.put(underloadAddress,UNDERLOADVALUE);
+}
+#endif
+
 void S_EEPROM::loadResponseSettings()
 {
   EEPROM.get(responseAddress, RESPONSE);
@@ -520,6 +594,9 @@ void S_EEPROM::loadResponseSettings()
     saveResponseSettings('T');
 }
 
+
+#ifndef ENABLE_CURRENT
+#ifndef ENABLE_M2M
 void S_EEPROM::loadNoCallSettings()
 {
   EEPROM.get(noCallAddress,NOCALL);
@@ -534,7 +611,8 @@ void S_EEPROM::loadNoCallSettings()
     EEPROM.get(noCallStopTimeMinuteAddress,NCSTOPMINUTE);
   }
 }
-
+#endif
+#endif
 // void S_EEPROM::loadAlterNumberSettings()
 // {
  // 
@@ -640,7 +718,14 @@ void S_EEPROM::loadAllData()
   loadAutoStartTimeSettings();
   loadDNDSettings();
   loadResponseSettings();
-  loadNoCallSettings();
+
+  #ifndef ENABLE_M2M
+  #ifndef ENABLE_CURRENT
+    loadNoCallSettings();
+  #endif
+  #endif
+  
+
   loadNumberSettings();
   loadCCID();
   loadStarDeltaTimer();
@@ -650,6 +735,10 @@ void S_EEPROM::loadAllData()
     #else
     loadM2MSettings();
     #endif
+  #endif
+
+  #ifdef ENABLE_CURRENT
+    loadCurrentSettings();
   #endif
   // loadNumbers();
   // loadAlterNumber();

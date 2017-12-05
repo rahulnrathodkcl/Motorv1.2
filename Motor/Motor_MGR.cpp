@@ -55,7 +55,11 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   pinMode(PIN_STOPBUTTON,INPUT_PULLUP);
 
   #ifndef ENABLE_GP
-  pinMode(PIN_AUTOBUTTON,INPUT_PULLUP);
+  	pinMode(PIN_AUTOBUTTON,INPUT_PULLUP);
+  #endif
+
+  #ifdef ENABLE_CURRENT
+  		pinMode(PIN_CURRENT,INPUT);
   #endif
 
   pinMode(PIN_MOTORLED,OUTPUT);
@@ -114,6 +118,12 @@ lastButtonEvent=0;
 
   simEvent[10] = '8';		//AUTO ON EVENT 
   simEvent[11] = '9';		//AUTO OFF EVENT
+
+
+  #ifdef ENABLE_CURRENT
+  simEvent[12] = 'B';		//Overload Event 
+  simEvent[13] = 'J';		//Underload EVENT
+  #endif
   
   // resetAutoStart();
 }
@@ -123,6 +133,7 @@ lastButtonEvent=0;
 #ifdef ENABLE_GP
 void Motor_MGR::readOverHeadWaterSensorState(bool &olow,bool &ohigh)
 {
+  
   	noInterrupts();
   	olow = digitalRead(PIN_OLOWSENSOR);
 	ohigh = digitalRead(PIN_OHIGHSENSOR);
@@ -488,6 +499,67 @@ void Motor_MGR::operateOnWaterEvent()
 }
 #endif
 
+#ifdef ENABLE_CURRENT
+void Motor_MGR::autoSetCurrent()
+{
+	if(motorState() && !startSequenceOn && !starDeltaTimerOn && !stopSequenceOn && AllPhaseState())
+	{
+		unsigned short int temp = analogRead(PIN_CURRENT);
+		eeprom1->setUnderloadValue(temp * (float)eeprom1->UNDERLOADPER / 100.0);
+		eeprom1->setOverloadValue(temp * (float)eeprom1->OVERLOADPER /100.0);
+		eeprom1->setCurrentDetection(true);
+		sim1->setMotorMGRResponse('K');		//ampere settings complete
+	}
+	else
+	{
+		eeprom1->setCurrentDetection(false);
+		sim1->setMotorMGRResponse('Y');		//ampere cleared
+	}
+}
+
+void Motor_MGR::checkCurrentConsumption()
+{
+
+	if(!motorState() || !eeprom1->CURRENTDETECTION || startSequenceOn || starDeltaTimerOn
+		|| millis()-lastCurrentReadingTime<500)
+		return;
+
+	if(enableCurrentDetection)
+	{
+		if(millis()-tempStartSequenceTimer>5000)
+			enableCurrentDetection=false;
+		return;
+	}
+
+	lastCurrentReadingTime=millis();
+	unsigned short int temp = analogRead(PIN_CURRENT);
+
+	byte temp2;
+// implement bufffer of previous input.. and check 2 previous inputs for deciding overload or underload
+	if(temp> eeprom1->OVERLOADVALUE)
+		temp2 = CR_OVER;
+	else if(temp < eeprom1->UNDERLOADVALUE)
+		temp2 = CR_UNDER;
+	else 
+		temp2= CR_NORMAL;
+
+	if(lastCurrentReading == temp2)
+	{
+		if(temp2==CR_OVER)
+		{
+			stopMotor(false,true);
+			simEventTemp[12] = sim1->registerEvent('B');			//register overload Event
+		}
+		else if(temp2==CR_UNDER)
+		{
+			stopMotor(false,true);
+			simEventTemp[13] = sim1->registerEvent('J');			// register Underload Event
+		}
+	}
+	lastCurrentReading=temp2;
+}
+#endif
+
 bool Motor_MGR::getMotorState()
 {
   bool p1, p2, p3;
@@ -556,7 +628,9 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3)
   	if(ACPowerState())	// on AC Power,
   	{
   		#ifndef ENABLE_GP
-	    digitalWrite(PIN_AUTOLED,HIGH); 	//AUTO LED is turned on.
+			#ifndef ENABLE_CURRENT
+			    digitalWrite(PIN_AUTOLED,HIGH); 	//AUTO LED is turned on.
+  			#endif
   		#endif
 		if (AllPhaseState() && !stopSequenceOn)				//auto start is on , and AC is Present in 3 phase, so , can start with switch or external force.
 		{
@@ -566,7 +640,9 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3)
 	else  			// on battery, so stop AUTO LED to save power
 	{
 		#ifndef ENABLE_GP
-	    digitalWrite(PIN_AUTOLED,LOW);
+			#ifndef ENABLE_CURRENT
+	    		digitalWrite(PIN_AUTOLED,LOW);
+			#endif
   		#endif
 	}
   }
@@ -884,6 +960,7 @@ void Motor_MGR::startMotor(bool commanded)
 	  setLED(TURN_ON);
 	  tempStartSequenceTimer = millis();
 	  startSequenceOn = true;
+	  enableCurrentDetection=false;
 	  motorState(true);
 	  gotOnCommand = commanded;
 	}
@@ -978,6 +1055,10 @@ void Motor_MGR::terminateStarDeltaTimer()
 	{
 		digitalWrite(PIN_MSTART,HIGH);
 		starDeltaTimerOn=false;
+		#ifdef ENABLE_CURRENT
+			enableCurrentDetection=true;
+			tempStartSequenceTimer=millis();
+		#endif
 	}
 }
 
@@ -988,6 +1069,8 @@ void Motor_MGR::terminateStartRelay()
   	if(((unsigned int)eeprom1->starDeltaTimerTime *10) <= startSequenceTimerTime)
   	{
 		digitalWrite(PIN_MSTART, HIGH);
+		enableCurrentDetection=true;
+		tempStartSequenceTimer=millis();
   	}
   	else
   	{
@@ -1096,7 +1179,11 @@ void Motor_MGR::SIMEventManager()
 		byte i=17;
 		#endif
 	#else
-		byte i=12;
+		#ifdef ENABLE_CURRENT
+			byte i=14;
+		#else
+			byte i=12;
+		#endif
 	#endif
 	while(i--)
 	{
@@ -1125,10 +1212,13 @@ bool Motor_MGR::checkSleepElligible()
 		byte j=17;
 		#endif
 	#else
-		byte j=12;
+		#ifdef ENABLE_CURRENT
+			byte j=14;
+		#else
+			byte j=12;
+		#endif
 	#endif
 	bool event=true;
-	// byte i=12;
 	while(j--)
 	{
 		if(!simEventTemp[j]) 
@@ -1233,6 +1323,8 @@ inline void Motor_MGR::buttonFilter()
 
 void Motor_MGR::update()
 {
+
+	checkCurrentConsumption();
 	if(!startSequenceOn && !stopSequenceOn)
 	{
 		noInterrupts();

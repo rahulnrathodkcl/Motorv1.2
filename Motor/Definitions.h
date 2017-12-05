@@ -35,9 +35,10 @@
 
 #define MAXNUMBERS 15
 
-#define disable_debug 
-#define ENABLE_WATER
-#define ENABLE_GP
+#define disable_debug
+#define ENABLE_CURRENT 
+// #define ENABLE_WATER
+// #define ENABLE_GP
 // #define ENABLE_M2M
 
 #ifdef ENABLE_M2M
@@ -45,6 +46,12 @@
 		#undef ENABLE_M2M
 	#endif
 #endif
+
+// #ifdef ENABLE_CURRENT
+// 	#ifdef ENABLE_GP
+// 		#undef ENABLE_GP
+// 	#endif
+// #endif
 
 // #define software_SIM
 // #ifdef disable_debug
@@ -98,6 +105,22 @@
 	#endif
 #endif
 
+#ifdef ENABLE_CURRENT
+		#undef PIN_AUTOLED
+		// #undef PIN_AUTOBUTTON
+
+	#ifdef ENABLE_GP
+		#undef PIN_OLOWSENSOR
+		#undef PIN_OHIGHSENSOR
+		#undef ENABLE_GP
+	#endif
+
+	#define PIN_CURRENT A4
+	#define CR_OVER 1
+	#define CR_UNDER 2
+	#define CR_NORMAL 0
+
+#endif
 // #define PIN_PHASE1 9
 // #define PIN_PHASE2 10
 // #define PIN_ACPHASE 11
@@ -147,6 +170,15 @@
 #define noCallStopTimeHourAddress 156
 #define noCallStopTimeMinuteAddress 158
 #define lowVoltAddress 160
+
+#ifdef ENABLE_CURRENT
+	#define currentDetectionAddress 164
+	#define overloadAddress 168
+	#define underloadAddress 172
+	#define underloadPerAddress 176
+	#define overloadPerAddress 180
+	#define STARTINGCURRENT 800
+#endif
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304

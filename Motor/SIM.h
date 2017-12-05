@@ -36,6 +36,11 @@ class SIM
     bool inCall;
     // String balStr;
 
+    #ifdef ENABLE_M2M
+        bool zeroPressed;
+    #endif
+
+
     unsigned short int callCutWaitTime;  //x100 = mSec
     unsigned long callCutWait;
 

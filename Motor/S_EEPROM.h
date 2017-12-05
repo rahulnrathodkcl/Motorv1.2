@@ -17,6 +17,10 @@ class S_EEPROM
         #endif
     #endif
 
+    #ifdef ENABLE_CURRENT
+        void loadCurrentSettings();
+    #endif
+
     void loadM2MClientSettings();
 
     void loadEventStageSettings();
@@ -24,12 +28,19 @@ class S_EEPROM
     void loadDNDSettings();
     void loadBypassSettings();
     void loadResponseSettings();
-    void loadNoCallSettings();
     void loadCCID();
     void loadStarDeltaTimer();
 
+    #ifndef ENABLE_CURRENT
+    #ifndef ENABLE_M2M
+        void loadNoCallSettings();
+    #endif
+    #endif
+
     #ifndef ENABLE_GP
-    void setAutoLed();
+        #ifndef ENABLE_CURRENT
+            void setAutoLed();
+        #endif
     #endif
     
 
@@ -67,11 +78,15 @@ class S_EEPROM
     byte AUTOSTART;
     byte BYPASS;
 
-    byte NCSTARTHOUR;
-    byte NCSTARTMINUTE;
-    byte NCSTOPHOUR;
-    byte NCSTOPMINUTE;
-    byte NOCALL;
+    #ifndef ENABLE_CURRENT
+    #ifndef ENABLE_M2M
+        byte NCSTARTHOUR;
+        byte NCSTARTMINUTE;
+        byte NCSTOPHOUR;
+        byte NCSTOPMINUTE;
+        byte NOCALL;
+    #endif
+    #endif
 
     byte EVENTSTAGE;
     
@@ -85,6 +100,13 @@ class S_EEPROM
         #endif
     #endif
 
+    #ifdef ENABLE_CURRENT
+        bool CURRENTDETECTION;
+        unsigned short int OVERLOADVALUE;
+        unsigned short int UNDERLOADVALUE;
+        byte UNDERLOADPER;
+        byte OVERLOADPER;
+    #endif
 
     unsigned short int AUTOSTARTTIME;
     unsigned short int starDeltaTimerTime;
@@ -116,6 +138,13 @@ class S_EEPROM
         #endif
     #endif
 
+    #ifdef ENABLE_CURRENT
+        void setOverloadValue(unsigned short val);
+        void setUnderloadValue(unsigned short val);
+        void setCurrentDetection(bool value);
+        bool setOverloadPer(byte);
+        bool setUnderloadPer(byte);
+    #endif
 
     void addM2MNumber(String &number);      //for client
     void setM2MVerify(bool temp);           //for client
@@ -126,7 +155,12 @@ class S_EEPROM
     void saveBypassSettings(bool);
     void saveDNDSettings(bool);
     void saveResponseSettings(char);
-    void saveNoCallSettings(bool value,byte startHour=0,byte startMinute=0, byte stopHour=0, byte stopMinute=0);
+    
+    #ifndef ENABLE_CURRENT
+    #ifndef ENABLE_M2M
+        void saveNoCallSettings(bool value,byte startHour=0,byte startMinute=0, byte stopHour=0, byte stopMinute=0);
+    #endif
+    #endif
     unsigned long int getProgramSize();
     byte getUpdateStatus();
     void discardUpdateStatus();

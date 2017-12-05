@@ -74,7 +74,6 @@ void setup() {
   else
     digitalWrite(PIN_TURNOFF,HIGH);     // pull down gate of mosfet to start it
 
-
   eeprom1.loadAllData();
   sim1.setClassReference(&eeprom1, &motor1);
    Serial.begin(19200);
@@ -611,11 +610,13 @@ void loop() {
   }
 #endif
 
+  #ifdef ENABLE_WATER
   if(wdtEvent)
   {
     wdtEvent=false;
     motor1.checkWater();
   }
+  #endif
 
   motor1.update();
   sim1.update();

@@ -721,6 +721,7 @@ void SIM::stopCallWaiting()
 }
 
 #ifndef ENABLE_M2M
+#ifndef ENABLE_CURRENT
 bool SIM::checkNoCallTime()
 {
   byte globalHours, globalMinutes;
@@ -753,6 +754,7 @@ bool SIM::checkNoCallTime()
   }
   return false;
 }
+#endif
 #endif
 
 bool SIM::getBlockingResponse(String &cmd,bool (SIM::*func)(String &))
@@ -873,6 +875,11 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
           eeprom1->savePreventOverFlowSettings(false);
         #endif
       #endif
+      #ifdef ENABLE_CURRENT
+          eeprom1->setOverloadPer(125);
+          eeprom1->setUnderloadPer(75);
+          eeprom1->setCurrentDetection(false);
+      #endif
       eeprom1->saveEventStageSettings(0);
       eeprom1->saveBypassSettings(false);
       eeprom1->saveDNDSettings(false);
@@ -944,6 +951,30 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
           }
       }
     }
+    #ifdef ENABLE_CURRENT
+    else if(str.startsWith("OVR"))
+    {
+      if(str.length()>3)
+      {
+        char tempChr = str.charAt(3);
+        if(tempChr=='+')
+          eeprom1->setOverloadPer(eeprom1->OVERLOADPER+10);
+        else if(tempChr=='-')
+          eeprom1->setOverloadPer(eeprom1->OVERLOADPER-10);
+      }
+    }
+    else if(str.startsWith("UNDR"))
+    {
+      if(str.length()>3)
+      {
+        char tempChr = str.charAt(3);
+        if(tempChr=='+')
+          eeprom1->setUnderloadPer(eeprom1->UNDERLOADPER+10);
+        else if(tempChr=='-')
+          eeprom1->setUnderloadPer(eeprom1->UNDERLOADPER-10);
+      }
+    }
+    #endif
     #ifdef ENABLE_WATER
       #ifndef ENABLE_M2M
       else if (str.startsWith(F("OVFON"))) //stringContains(str, F("RESPA"), 5, str.length() - 1))
@@ -1008,6 +1039,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       done=true;
     }
     #ifndef ENABLE_M2M
+    #ifndef ENABLE_CURRENT
     else if (str.startsWith(F("NCOFF")))    // stop No Call according to Time
     {
       eeprom1->saveNoCallSettings(false);
@@ -1062,6 +1094,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
         }
       }
     }
+    #endif
     #endif
     else if (stringContains(str, F("STAGE"), 5, str.length() - 1))
     {
@@ -1642,7 +1675,7 @@ void SIM::endCall()
   sendCommand("", true);
   _SSerial->flush();
   freezeIncomingCalls = false;
-
+  zeroPressed=false;
 
   // if(retryOn)
   // {
@@ -1856,12 +1889,6 @@ void SIM::operateDTMF(String s)
       subDTMF();
       motor1->waterStatusOnCall();
     }
-    // else if (str == '6') //underground status
-    // {
-    //   currentOperation = 'W';
-    //   subDTMF();
-    //   motor1->waterStatusOnCall(true);
-    // }
   #ifdef ENABLE_GP
     else if (str == '5') //overHead Status
     {
@@ -1869,13 +1896,26 @@ void SIM::operateDTMF(String s)
       subDTMF();
       motor1->overHeadWaterStatusOnCall();
     }
-    // else if (str == '7') //overHead Status
-    // {
-    //   currentOperation = 'V';
-    //   subDTMF();
-    //   motor1->overHeadWaterStatusOnCall(true);
-    // }
   #endif
+  #endif
+  #ifdef ENABLE_CURRENT
+    else if(str == '0')
+    {
+      if(zeroPressed)
+      {
+        motor1->autoSetCurrent();   //to enable or disable current detection
+        subDTMF();
+      }
+        zeroPressed=true;
+    }
+    // else if(str=='7')   // increase overload per by 10
+    // {
+    //     eeprom1->setOverloadPer(eeprom1->OVERLOADPER+10);
+    // }
+    // else if(str=='8')   // decrease overload per by 10
+    // {
+    //     eeprom1->setOverloadPer(eeprom1->OVERLOADPER-10);
+    // }
   #endif
     else if(str=='D')
     {
@@ -2063,10 +2103,12 @@ bool SIM::registerEvent(char eventType)
 #endif
 
     #ifndef ENABLE_M2M
+    #ifndef ENABLE_CURRENT
     if(eeprom1->NOCALL && checkNoCallTime())
     {
         return true; 
     }
+    #endif
     #endif
 
     retries=0;
@@ -2333,6 +2375,7 @@ unsigned short int SIM::getBatVolt()
 }
 
 #ifndef ENABLE_M2M
+#ifndef ENABLE_CURRENT
 // void SIM::setSystemTime(String time)
 // {
 //     globalHours=(time.substring(0,2)).toInt();
@@ -2352,27 +2395,7 @@ void SIM::getSystemTime(byte &Hours, byte &Minutes)
     // globalSeconds=0;
   }
 }
-
-// void SIM::updateTime()
-// {
-//   // triggerTimeUpdate=false;
-//   globalSeconds+=8;
-//   if(globalSeconds>59)
-//   {
-//     globalSeconds-=60;
-//     globalMinutes++;
-//     if(globalMinutes>59)
-//     {
-//       globalMinutes-=60;
-//       globalHours++;
-//       if(globalHours>23)
-//       {
-//           globalHours=0;
-//           // setTime();
-//       }
-//     }
-//   }
-// }
+#endif
 #endif
 
 void SIM::update()

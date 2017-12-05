@@ -35,10 +35,22 @@ class Motor_MGR
             byte mapTable[2];
         #endif
     #else
+        #ifdef ENABLE_CURRENT
+            bool simEventTemp[14];
+            char simEvent[14];
+        #else
         bool simEventTemp[12];
         char simEvent[12];
+        #endif
+
     #endif
     
+    #ifdef ENABLE_CURRENT
+        unsigned long int lastCurrentReadingTime;
+        bool enableCurrentDetection;
+        byte lastCurrentReading;
+    #endif
+
     bool gotOffCommand;
     bool gotOnCommand;
     bool offButtonPressed;
@@ -111,6 +123,11 @@ class Motor_MGR
         // void highSensorState(bool);
         void setWaterDefaults();
         byte getWaterSensorState();
+    #endif
+
+
+    #ifdef ENABLE_CURRENT
+        void checkCurrentConsumption();
     #endif
 
     void anotherConstructor(SIM* sim1, S_EEPROM* eeprom1);
@@ -192,6 +209,9 @@ class Motor_MGR
         #endif
     #endif
 
+    #ifdef ENABLE_CURRENT
+        void autoSetCurrent();
+    #endif
 
     void resetAutoStart(bool setChange = false);
     // void waterEvent();
