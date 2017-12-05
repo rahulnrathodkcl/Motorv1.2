@@ -1181,15 +1181,16 @@ void Motor_MGR::operateOnButtonEvent()
 		lastButtonEvent=BTNEVENTSTOP;
 	}
 	#ifndef ENABLE_GP
-	else if(digitalRead(PIN_AUTOBUTTON)==LOW)
-	{
-		lastButtonEvent=BTNEVENTAUTO;
-		lastPressTime=millis();
-	}
+	// else if(digitalRead(PIN_AUTOBUTTON)==LOW)
+	// {
+	// 	lastButtonEvent=BTNEVENTAUTO;
+	// 	lastPressTime=millis();
+	// }
 	#endif	
 
 	#ifndef ENABLE_GP
-		byte pin = PIN_AUTOBUTTON;
+		byte pin;
+		// byte pin = PIN_AUTOBUTTON;
 		if(lastButtonEvent == BTNEVENTSTART)  pin = PIN_STARTBUTTON;
 	#else
 		byte pin = PIN_STARTBUTTON;
