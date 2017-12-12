@@ -505,10 +505,21 @@ void Motor_MGR::autoSetCurrent()
 	if(motorState() && !startSequenceOn && !starDeltaTimerOn && !stopSequenceOn && AllPhaseState())
 	{
 		unsigned short int temp = analogRead(PIN_CURRENT);
-		eeprom1->setUnderloadValue(temp * (float)eeprom1->UNDERLOADPER / 100.0);
-		eeprom1->setOverloadValue(temp * (float)eeprom1->OVERLOADPER /100.0);
-		eeprom1->setCurrentDetection(true);
-		sim1->setMotorMGRResponse('K');		//ampere settings complete
+		unsigned short int temp2 = temp * (float)eeprom1->UNDERLOADPER / 100.0;
+		temp = temp * (float)eeprom1->OVERLOADPER /100.0;
+		if(temp2>1022 || temp < 5)
+		{
+			sim1->setMotorMGRResponse('Z');		//change ampere jumper
+			return;
+		}		
+		else
+		{
+			eeprom1->setUnderloadValue(temp * (float)eeprom1->UNDERLOADPER / 100.0);
+			eeprom1->setOverloadValue(temp * (float)eeprom1->OVERLOADPER /100.0);
+			
+			eeprom1->setCurrentDetection(true);
+			sim1->setMotorMGRResponse('K');		//ampere settings complete
+		}
 	}
 	else
 	{
