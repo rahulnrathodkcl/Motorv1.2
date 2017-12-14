@@ -106,8 +106,8 @@
 #endif
 
 #ifdef ENABLE_CURRENT
-		#undef PIN_AUTOLED
-		// #undef PIN_AUTOBUTTON
+		// #undef PIN_AUTOLED
+		#undef PIN_AUTOBUTTON
 
 	#ifdef ENABLE_GP
 		#undef PIN_OLOWSENSOR
@@ -115,7 +115,7 @@
 		#undef ENABLE_GP
 	#endif
 
-	#define PIN_CURRENT A4
+	#define PIN_CURRENT A5
 	#define CR_OVER 1
 	#define CR_UNDER 2
 	#define CR_NORMAL 0

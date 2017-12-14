@@ -36,7 +36,7 @@ class SIM
     bool inCall;
     // String balStr;
 
-    #ifdef ENABLE_M2M
+    #ifdef ENABLE_CURRENT
         bool zeroPressed;
     #endif
 

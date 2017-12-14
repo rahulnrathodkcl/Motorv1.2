@@ -29,9 +29,7 @@ S_EEPROM::S_EEPROM()
     numbersCount = 0;
     PROGSIZE=0;
     #ifndef ENABLE_GP
-      #ifndef ENABLE_CURRENT
         pinMode(PIN_AUTOLED,OUTPUT);
-      #endif
     #endif
 }
 
@@ -386,7 +384,6 @@ void S_EEPROM::updateFirmware(bool temp,bool verify)
 // }
 
 #ifndef ENABLE_GP
-#ifndef ENABLE_CURRENT
 void S_EEPROM::setAutoLed()
 {
   if(AUTOSTART)
@@ -394,7 +391,6 @@ void S_EEPROM::setAutoLed()
   else
     digitalWrite(PIN_AUTOLED,LOW);
 }
-#endif
 #endif
 
 void S_EEPROM::loadAutoStartSettings()

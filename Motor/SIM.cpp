@@ -85,6 +85,10 @@ void SIM::anotherConstructor()
   retries=0;
   // retryOn=false;
 
+  #ifdef ENABLE_CURRENT
+  zeroPressed=false;
+  #endif
+
   #ifdef ENABLE_M2M
     m2mAck=false;
     m2mEventCalls=m2mEventNo=0;

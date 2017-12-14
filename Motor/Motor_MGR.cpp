@@ -54,7 +54,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   pinMode(PIN_STARTBUTTON,INPUT_PULLUP);
   pinMode(PIN_STOPBUTTON,INPUT_PULLUP);
 
-  #ifndef ENABLE_GP
+  #if ! defined(ENABLE_GP) && ! defined(ENABLE_CURRENT)  
   	pinMode(PIN_AUTOBUTTON,INPUT_PULLUP);
   #endif
 
@@ -505,17 +505,25 @@ void Motor_MGR::autoSetCurrent()
 	if(motorState() && !startSequenceOn && !starDeltaTimerOn && !stopSequenceOn && AllPhaseState())
 	{
 		unsigned short int temp = analogRead(PIN_CURRENT);
-		unsigned short int temp2 = temp * (float)eeprom1->UNDERLOADPER / 100.0;
-		temp = temp * (float)eeprom1->OVERLOADPER /100.0;
-		if(temp2>1022 || temp < 5)
+		if(temp==0)
+		{
+			eeprom1->setCurrentDetection(false);
+			sim1->setMotorMGRResponse('Y');		//ampere cleared
+			return;
+		}
+		unsigned short int tempUnder = temp * (float)eeprom1->UNDERLOADPER / 100.0;
+		unsigned short int tempOver = temp * (float)eeprom1->OVERLOADPER / 100.0;
+		
+		// temp = temp * (float)eeprom1->OVERLOADPER /100.0;
+		if(tempOver>1022 || tempUnder < 5)
 		{
 			sim1->setMotorMGRResponse('Z');		//change ampere jumper
 			return;
-		}		
+		}
 		else
 		{
-			eeprom1->setUnderloadValue(temp * (float)eeprom1->UNDERLOADPER / 100.0);
-			eeprom1->setOverloadValue(temp * (float)eeprom1->OVERLOADPER /100.0);
+			eeprom1->setUnderloadValue(temp2);
+			eeprom1->setOverloadValue(temp);
 			
 			eeprom1->setCurrentDetection(true);
 			sim1->setMotorMGRResponse('K');		//ampere settings complete
@@ -639,9 +647,7 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3)
   	if(ACPowerState())	// on AC Power,
   	{
   		#ifndef ENABLE_GP
-			#ifndef ENABLE_CURRENT
-			    digitalWrite(PIN_AUTOLED,HIGH); 	//AUTO LED is turned on.
-  			#endif
+			digitalWrite(PIN_AUTOLED,HIGH); 	//AUTO LED is turned on.
   		#endif
 		if (AllPhaseState() && !stopSequenceOn)				//auto start is on , and AC is Present in 3 phase, so , can start with switch or external force.
 		{
@@ -651,9 +657,7 @@ void Motor_MGR::updateSensorState(bool &p1, bool &p2, bool &p3)
 	else  			// on battery, so stop AUTO LED to save power
 	{
 		#ifndef ENABLE_GP
-			#ifndef ENABLE_CURRENT
-	    		digitalWrite(PIN_AUTOLED,LOW);
-			#endif
+			digitalWrite(PIN_AUTOLED,LOW);
   		#endif
 	}
   }
@@ -1268,7 +1272,7 @@ void Motor_MGR::operateOnButtonEvent()
 		lastPressTime=millis();
 		lastButtonEvent=BTNEVENTSTOP;
 	}
-	#ifndef ENABLE_GP
+	#if ! defined(ENABLE_GP) && ! defined(ENABLE_CURRENT)
 	else if(digitalRead(PIN_AUTOBUTTON)==LOW)
 	{
 		lastButtonEvent=BTNEVENTAUTO;
@@ -1276,7 +1280,7 @@ void Motor_MGR::operateOnButtonEvent()
 	}
 	#endif	
 
-	#ifndef ENABLE_GP
+	#if ! defined(ENABLE_GP) && ! defined(ENABLE_CURRENT)
 		byte pin = PIN_AUTOBUTTON;
 		if(lastButtonEvent == BTNEVENTSTART)  pin = PIN_STARTBUTTON;
 	#else
@@ -1317,7 +1321,7 @@ inline void Motor_MGR::buttonFilter()
 			lastButtonEvent=0;
 			stopMotor(false,false,true);
 		}
-		#ifndef ENABLE_GP
+		#if ! defined(ENABLE_GP) && ! defined(ENABLE_CURRENT)
 		else if(lastButtonEvent==BTNEVENTAUTO && digitalRead(PIN_AUTOBUTTON)==LOW)
 		{
 			lastButtonEvent=0;

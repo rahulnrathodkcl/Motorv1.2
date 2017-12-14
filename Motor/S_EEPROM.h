@@ -38,9 +38,7 @@ class S_EEPROM
     #endif
 
     #ifndef ENABLE_GP
-        #ifndef ENABLE_CURRENT
-            void setAutoLed();
-        #endif
+        void setAutoLed();
     #endif
     
 
