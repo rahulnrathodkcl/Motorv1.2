@@ -535,8 +535,9 @@ void S_EEPROM::loadCurrentSettings()
 
   EEPROM.get(overloadPerAddress,OVERLOADPER);
   if(OVERLOADPER==0xFF)
-    setUnderloadPer(125);
+    setOverloadPer(125);
 
+  EEPROM.get(normalLoadAddress,NORMALVALUE);
   EEPROM.get(overloadAddress,OVERLOADVALUE);
 
   EEPROM.get(underloadAddress,UNDERLOADVALUE);
@@ -548,6 +549,8 @@ bool S_EEPROM::setOverloadPer(byte overloadPerValue)
   {
     OVERLOADPER = overloadPerValue;
     EEPROM.put(overloadPerAddress,OVERLOADPER);
+    if(CURRENTDETECTION)
+      calcCurrentValues();
     return true;
   }
   return false;
@@ -559,6 +562,8 @@ bool S_EEPROM::setUnderloadPer(byte underloadPerValue)
   {
     UNDERLOADPER =underloadPerValue;
     EEPROM.put(underloadPerAddress,UNDERLOADPER);
+    if(CURRENTDETECTION)
+      calcCurrentValues();
     return true;
   }
   return false;
@@ -581,6 +586,22 @@ void S_EEPROM::setUnderloadValue(unsigned short int underValue)
   UNDERLOADVALUE = underValue;
   EEPROM.put(underloadAddress,UNDERLOADVALUE);
 }
+
+void S_EEPROM::setNormalLoadValue(unsigned short int normalVal)
+{
+  NORMALVALUE = normalVal;
+  EEPROM.put(normalLoadAddress,NORMALVALUE);
+}
+
+void S_EEPROM::calcCurrentValues()
+{
+  unsigned short int temp = NORMALVALUE * (float)UNDERLOADPER / 100.0;
+  setUnderloadValue(temp);
+
+  temp = NORMALVALUE * (float)OVERLOADPER / 100.0;
+  setOverloadValue(temp);
+}
+
 #endif
 
 void S_EEPROM::loadResponseSettings()

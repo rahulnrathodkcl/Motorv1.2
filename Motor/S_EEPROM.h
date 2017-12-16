@@ -19,6 +19,7 @@ class S_EEPROM
 
     #ifdef ENABLE_CURRENT
         void loadCurrentSettings();
+        void calcCurrentValues();
     #endif
 
     void loadM2MClientSettings();
@@ -102,6 +103,7 @@ class S_EEPROM
         bool CURRENTDETECTION;
         unsigned short int OVERLOADVALUE;
         unsigned short int UNDERLOADVALUE;
+        unsigned short int NORMALVALUE;
         byte UNDERLOADPER;
         byte OVERLOADPER;
     #endif
@@ -137,6 +139,7 @@ class S_EEPROM
     #endif
 
     #ifdef ENABLE_CURRENT
+        void setNormalLoadValue(unsigned short val);
         void setOverloadValue(unsigned short val);
         void setUnderloadValue(unsigned short val);
         void setCurrentDetection(bool value);

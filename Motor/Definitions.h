@@ -172,12 +172,13 @@
 #define lowVoltAddress 160
 
 #ifdef ENABLE_CURRENT
+	// #define STARTINGCURRENT 800
 	#define currentDetectionAddress 164
-	#define overloadAddress 168
-	#define underloadAddress 172
-	#define underloadPerAddress 176
-	#define overloadPerAddress 180
-	#define STARTINGCURRENT 800
+	#define normalLoadAddress 168
+	#define overloadAddress 172
+	#define underloadAddress 176
+	#define underloadPerAddress 180
+	#define overloadPerAddress 184
 #endif
 
 #define numbersCountAddress 300

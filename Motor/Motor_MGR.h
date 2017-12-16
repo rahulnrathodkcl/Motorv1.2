@@ -47,7 +47,7 @@ class Motor_MGR
     
     #ifdef ENABLE_CURRENT
         unsigned long int lastCurrentReadingTime;
-        bool enableCurrentDetection;
+        bool enableCurrentBuffer;
         byte lastCurrentReading;
     #endif
 
@@ -210,6 +210,7 @@ class Motor_MGR
     #endif
 
     #ifdef ENABLE_CURRENT
+        unsigned short int getCurrentConsumed();
         void autoSetCurrent();
     #endif
 

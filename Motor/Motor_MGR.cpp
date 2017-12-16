@@ -102,8 +102,16 @@ lastPressTime=0;
 lastButtonEvent=0;
 
 
-  for (byte i = 0; i < 12; i++)
-	simEventTemp[i] = true;
+
+	#ifdef ENABLE_CURRENT
+		byte i=14;
+	#else
+		byte i=12;
+	#endif
+	while(i--)
+	{
+		simEventTemp[i] = true;
+	}
 
   simEvent[0] = 'N';
   simEvent[1] = 'P';
@@ -505,7 +513,7 @@ void Motor_MGR::autoSetCurrent()
 	if(motorState() && !startSequenceOn && !starDeltaTimerOn && !stopSequenceOn && AllPhaseState())
 	{
 		unsigned short int temp = analogRead(PIN_CURRENT);
-		if(temp==0)
+		if(temp<168)
 		{
 			eeprom1->setCurrentDetection(false);
 			sim1->setMotorMGRResponse('Y');		//ampere cleared
@@ -515,15 +523,16 @@ void Motor_MGR::autoSetCurrent()
 		unsigned short int tempOver = temp * (float)eeprom1->OVERLOADPER / 100.0;
 		
 		// temp = temp * (float)eeprom1->OVERLOADPER /100.0;
-		if(tempOver>1022 || tempUnder < 5)
+		if(tempOver>1022 || tempUnder < 168)
 		{
-			sim1->setMotorMGRResponse('Z');		//change ampere jumper
+			sim1->setMotorMGRResponse('7');		//change ampere jumper
 			return;
 		}
 		else
 		{
-			eeprom1->setUnderloadValue(temp2);
-			eeprom1->setOverloadValue(temp);
+			eeprom1->setNormalLoadValue(temp);
+			eeprom1->setUnderloadValue(tempUnder);
+			eeprom1->setOverloadValue(tempOver);
 			
 			eeprom1->setCurrentDetection(true);
 			sim1->setMotorMGRResponse('K');		//ampere settings complete
@@ -536,19 +545,23 @@ void Motor_MGR::autoSetCurrent()
 	}
 }
 
+unsigned short int Motor_MGR::getCurrentConsumed()
+{
+	return (analogRead(PIN_CURRENT));
+}
+
 void Motor_MGR::checkCurrentConsumption()
 {
-
-	if(!motorState() || !eeprom1->CURRENTDETECTION || startSequenceOn || starDeltaTimerOn
+	if(!motorState() || !eeprom1->CURRENTDETECTION || starDeltaTimerOn
 		|| millis()-lastCurrentReadingTime<500)
 		return;
 
-	if(enableCurrentDetection)
-	{
-		if(millis()-tempStartSequenceTimer>5000)
-			enableCurrentDetection=false;
-		return;
-	}
+	// if(enableCurrentBuffer)
+	// {
+		if(enableCurrentBuffer && millis()-tempStartSequenceTimer>20000)
+			enableCurrentBuffer=false;
+		// return;
+	// }
 
 	lastCurrentReadingTime=millis();
 	unsigned short int temp = analogRead(PIN_CURRENT);
@@ -578,7 +591,7 @@ void Motor_MGR::checkCurrentConsumption()
 	lastCurrentReading=temp2;
 }
 #endif
-
+ 
 bool Motor_MGR::getMotorState()
 {
   bool p1, p2, p3;
@@ -975,7 +988,7 @@ void Motor_MGR::startMotor(bool commanded)
 	  setLED(TURN_ON);
 	  tempStartSequenceTimer = millis();
 	  startSequenceOn = true;
-	  enableCurrentDetection=false;
+	  enableCurrentBuffer=false;
 	  motorState(true);
 	  gotOnCommand = commanded;
 	}
@@ -1071,7 +1084,7 @@ void Motor_MGR::terminateStarDeltaTimer()
 		digitalWrite(PIN_MSTART,HIGH);
 		starDeltaTimerOn=false;
 		#ifdef ENABLE_CURRENT
-			enableCurrentDetection=true;
+			enableCurrentBuffer=true;
 			tempStartSequenceTimer=millis();
 		#endif
 	}
@@ -1084,7 +1097,7 @@ void Motor_MGR::terminateStartRelay()
   	if(((unsigned int)eeprom1->starDeltaTimerTime *10) <= startSequenceTimerTime)
   	{
 		digitalWrite(PIN_MSTART, HIGH);
-		enableCurrentDetection=true;
+		enableCurrentBuffer=true;
 		tempStartSequenceTimer=millis();
   	}
   	else
@@ -1339,9 +1352,10 @@ inline void Motor_MGR::buttonFilter()
 void Motor_MGR::update()
 {
 
-	checkCurrentConsumption();
 	if(!startSequenceOn && !stopSequenceOn)
 	{
+		checkCurrentConsumption();
+
 		noInterrupts();
 			byte tempEventOccured=eventOccured;
 			byte tempButtonEventOccured=buttonEventOccured;

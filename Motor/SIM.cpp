@@ -956,27 +956,47 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       }
     }
     #ifdef ENABLE_CURRENT
-    else if(str.startsWith("OVR"))
+    // else if(str.startsWith("OVR"))
+    else if(stringContains(str, F("OVR"), 3, str.length()-1))
     {
-      if(str.length()>3)
+      if (isNumeric(str))
       {
-        char tempChr = str.charAt(3);
-        if(tempChr=='+')
-          eeprom1->setOverloadPer(eeprom1->OVERLOADPER+10);
-        else if(tempChr=='-')
-          eeprom1->setOverloadPer(eeprom1->OVERLOADPER-10);
+        data = str.toInt();
+        if(data>110)
+        {
+          eeprom1->setOverloadPer(data);
+          done=true;
+        }
       }
     }
-    else if(str.startsWith("UNDR"))
+    else if(stringContains(str, F("UNDR"), 4, str.length()-1))
     {
-      if(str.length()>3)
+      if (isNumeric(str))
       {
-        char tempChr = str.charAt(3);
-        if(tempChr=='+')
-          eeprom1->setUnderloadPer(eeprom1->UNDERLOADPER+10);
-        else if(tempChr=='-')
-          eeprom1->setUnderloadPer(eeprom1->UNDERLOADPER-10);
+        data = str.toInt();
+        if(data<95 && data>0)
+        {
+          eeprom1->setUnderloadPer(data);
+          done=true;
+        }
       }
+    }
+    else if(str.startsWith("ASTAT"))
+    {
+        String smsg="C:";
+        smsg.concat(motor1->getCurrentConsumed());
+        smsg.concat("\nN:");
+        smsg.concat(eeprom1->NORMALVALUE);
+        smsg.concat("\nO:");
+        smsg.concat(eeprom1->OVERLOADVALUE);
+        smsg.concat("\nU:");
+        smsg.concat(eeprom1->UNDERLOADVALUE);
+        smsg.concat("\nOP:");
+        smsg.concat(eeprom1->OVERLOADPER);
+        smsg.concat("\nUP:");
+        smsg.concat(eeprom1->UNDERLOADPER);
+        sendSMS(smsg,true);
+        done=true;
     }
     #endif
     #ifdef ENABLE_WATER
