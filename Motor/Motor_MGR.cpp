@@ -98,6 +98,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   	setWaterDefaults();
   #endif
   	
+
 lastPressTime=0;
 lastButtonEvent=0;
 
@@ -513,7 +514,7 @@ void Motor_MGR::autoSetCurrent()
 	if(motorState() && !startSequenceOn && !starDeltaTimerOn && !stopSequenceOn && AllPhaseState())
 	{
 		unsigned short int temp = analogRead(PIN_CURRENT);
-		if(temp<168)
+		if(temp<160)
 		{
 			eeprom1->setCurrentDetection(false);
 			sim1->setMotorMGRResponse('Y');		//ampere cleared
@@ -523,7 +524,7 @@ void Motor_MGR::autoSetCurrent()
 		unsigned short int tempOver = temp * (float)eeprom1->OVERLOADPER / 100.0;
 		
 		// temp = temp * (float)eeprom1->OVERLOADPER /100.0;
-		if(tempOver>1022 || tempUnder < 168)
+		if(tempOver>1022 || tempUnder < 128)
 		{
 			sim1->setMotorMGRResponse('7');		//change ampere jumper
 			return;
@@ -558,7 +559,7 @@ void Motor_MGR::checkCurrentConsumption()
 
 	// if(enableCurrentBuffer)
 	// {
-		if(enableCurrentBuffer && millis()-tempStartSequenceTimer>20000)
+		if(enableCurrentBuffer && millis()-tempStartSequenceTimer>30000)
 			enableCurrentBuffer=false;
 		// return;
 	// }
@@ -566,29 +567,59 @@ void Motor_MGR::checkCurrentConsumption()
 	lastCurrentReadingTime=millis();
 	unsigned short int temp = analogRead(PIN_CURRENT);
 
+	
+	unsigned short int overLoadDetectValue=10000;
 	byte temp2;
 // implement bufffer of previous input.. and check 2 previous inputs for deciding overload or underload
-	if(temp> eeprom1->OVERLOADVALUE)
+	if(enableCurrentBuffer && temp>(eeprom1->NORMALVALUE*2))
+	{
+		temp2 = CR_OVER2;
+		overLoadDetectValue=18000;
+	}
+	else if(!enableCurrentBuffer && temp>(eeprom1->NORMALVALUE*2))
+	{
 		temp2 = CR_OVER;
-	else if(temp < eeprom1->UNDERLOADVALUE)
+		overLoadDetectValue=4000;
+	}
+	else if(!enableCurrentBuffer && temp> (float)eeprom1->NORMALVALUE*(1.5))
+	{
+		temp2 = CR_OVER;
+		overLoadDetectValue=7500;
+	}
+	else if (!enableCurrentBuffer && temp>eeprom1->OVERLOADVALUE)
+	{
+		temp2 = CR_OVER;
+	}
+	else if(temp < eeprom1->UNDERLOADVALUE && !enableCurrentBuffer)		// only consider noLoad after 30 secs
+	{
 		temp2 = CR_UNDER;
+	}
 	else 
+	{
 		temp2= CR_NORMAL;
+	}
 
 	if(lastCurrentReading == temp2)
 	{
-		if(temp2==CR_OVER)
+		if(millis()-currentEventFilterTempTime>overLoadDetectValue)
 		{
-			stopMotor(false,true);
-			simEventTemp[12] = sim1->registerEvent('B');			//register overload Event
-		}
-		else if(temp2==CR_UNDER)
-		{
-			stopMotor(false,true);
-			simEventTemp[13] = sim1->registerEvent('J');			// register Underload Event
+			if(temp2==CR_OVER)
+			{
+				stopMotor(false,true);
+				simEventTemp[12] = sim1->registerEvent('B');			//register overload Event
+			}
+			else if(temp2==CR_UNDER)
+			{
+				stopMotor(false,true);
+				simEventTemp[13] = sim1->registerEvent('J');			// register Underload Event
+			}
 		}
 	}
-	lastCurrentReading=temp2;
+	else
+	{
+		currentEventFilterTempTime = millis();
+		lastCurrentReading=temp2;
+	}
 }
 #endif
  
@@ -990,6 +1021,9 @@ void Motor_MGR::startMotor(bool commanded)
 	  startSequenceOn = true;
 	  enableCurrentBuffer=false;
 	  motorState(true);
+  	#ifdef ENABLE_CURRENT
+		lastCurrentReading=CR_NORMAL;
+  	#endif
 	  gotOnCommand = commanded;
 	}
 	else
@@ -1031,6 +1065,9 @@ void Motor_MGR::stopMotor(bool commanded, bool forceStop,bool offButton)
 	motorState(false);
 	gotOffCommand = commanded;
 	offButtonPressed=offButton;
+	#ifdef ENABLE_CURRENT
+		lastCurrentReading=CR_NORMAL;			//to make the current readings normal
+	#endif
   }
   else
   {

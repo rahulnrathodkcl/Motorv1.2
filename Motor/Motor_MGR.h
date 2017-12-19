@@ -47,6 +47,7 @@ class Motor_MGR
     
     #ifdef ENABLE_CURRENT
         unsigned long int lastCurrentReadingTime;
+        unsigned long int currentEventFilterTempTime;
         bool enableCurrentBuffer;
         byte lastCurrentReading;
     #endif

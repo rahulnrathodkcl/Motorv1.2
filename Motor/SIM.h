@@ -100,7 +100,7 @@ class SIM
     void sendReadMsg(String str);
     bool isMsgBody(String &str);
     bool isAdmin(String str);
-    bool isPrimaryNumber(String str);
+    // static bool isPrimaryNumber(String str);
     void gotMsgBody(String &str);
     bool isNewMsg(String &str);
 
@@ -145,7 +145,7 @@ class SIM
     bool isCut(String);
     bool isSoundStop(String);
     char callState(String);
-    String getActiveNumber();
+    // static String getActiveNumber();
     void makeCall();
     void endCall();
     void acceptCall();
@@ -157,7 +157,7 @@ class SIM
     void operateRing();
     bool playSoundElligible();
     void triggerPlaySound();
-    void playSoundAgain(String);
+    // static void playSoundAgain(String);
     void playSound(char c, bool x = true);
     void stopSound();
     void delay(byte);

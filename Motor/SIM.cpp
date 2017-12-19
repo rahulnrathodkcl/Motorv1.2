@@ -385,7 +385,7 @@ bool SIM::startGPRS(String apn)
   return false;
 }
 
-bool SIM::stopGPRS()
+inline bool SIM::stopGPRS()
 {
 		return(sendBlockingATCommand(F(STR_SAPBR_STOP),true));
 }
@@ -636,7 +636,7 @@ bool SIM::prepareForFirmwareUpdate(String &ipaddress)
 
 // #asm("jmp 0xE00") // jump to bootloader
 
-void SIM::jumpToBootloader() // Restarts program from beginning but does not reset the peripherals and registers
+inline void SIM::jumpToBootloader() // Restarts program from beginning but does not reset the peripherals and registers
 {
 asm volatile ("  jmp 0X7800");  //bootloader vector start address set using BOOTSZ fuse. 
 }  
@@ -647,7 +647,7 @@ asm volatile ("  jmp 0X7800");  //bootloader vector start address set using BOOT
   // );
 // }
 
-void SIM::initRestartSeq()
+inline void SIM::initRestartSeq()
 {
     sendBlockingATCommand(F("AT+CSCLK=0\r\n"));
     sendBlockingATCommand(F("AT&W\r\n"));
@@ -782,7 +782,7 @@ bool SIM::getBlockingResponse(String &cmd,bool (SIM::*func)(String &))
 
 #ifdef ENABLE_M2M
 
-void SIM::verifyRemoteNumber()
+inline void SIM::verifyRemoteNumber()
 {
     sendSMS(F("VMM01"),true,SEND_TO_M2M_REMOTE);
 }
@@ -1278,7 +1278,7 @@ inline bool SIM::isCSQ(String &str)
   return stringContains(str, "+CSQ", 5, str.length() - 3);
 }
 
-inline void SIM::sendReadMsg(String str)
+void SIM::sendReadMsg(String str)
 {
   String s = "AT+CMGR=";
   s.concat(str);
@@ -1290,7 +1290,7 @@ inline bool SIM::isMsgBody(String &str)
   return stringContains(str, "+CMGR:", 24, 34);
 }
 
-bool SIM::isAdmin(String str)
+inline bool SIM::isAdmin(String str)
 {
   return (str == adminNumber || str==adminNumber1 || str==adminNumber2 || str==adminNumber3 || str==adminNumber4);
 }
@@ -1359,7 +1359,7 @@ void SIM::gotMsgBody(String &str)
   delAllMsg();
 }
 
-bool SIM::isNewMsg(String &str)
+inline bool SIM::isNewMsg(String &str)
 {
   return stringContains(str, "+CMTI:", 12, str.length() - 1);
 }
@@ -1427,13 +1427,13 @@ bool SIM::initialize()
   return false;
 }
 
-void SIM::registerWithAdmin()
+inline void SIM::registerWithAdmin()
 {
   isMsgFromAdmin=true;
   sendSMS((eeprom1->getDeviceId()),true);
 }
 
-bool SIM::isNumber(String &str)
+inline bool SIM::isNumber(String &str)
 {
   return (stringContains(str, "+CLIP: \"", 11, 21));
 }
@@ -1473,7 +1473,7 @@ void SIM::acceptCommands()
   }
 }
 
-void SIM::rejectCommands()
+inline void SIM::rejectCommands()
 {
 #ifndef disable_debug
   _NSerial->print("com");
@@ -1564,12 +1564,12 @@ bool SIM::stringContains(String &sstr, String mstr, byte sstart, byte sstop)
   return false;
 }
 
-bool SIM::isRinging(String str)
+inline bool SIM::isRinging(String str)
 {
   return (str == "RING\r");
 }
 
-bool SIM::isDTMF(String &str)
+inline bool SIM::isDTMF(String &str)
 {
   return(stringContains(str, "+DTMF: ", 7, 8));
 }
@@ -1597,7 +1597,7 @@ bool SIM::isCut(String str)
   return false;
 }
 
-bool SIM::isSoundStop(String str)
+inline bool SIM::isSoundStop(String str)
 {
   return (str == "+CREC: 0\r");
 }
@@ -1772,7 +1772,7 @@ void SIM::endCall()
 #endif
 }
 
-void SIM::setObtainEvent()
+inline void SIM::setObtainEvent()
 {
   if (!obtainNewEvent  && millis() - obtainEventTimer > 1000)
     obtainNewEvent = true;
@@ -2026,12 +2026,12 @@ void SIM::operateRing()
   }
 }
 
-bool SIM::playSoundElligible()
+inline bool SIM::playSoundElligible()
 {
   return (bplaySound && ((millis() - soundWait) > (soundWaitTime * 100)));
 }
 
-void SIM::triggerPlaySound()
+inline void SIM::triggerPlaySound()
 {
   _SSerial->flush();
   sendCommand(F("AT+CREC=4,\""));
@@ -2070,19 +2070,19 @@ void SIM::playSound(char actionType, bool newAction)
   playFile = actionType;
 }
 
-void SIM::stopSound()
+inline void SIM::stopSound()
 {
   _SSerial->flush();
   sendCommand(F("AT+CREC=5\r"), true);
   _SSerial->flush();
 }
 
-bool SIM::callTimerExpire()
+inline bool SIM::callTimerExpire()
 {
   return ((millis() - callCutWait) >= (callCutWaitTime * 100));
 }
 
-void SIM::makeResponseAction()
+inline void SIM::makeResponseAction()
 {
   #ifndef ENABLE_M2M
   if(eeprom1->RESPONSE!='N')
@@ -2153,12 +2153,12 @@ bool SIM::registerEvent(char eventType)
     return false;
 }
 
-bool SIM::rejectCommandsElligible()
+inline bool SIM::rejectCommandsElligible()
 {
   return (commandsAccepted && millis() - tempAcceptCommandTime >= (acceptCommandsTime * 100));
 }
 
-void SIM::checkNetwork(String str)
+inline void SIM::checkNetwork(String str)
 {
   if (str == F("+CPIN: NOT READY\r"))
   {
@@ -2271,7 +2271,7 @@ bool SIM::busy()
   return (inCall || inInterrupt);
 }
 
-bool inline SIM::checkEventGone()
+inline bool SIM::checkEventGone()
 {
   return (millis() - tempInterruptTime > 2000);
 }
@@ -2302,7 +2302,7 @@ String SIM::makeStatusMsg(byte battery, byte network)
       return resp;
 }
 
-void SIM::checkRespSMS(char t1)
+inline void SIM::checkRespSMS(char t1)
 {
   if (!callAccepted && eeprom1->RESPONSE=='A')
   {

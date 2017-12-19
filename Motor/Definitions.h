@@ -1,7 +1,7 @@
 #ifndef DEF_h
 #define DEF_h
 
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 #include <HardwareSerial.h>
 #include <avr/wdt.h>
 #include <avr/sleep.h>
@@ -116,6 +116,7 @@
 	#endif
 
 	#define PIN_CURRENT A5
+	#define CR_OVER2 2
 	#define CR_OVER 1
 	#define CR_UNDER 2
 	#define CR_NORMAL 0
