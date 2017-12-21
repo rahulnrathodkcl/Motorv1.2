@@ -551,6 +551,33 @@ unsigned short int Motor_MGR::getCurrentConsumed()
 	return (analogRead(PIN_CURRENT));
 }
 
+void Motor_MGR::speakAmpere()
+{
+	if(motorState())
+	{
+		unsigned short tempCr = getCurrentConsumed();
+		unsigned short cVolt = sim1->getBatVolt();
+		cVolt = cVolt / 10;
+		tempCr = tempCr * cVolt / 1024;
+		// String tempStr = "";
+		char cTemp[5];
+		itoa(tempCr, cTemp, 10);
+		// tempStr.concat(tempCr);
+		cTemp[0] = cTemp[0] + 49;
+		cTemp[1] = cTemp[1] + 49;
+		sim1->playRepeatedFiles(cTemp);
+		// return tempCr;
+
+		// tempStr.concat(tempCr);
+		// tempStr[0] = (char)tempStr.charAt(0) + 49;
+		// tempStr[1] = (char)tempStr.charAt(1) + 49;
+		// sim1->playRepeatedFiles(tempStr);
+		// return tempCr;
+	}
+	// sim1->playRepeatedFiles("0");
+	return;
+}
+
 void Motor_MGR::checkCurrentConsumption()
 {
 	if(!motorState() || !eeprom1->CURRENTDETECTION || starDeltaTimerOn
@@ -568,25 +595,27 @@ void Motor_MGR::checkCurrentConsumption()
 	unsigned short int temp = analogRead(PIN_CURRENT);
 
 	
-	unsigned short int overLoadDetectValue=10000;
+	unsigned short int overLoadDetectValue=12000;
 	byte temp2;
 // implement bufffer of previous input.. and check 2 previous inputs for deciding overload or underload
-	if(enableCurrentBuffer && temp>(eeprom1->NORMALVALUE*2))
+	if(enableCurrentBuffer && temp>(eeprom1->NORMALVALUE<<1))		// more than double
 	{
 		temp2 = CR_OVER2;
 		overLoadDetectValue=18000;
 	}
-	else if(!enableCurrentBuffer && temp>(eeprom1->NORMALVALUE*2))
+	else if(!enableCurrentBuffer && temp>(eeprom1->NORMALVALUE<<1))			//more than double
 	{
 		temp2 = CR_OVER;
-		overLoadDetectValue=4000;
+		// overLoadDetectValue/=3;
+		overLoadDetectValue=overLoadDetectValue>>2;
 	}
-	else if(!enableCurrentBuffer && temp> (float)eeprom1->NORMALVALUE*(1.5))
+	// else if(!enableCurrentBuffer && temp> (float)eeprom1->NORMALVALUE*(1.5F))
+	else if(!enableCurrentBuffer && temp> (eeprom1->NORMALVALUE+(eeprom1->NORMALVALUE>>1))) // more than 1.5
 	{
 		temp2 = CR_OVER;
-		overLoadDetectValue=7500;
+		overLoadDetectValue=overLoadDetectValue>>1;
 	}
-	else if (!enableCurrentBuffer && temp>eeprom1->OVERLOADVALUE)
+	else if (!enableCurrentBuffer && temp>eeprom1->OVERLOADVALUE)		// more than 1.25 to 1.5
 	{
 		temp2 = CR_OVER;
 	}

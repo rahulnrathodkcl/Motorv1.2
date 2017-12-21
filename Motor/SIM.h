@@ -27,7 +27,7 @@ class SIM
     // #endif
 
     bool isRegisteredNumber;
-    bool responseToAction;
+    // bool responseToAction;
     // String adminNumber;
     byte soundWaitTime; //x100 = mSec
     unsigned long soundWait;
@@ -93,6 +93,10 @@ class SIM
     bool obtainNewEvent;
     unsigned long obtainEventTimer;
 
+    byte currentPlayingFileIndex;
+    byte maxPlayingFiles;
+    char playFilesList[5];
+    
     void anotherConstructor();
 
     void delAllMsg();
@@ -139,6 +143,8 @@ class SIM
     bool sendBlockingATCommand(String,bool =false);
     String readString();
     // bool matchString(String, String);
+    
+    bool stringContains(char *chr,String &sstr, String mstr, byte sstart, byte sstop);
     bool stringContains(String &sstr, String mstr, byte sstart, byte sstop);
     bool isRinging(String);
     bool isDTMF(String &s);
@@ -157,7 +163,8 @@ class SIM
     void operateRing();
     bool playSoundElligible();
     void triggerPlaySound();
-    // static void playSoundAgain(String);
+    
+    void playSoundAgain(String);
     void playSound(char c, bool x = true);
     void stopSound();
     void delay(byte);
@@ -231,9 +238,12 @@ class SIM
     SIM(HardwareSerial* serial);
 #endif
 #endif
+    void playRepeatedFiles(char *fileList);
+    // void playRepeatedFiles(String &);
     unsigned short int getBatVolt();
     void startSIMAfterUpdate();
     void sendUpdateStatus(byte);
+    void sendCommand_P(const char *cmd, bool newline);
     void sendCommand(char cmd, bool newline);
     void sendCommand(String cmd, bool newline);
 

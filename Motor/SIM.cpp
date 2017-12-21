@@ -69,7 +69,7 @@ void SIM::anotherConstructor()
   // attemptsToCall=0;
 
   actionType = 'N';
-  responseToAction = false;
+  // responseToAction = false;
 
   callCutWaitTime = 580;
   nr = 0;
@@ -471,6 +471,7 @@ bool SIM::getProgramSize()
               #endif
               if(stringContains(str,F("+FTPSIZE: 1,0,"),14,str.length()-1))
               {
+                // eeprom1->saveProgramSize(atoi(buf));
                 eeprom1->saveProgramSize(str.toInt());
                 #ifndef disable_debug
                   _NSerial->println(str);
@@ -666,6 +667,7 @@ bool SIM::checkPrgReq(String str,bool noMsg)
 {
   byte p=0;
   isMsgFromAdmin=true;
+
   if(stringContains(str,F("PRGUPD"),6,str.length()-1))
   {
       if(currentStatus=='N')
@@ -674,7 +676,7 @@ bool SIM::checkPrgReq(String str,bool noMsg)
       // bool verify=false;
       // if(stringContains(str,"V",1,str.length()-1))
       //   verify=true;
-      str.toLowerCase();
+      // str.toLowerCase();
       if(prepareForFirmwareUpdate(str))
       {
           isMsgFromAdmin=true;
@@ -695,26 +697,26 @@ bool SIM::checkPrgReq(String str,bool noMsg)
       }
           return true;
   }
-  else if(stringContains(str,F("PRGSIZE"),7,str.length()-1))
-  {
-      p=0x01;
-  }
-  else if(stringContains(str,F("REUPD"),5,str.length()-1))
-  {
-    p=0x02;
-  }
+  // else if(stringContains(str,F("PRGSIZE"),7,str.length()-1))
+  // {
+  //     p=0x01;
+  // }
+  // else if(stringContains(str,F("REUPD"),5,str.length()-1))
+  // {
+  //   p=0x02;
+  // }
 
-  if(p>0)
-  {
-      eeprom1->saveProgramSize(str.toInt());
-      String tempStr = F("OK : ");
-      tempStr.concat(str);
-      // tempStr = tempStr + str;
-      if(!noMsg) sendSMS(tempStr,true);
-      if(p==0x02) initRestartSeq();
+  // if(p>0)
+  // {
+  //     eeprom1->saveProgramSize(str.toInt());
+  //     String tempStr = F("OK : ");
+  //     tempStr.concat(str);
+  //     // tempStr = tempStr + str;
+  //     if(!noMsg) sendSMS(tempStr,true);
+  //     if(p==0x02) initRestartSeq();
 
-      return true;
-  }
+  //     return true;
+  // }
   isMsgFromAdmin=false;
   return false;
 }
@@ -1484,6 +1486,20 @@ inline void SIM::rejectCommands()
   commandsAccepted = false;
 }
 
+void SIM::sendCommand_P(const char *cmd, bool newline = false)
+{
+  acceptCommands();
+  char c;
+  if (!cmd) 
+    return;
+  while ((c = pgm_read_byte(cmd++)))
+    _SSerial->print (c);
+
+  if(newline)
+    _SSerial->println();
+}
+
+
 void SIM::sendCommand(char cmd, bool newline = false)
 {
   acceptCommands();
@@ -1554,11 +1570,44 @@ String SIM::readString()
 //   return (m1 == m2);
 // }
 
+
+// bool SIM::stringContains(char *sstr,const char *mstr, byte sstart, byte sstop)
+// {
+//   if(strncmp(sstr,mstr,strlen(mstr))==0)      //sstr starts with mstr
+//   {
+//     sstr=sstr+sstart;
+//     char *temp;
+//     temp= sstr + sstop - sstart;
+//     *temp='\0';
+//     return true;
+//  }
+// return false;
+  
+// }
+
+// bool SIM::stringContains(char *temp,String &sstr, String mstr, byte sstart, byte sstop)
+// {
+
+//   if(sstr.startsWith(mstr))
+//   {
+//     byte j=0;
+//     while(sstart<sstop)
+//     {
+//       temp[j++]=sstr.charAt(sstart++);      
+//     }    
+//     temp[j]='\0';
+//     return true;
+//   }
+  
+//   return false;
+
+// }
+
 bool SIM::stringContains(String &sstr, String mstr, byte sstart, byte sstop)
 {
   if (sstr.startsWith(mstr))
   {
-    sstr = sstr.substring(sstart, sstop);
+    sstr.substring(sstart, sstop);
     return true;
   }
   return false;
@@ -1573,7 +1622,6 @@ inline bool SIM::isDTMF(String &str)
 {
   return(stringContains(str, "+DTMF: ", 7, 8));
 }
-
 
 bool SIM::isCut(String str)
 {
@@ -1759,7 +1807,7 @@ void SIM::endCall()
   // eeprom1->inCall(false);
 
   callAccepted = false;
-  responseToAction = false;
+  // responseToAction = false;
   currentStatus = 'N';
   currentCallStatus = 'N';
 
@@ -1929,8 +1977,18 @@ void SIM::operateDTMF(String s)
       {
         motor1->autoSetCurrent();   //to enable or disable current detection
         subDTMF();
+        zeroPressed=false;
       }
         zeroPressed=true;
+    }
+    else if (str == '7') //Speak Current Ampere On Call
+    {
+      subDTMF();
+      motor1->speakAmpere();
+      // eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
+      // motor1->resetAutoStart(true);
+        // responseToAction = true;
+        // playSound('8');     // playFile AutoStart is On
     }
     // else if(str=='7')   // increase overload per by 10
     // {
@@ -1961,7 +2019,7 @@ void SIM::operateDTMF(String s)
       subDTMF();
       eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
       motor1->resetAutoStart(true);
-        responseToAction = true;
+        // responseToAction = true;
         playSound('8');     // playFile AutoStart is On
     }
     else if (str == '9') //Set AUTOTIMER OFF
@@ -1969,7 +2027,7 @@ void SIM::operateDTMF(String s)
       subDTMF();
       eeprom1->saveAutoStartSettings(false);  //set AUtoStart to False in EEPROM
       motor1->resetAutoStart(true);
-        responseToAction = true;
+        // responseToAction = true;
         playSound('9'); //playFile autoStart is turned oFF
     }
   }
@@ -2031,22 +2089,63 @@ inline bool SIM::playSoundElligible()
   return (bplaySound && ((millis() - soundWait) > (soundWaitTime * 100)));
 }
 
+
+// inline void SIM::triggerPlaySound()
+// {
+//   _SSerial->flush();
+//   sendCommand(F("AT+CREC=4,\""));
+//   sendCommand(F("AT+CREC=4,\""));
+//   sendCommand("C:\\User\\FTP\\");
+//   sendCommand(playFile);
+//   sendCommand(F(".amr\",0,100,"));
+//   if(maxPlayingFiles>1)
+//     sendCommand(F("0\r"), true);
+//   else
+//     sendCommand(F("1\r"), true);
+
+//   // sendCommand(F(".amr\",0,100,1\r"), true);
+//   _SSerial->flush();
+//   bplaySound = false;
+// }
+
 inline void SIM::triggerPlaySound()
 {
   _SSerial->flush();
-  sendCommand(F("AT+CREC=4,\""));
-  sendCommand("C:\\User\\FTP\\");
+  sendCommand_P(PSTR ("AT+CREC=4,\""));
+  sendCommand_P(PSTR ("C:\\User\\FTP\\"));
   sendCommand(playFile);
-  sendCommand(F(".amr\",0,100,1\r"), true);
+  sendCommand_P(PSTR(".amr\",0,100,"));
+  if(maxPlayingFiles>1)
+    sendCommand_P(PSTR("0\r"), true);
+  else
+    sendCommand_P(PSTR("1\r"), true);
+  // sendCommand(F("AT+CREC=4,\""));
+  // sendCommand("C:\\User\\FTP\\");
+  // sendCommand(playFile);
+  // sendCommand(F(".amr\",0,100,"));
+  // if(maxPlayingFiles>1)
+  //   sendCommand(F("0\r"), true);
+  // else
+  //   sendCommand(F("1\r"), true);
+
+  // sendCommand(F(".amr\",0,100,1\r"), true);
   _SSerial->flush();
   bplaySound = false;
 }
 
-// void SIM::playSoundAgain(String str)
-// {
-//   if (isSoundStop(str))
-//   {
-////       if (starPresent)
+void SIM::playSoundAgain(String str)
+{
+  if (isSoundStop(str))
+  {
+    if(maxPlayingFiles>1 && currentPlayingFileIndex<maxPlayingFiles-1)
+    {
+      playSound(playFilesList[++currentPlayingFileIndex]);
+    }
+    else
+    {
+      playSound('M');
+    }
+// //       if (starPresent)
 //       {
 //           if(playFile==actionType)
 //             playFile='N';
@@ -2054,19 +2153,75 @@ inline void SIM::triggerPlaySound()
 //             playFile=actionType;
 //       }
 //       playSound(playFile);
+  }
+}
+
+// void SIM::playRepeatedFiles(String &fileList)
+// {
+//   _SSerial->flush();
+//   stopSound();
+//   if(fileList.length()<5)
+//   {
+//     currentPlayingFileIndex=0;
+//     maxPlayingFiles=fileList.length();
+//     while(currentPlayingFileIndex<maxPlayingFiles)
+//     {
+//       playFilesList[currentPlayingFileIndex]=fileList.charAt(currentPlayingFileIndex++);
+//     }
+//     currentPlayingFileIndex=0;
+//     soundWait = millis();
+//     playFile = playFilesList[currentPlayingFileIndex];
+//     bplaySound = true;
 //   }
 // }
+
+void SIM::playRepeatedFiles(char *fileList)
+{
+  _SSerial->flush();
+  stopSound();
+  if(strlen(fileList)<5)
+  {
+    currentPlayingFileIndex=0;
+    maxPlayingFiles=strlen(fileList);
+    strcpy(playFilesList,fileList);
+    // while(currentPlayingFileIndex<maxPlayingFiles)
+    // {
+    //   playFilesList[currentPlayingFileIndex]=fileList[currentPlayingFileIndex++];
+    // }
+    // currentPlayingFileIndex=0;
+    soundWait = millis();
+    playFile = playFilesList[currentPlayingFileIndex];
+    bplaySound = true;
+  }
+
+  // if(fileList.length()<5)
+  // {
+  //   currentPlayingFileIndex=0;
+  //   maxPlayingFiles=fileList.length();
+  //   while(currentPlayingFileIndex<maxPlayingFiles)
+  //   {
+  //     playFilesList[currentPlayingFileIndex]=fileList.charAt(currentPlayingFileIndex++);
+  //   }
+  //   currentPlayingFileIndex=0;
+  //   soundWait = millis();
+  //   playFile = playFilesList[currentPlayingFileIndex];
+  //   bplaySound = true;
+  // }
+}
 
 void SIM::playSound(char actionType, bool newAction)
 {
   _SSerial->flush();
   stopSound();
-
   soundWait = millis();
   bplaySound = true;
   if (newAction)
+  {
+    maxPlayingFiles=1;
+    currentPlayingFileIndex=0;
+    playFilesList[currentPlayingFileIndex]=actionType;
     this->actionType = actionType;
-
+  }
   playFile = actionType;
 }
 
@@ -2186,7 +2341,7 @@ void SIM::setMotorMGRResponse(char response)
     return;
   }
 
-  responseToAction = true;
+  // responseToAction = true;
   { 
     playSound(response);
   }
@@ -2582,10 +2737,10 @@ void SIM::update()
       {
         operateDTMF(str);
       }
-      // else
-      // {
-      //   // playSoundAgain(str);
-      // }
+      else
+      {
+        playSoundAgain(str);
+      }
     }
   }
 }

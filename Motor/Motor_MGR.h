@@ -213,6 +213,7 @@ class Motor_MGR
     #ifdef ENABLE_CURRENT
         unsigned short int getCurrentConsumed();
         void autoSetCurrent();
+        void Motor_MGR::speakAmpere();
     #endif
 
     void resetAutoStart(bool setChange = false);

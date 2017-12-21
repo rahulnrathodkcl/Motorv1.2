@@ -9,7 +9,9 @@ S_EEPROM eeprom1;
 // bool batStatus;
 // bool batLevelChange=false;
 String str;
+#ifndef disable_debug
 bool simDebugMode = false;
+#endif
 bool initialized = false;
 // bool checkedUpdate=false;
 bool initCFUN=false;
