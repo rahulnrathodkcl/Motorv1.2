@@ -49,6 +49,7 @@ class S_EEPROM
 
     // void updateNumberChanges();
     bool write_StringEE(unsigned short int Addr, String input);
+    void read_StringEE(char *,unsigned short int Addr, byte length);
     String read_StringEE(unsigned short int Addr, byte length);
     bool eeprom_read_string(unsigned short int addr, char* buffer, byte bufSize);
     bool eeprom_write_string(unsigned short int addr, const char* str);
@@ -183,6 +184,8 @@ class S_EEPROM
     bool isAlterNumber(String str);
     bool isM2MNumber(String str);
 
+    void getActiveNumber(char *);
+    void  getM2MNumber(char *);
     String getActiveNumber();
     String getM2MNumber();
 
@@ -191,6 +194,7 @@ class S_EEPROM
     bool addAlternateNumber(String &number);
     bool removeNumber(String &number);
     void clearNumbers(bool admin);
+    void getIndexedNumber(char *,byte index);
     String getIndexedNumber(byte index);
 };
 #endif

@@ -114,12 +114,15 @@ class SIM
     void stopCallWaiting();
     void acceptCommands();
     void rejectCommands();
+    bool extendedSendCommand(char *,byte timeout);
     bool extendedSendCommand(String cmd,byte timeout);
 
+    bool startGPRS(const char *);
     bool startGPRS(String);
     bool stopGPRS();
     // bool extendedSendCommand(String &cmd,String vstr,unsigned short int len,unsigned short int timeout);
     bool connectToFTP(String);
+    bool setFile(const char *);
     bool setFile(String);
     bool getProgramSize();
     bool downloadFirmware();
@@ -140,6 +143,8 @@ class SIM
 
     bool isCBC(String &);
     bool isCSQ(String &);
+    bool sendBlockingATCommand_P(const char *,bool =false);
+    bool sendBlockingATCommand(char *,bool =false);
     bool sendBlockingATCommand(String,bool =false);
     String readString();
     // bool matchString(String, String);
@@ -155,6 +160,7 @@ class SIM
     void makeCall();
     void endCall();
     void acceptCall();
+    void sendSMS(char *, bool ,byte isM2m= 0x00);
     void sendSMS(String, bool ,byte isM2m= 0x00);
     
     // void operateM2MDTMF(String str);
@@ -244,6 +250,7 @@ class SIM
     void startSIMAfterUpdate();
     void sendUpdateStatus(byte);
     void sendCommand_P(const char *cmd, bool newline);
+    void sendCommand(char *cmd, bool newline);
     void sendCommand(char cmd, bool newline);
     void sendCommand(String cmd, bool newline);
 
