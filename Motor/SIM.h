@@ -115,16 +115,16 @@ class SIM
     void acceptCommands();
     void rejectCommands();
     bool extendedSendCommand(char *,byte timeout);
-    bool extendedSendCommand(String cmd,byte timeout);
+    // bool extendedSendCommand(String cmd,byte timeout);
 
     bool startGPRS(const char *);
-    bool startGPRS(String);
+    // bool startGPRS(String);
     bool stopGPRS();
     // bool extendedSendCommand(String &cmd,String vstr,unsigned short int len,unsigned short int timeout);
-    bool connectToFTP(String);
+    bool connectToFTP(String);  //*********************************
     bool setFile(const char *);
-    bool setFile(String);
-    bool getProgramSize();
+    // bool setFile(String);
+    bool getProgramSize();      //***** half***
     bool downloadFirmware();
     bool isGPRSConnected();
     bool prepareForFirmwareUpdate(String &);

@@ -25,15 +25,15 @@ void S_EEPROM::getIndexedNumber(char *retStr,byte index)
 }
 
 
-String S_EEPROM::getIndexedNumber(byte index)
-{
-  String str="";
-  if(numbersCount>index)
-  {
-    str=read_StringEE(mobileNumberAddress + (index*11),10);
-  }
-  return str;
-}
+// String S_EEPROM::getIndexedNumber(byte index)
+// {
+//   String str="";
+//   if(numbersCount>index)
+//   {
+//     str=read_StringEE(mobileNumberAddress + (index*11),10);
+//   }
+//   return str;
+// }
 
 S_EEPROM::S_EEPROM()
 {
@@ -196,7 +196,7 @@ String S_EEPROM::getActiveNumber()
     return(read_StringEE((!alterNumberSetting ? mobileNumberAddress : alterNumberAddress),10));
   }
   else
-    return (adminNumber); //="AT+CMGS=\"+917698439201\"";
+    return (F(adminNumber)); //="AT+CMGS=\"+917698439201\"";
 }
 
 void S_EEPROM::addM2MNumber(String &number)

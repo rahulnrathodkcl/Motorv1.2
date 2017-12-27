@@ -356,23 +356,23 @@ bool SIM::extendedSendCommand(char *cmd,byte timeout)
 }
 
 
-bool SIM::extendedSendCommand(String cmd,byte timeout)
-{
-  sendCommand(cmd,false);
-  unsigned long temp =millis();
-  while(millis()-temp< timeout*100)
-  {
-    if(_SSerial->available())
-    {
-      String str = _SSerial->readStringUntil('\n');
-      if(str=="OK\r")
-        return true;
-      else if(str=="ERROR\r")
-        return false;
-    }
-  }
-  return false;
-}
+// bool SIM::extendedSendCommand(String cmd,byte timeout)
+// {
+//   sendCommand(cmd,false);
+//   unsigned long temp =millis();
+//   while(millis()-temp< timeout*100)
+//   {
+//     if(_SSerial->available())
+//     {
+//       String str = _SSerial->readStringUntil('\n');
+//       if(str=="OK\r")
+//         return true;
+//       else if(str=="ERROR\r")
+//         return false;
+//     }
+//   }
+//   return false;
+// }
 
 bool SIM::startGPRS(const char *apn)
 {
@@ -427,47 +427,47 @@ bool SIM::startGPRS(const char *apn)
   return false;
 }
 
-bool SIM::startGPRS(String apn)
-{
-    //AT+SAPBR=3,1,"ConType","GPRS"
-  	// String m1="AT+SAPBR=3,1,\"";
-  	// String cmd;
-  	// cmd=m1;
-  	// cmd=cmd+"ConType\",\"GPRS\"\r\n";
-    // cmd = cmd + F(STR_SAPBR_GPRS);
+// bool SIM::startGPRS(String apn)
+// {
+//     //AT+SAPBR=3,1,"ConType","GPRS"
+//   	// String m1="AT+SAPBR=3,1,\"";
+//   	// String cmd;
+//   	// cmd=m1;
+//   	// cmd=cmd+"ConType\",\"GPRS\"\r\n";
+//     // cmd = cmd + F(STR_SAPBR_GPRS);
     
-    // String cmd=F(STR_SAPBR_PARAM);
-    // cmd.concat(F(STR_SAPBR_GPRS));
-    String cmd=F(STR_SAPBR_PARAM);
-    cmd.concat(F(STR_SAPBR_GPRS));
+//     // String cmd=F(STR_SAPBR_PARAM);
+//     // cmd.concat(F(STR_SAPBR_GPRS));
+//     String cmd=F(STR_SAPBR_PARAM);
+//     cmd.concat(F(STR_SAPBR_GPRS));
         
 
-    if(extendedSendCommand(cmd,50))
-    {
-        cmd = F(STR_SAPBR_PARAM);
-        cmd.concat(F(STR_SAPBR_APN));
-        cmd.concat(apn);
-        cmd.concat("\"\r\n");
+//     if(extendedSendCommand(cmd,50))
+//     {
+//         cmd = F(STR_SAPBR_PARAM);
+//         cmd.concat(F(STR_SAPBR_APN));
+//         cmd.concat(apn);
+//         cmd.concat("\"\r\n");
         
-        // cmd = cmd + F(STR_SAPBR_APN);
-        // cmd = cmd + apn;
-        // cmd = cmd + "\"\r\n";
-        //AT+SAPBR=3,1,"APN","bsnlnet"
-        if(extendedSendCommand(cmd,50))
-        {
-            // if(sendBlockingATCommand(F(STR_SAPBR_START),true))
-            if(sendBlockingATCommand_P(PSTR(STR_SAPBR_START),true))
-            {
-                // unsigned long temp = millis();
-                // while(millis() - temp < 2000)
-                // {}
-              delay(20);
-                return true;
-            }
-        }
-    }
-  return false;
-}
+//         // cmd = cmd + F(STR_SAPBR_APN);
+//         // cmd = cmd + apn;
+//         // cmd = cmd + "\"\r\n";
+//         //AT+SAPBR=3,1,"APN","bsnlnet"
+//         if(extendedSendCommand(cmd,50))
+//         {
+//             // if(sendBlockingATCommand(F(STR_SAPBR_START),true))
+//             if(sendBlockingATCommand_P(PSTR(STR_SAPBR_START),true))
+//             {
+//                 // unsigned long temp = millis();
+//                 // while(millis() - temp < 2000)
+//                 // {}
+//               delay(20);
+//                 return true;
+//             }
+//         }
+//     }
+//   return false;
+// }
 
 inline bool SIM::stopGPRS()
 {
@@ -585,7 +585,8 @@ bool SIM::getProgramSize()
       // }
 
       unsigned long int temp=millis();
-      sendCommand(F("AT+FTPSIZE\r\n"),false);
+      sendCommand_P(PSTR("AT+FTPSIZE\r\n"),false);
+      // sendCommand(F("AT+FTPSIZE\r\n"),false);
       while(millis()-temp<120000L)
       {
           if(_SSerial->available())
@@ -629,36 +630,89 @@ bool SIM::getProgramSize()
 //     return false;
 // }
 
+// bool SIM::downloadFirmware()
+// {
+//     unsigned long int size=eeprom1->getProgramSize();
+    
+//     //  +FTPGETTOFS: 0,2396
+//     String m1="+FTPGETTOFS";
+//     String v1=m1;
+//     v1.concat(": 0,");
+//     v1.concat(size);
+//     v1.concat("\r");
+//     // v1 = v1 + size;
+//     // v1 = v1 + "\r";
+
+//     // AT+FTPGETTOFS=0,"m.hex"\r\n
+//     String cmd="AT"; 
+//     cmd.concat(m1);
+//     cmd.concat("=0,\"m.hex\"\r\n");
+
+//     // cmd=cmd+m1;
+//     // cmd=cmd+ "=0,\"m.hex\"\r\n";
+//     unsigned long int temp = millis();
+//     sendCommand(cmd,false);
+//     while(millis()-temp<120000L)
+//     {
+//         if(_SSerial->available())
+//         {
+//             cmd=_SSerial->readStringUntil('\n');
+//             #ifndef disable_debug
+//                 _NSerial->println(cmd);
+//             #endif
+//             if(cmd==v1)
+//             {
+//               #ifndef disable_debug
+//                 _NSerial->println("DC");
+//               #endif   
+//                 return true;
+//             }
+//         }          
+//     }
+//     return false;
+//     // return extendedSendCommand(cmd,v1,25,60000);           
+// }
+
 bool SIM::downloadFirmware()
 {
     unsigned long int size=eeprom1->getProgramSize();
-    
     //  +FTPGETTOFS: 0,2396
-    String m1="+FTPGETTOFS";
-    String v1=m1;
-    v1.concat(": 0,");
-    v1.concat(size);
-    v1.concat("\r");
+    // String m1="+FTPGETTOFS";
+    // String v1=m1;
+    // v1.concat(": 0,");
+    // v1.concat(size);
+    // v1.concat("\r");
+
+    char buf2[30];
+    strcpy_P(buf2,"+FTPGETTOFS")
+    strcat_P(buf2,PSTR(": 0,"));
+    strcat(buf2,itoa(size));
+    strcat_P(buf2,PSTR("\r"));
     // v1 = v1 + size;
     // v1 = v1 + "\r";
 
     // AT+FTPGETTOFS=0,"m.hex"\r\n
-    String cmd="AT"; 
-    cmd.concat(m1);
-    cmd.concat("=0,\"m.hex\"\r\n");
+    
+    // String cmd="AT"; 
+    // cmd.concat(m1);
+    // cmd.concat("=0,\"m.hex\"\r\n");
 
     // cmd=cmd+m1;
     // cmd=cmd+ "=0,\"m.hex\"\r\n";
     unsigned long int temp = millis();
-    sendCommand(cmd,false);
+    char buf[30];
+    strcpy_P(buf,PSTR("AT+FTPGETTOFS=0,\"m.hex\"\r\n"));
+    sendCommand_P(buf,false);
+    // sendCommand(cmd,false);
     while(millis()-temp<120000L)
     {
         if(_SSerial->available())
         {
-            cmd=_SSerial->readStringUntil('\n');
+          String cmd = _SSerial->readStringUntil('\n');
             #ifndef disable_debug
                 _NSerial->println(cmd);
             #endif
+          cmd.toCharArray();
             if(cmd==v1)
             {
               #ifndef disable_debug
@@ -671,7 +725,6 @@ bool SIM::downloadFirmware()
     return false;
     // return extendedSendCommand(cmd,v1,25,60000);           
 }
-
 bool SIM::isGPRSConnected()
 {
     
@@ -1425,7 +1478,7 @@ inline bool SIM::isMsgBody(String &str)
 
 inline bool SIM::isAdmin(String str)
 {
-  return (str == adminNumber || str==adminNumber1 || str==adminNumber2 || str==adminNumber3 || str==adminNumber4);
+  return (str == F(adminNumber) || str==F(adminNumber1) || str==F(adminNumber2) || str==F(adminNumber3) || str==F(adminNumber4));
 }
 
 void SIM::gotMsgBody(String &str)
@@ -2140,7 +2193,7 @@ void SIM::sendSMS(String msg = "", bool predefMsg = false, byte isM2M)
   else 
   {
     if (isMsgFromAdmin)
-      command.concat(adminNumber);
+      command.concat(F(adminNumber));
     else
       command.concat(eeprom1->getActiveNumber());
   }
