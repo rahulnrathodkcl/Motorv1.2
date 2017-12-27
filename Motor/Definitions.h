@@ -35,7 +35,7 @@
 
 #define MAXNUMBERS 15
 
-// #define DUAL_LEVEL
+#define DUAL_LEVEL
 #define disable_debug 
 #define ENABLE_WATER
 #define ENABLE_GP
