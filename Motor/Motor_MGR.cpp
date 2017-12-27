@@ -455,14 +455,18 @@ void Motor_MGR::operateOnWaterEvent()
 		else if (uLevel==MIDLEVEL && undergroundLevel<MIDLEVEL)		// underground level is increasing
 		{
 	  		#ifdef ENABLE_GP
-	  			if(oLevel<OVERHEADHIGHLEVEL)
-	  			{
-			  		if(eeprom1->AUTOSTART)			//autoStart is ON
-				  		triggerAutoStart();
-	  			}
+	  			#ifndef DUAL_LEVEL
+	  				if(oLevel<OVERHEADHIGHLEVEL)
+	  				{
+			  			if(eeprom1->AUTOSTART)			//autoStart is ON
+					  		triggerAutoStart();
+	  				}
+	  			#endif
 	  		#else
-			  	if(eeprom1->AUTOSTART)			//autoStart is ON
-				  	triggerAutoStart(); 
+	  			#ifndef DUAL_LEVEL
+			  		if(eeprom1->AUTOSTART)			//autoStart is ON
+					  	triggerAutoStart(); 
+				#endif
 	 		#endif
 		}
 
