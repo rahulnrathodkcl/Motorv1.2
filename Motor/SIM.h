@@ -89,13 +89,13 @@ class SIM
 
     bool freezeIncomingCalls;
 
-    char currentOperation;
+    // char currentOperation;
     bool obtainNewEvent;
     unsigned long obtainEventTimer;
 
     byte currentPlayingFileIndex;
     byte maxPlayingFiles;
-    char playFilesList[5];
+    char playFilesList[8];
     
     void anotherConstructor();
 
@@ -115,10 +115,10 @@ class SIM
     void acceptCommands();
     void rejectCommands();
     bool extendedSendCommand(char *,byte timeout);
-    bool extendedSendCommand(String cmd,byte timeout);
+    // bool extendedSendCommand(String cmd,byte timeout);
 
     bool startGPRS(const char *);
-    bool startGPRS(String);
+    // bool startGPRS(String);
     bool stopGPRS();
     // bool extendedSendCommand(String &cmd,String vstr,unsigned short int len,unsigned short int timeout);
     bool connectToFTP(String);
@@ -145,7 +145,7 @@ class SIM
     bool isCSQ(String &);
     bool sendBlockingATCommand_P(const char *,bool =false);
     bool sendBlockingATCommand(char *,bool =false);
-    bool sendBlockingATCommand(String,bool =false);
+    // bool sendBlockingATCommand(String,bool =false);
     String readString();
     // bool matchString(String, String);
     
@@ -160,7 +160,7 @@ class SIM
     void makeCall();
     void endCall();
     void acceptCall();
-    void sendSMS(char *, bool ,byte isM2m= 0x00);
+    // void sendSMS(char *, bool ,byte isM2m= 0x00);
     void sendSMS(String, bool ,byte isM2m= 0x00);
     
     // void operateM2MDTMF(String str);
@@ -171,7 +171,7 @@ class SIM
     void triggerPlaySound();
     
     void playSoundAgain(String);
-    void playSound(char c, bool x = true);
+    void playSound(char c, bool x = false);
     void stopSound();
     void delay(byte);
 

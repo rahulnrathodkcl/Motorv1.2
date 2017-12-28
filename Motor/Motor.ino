@@ -107,8 +107,9 @@ void setup() {
   // PCMSK0 |= (1 << PCINT1);  // set PCINT1 to trigger an interrupt on state change
   PCMSK1 |= (1 << PCINT8);    //set PCINT8 to trigger interrupt (OFF BUTTON)
   PCMSK1 |= (1 << PCINT9);    //set PCINT9 to trigger interrupt (ON BUTTON)
-  PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)  OR (OVERHEAD LOW SENSOR)
-
+  #ifndef ENABLE_CURRENT
+    PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)  OR (OVERHEAD LOW SENSOR)
+  #endif
   // #ifdef ENABLE_WATER
   // PCICR |= (1 << PCIE2);    // set PCIE0 to enable PCMSK2 scan
   // PCMSK2 |= (1 << PCINT21);    //set PCINT21 to trigger interrupt (Low Sensor)

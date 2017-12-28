@@ -102,6 +102,7 @@ class S_EEPROM
 
     #ifdef ENABLE_CURRENT
         bool CURRENTDETECTION;
+        byte JUMPER;
         unsigned short int OVERLOADVALUE;
         unsigned short int UNDERLOADVALUE;
         unsigned short int NORMALVALUE;
@@ -140,6 +141,7 @@ class S_EEPROM
     #endif
 
     #ifdef ENABLE_CURRENT
+        void setJumperSettings(byte jumperVal);
         void setNormalLoadValue(unsigned short val);
         void setOverloadValue(unsigned short val);
         void setUnderloadValue(unsigned short val);

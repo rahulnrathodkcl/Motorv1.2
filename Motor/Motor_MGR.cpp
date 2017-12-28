@@ -125,8 +125,8 @@ lastButtonEvent=0;
   simEvent[8] = 'O';
   simEvent[9] = 'A';
 
-  simEvent[10] = '8';		//AUTO ON EVENT 
-  simEvent[11] = '9';		//AUTO OFF EVENT
+  simEvent[10] = ')';		//AUTO ON EVENT 
+  simEvent[11] = '[';		//AUTO OFF EVENT
 
 
   #ifdef ENABLE_CURRENT
@@ -526,7 +526,7 @@ void Motor_MGR::autoSetCurrent()
 		// temp = temp * (float)eeprom1->OVERLOADPER /100.0;
 		if(tempOver>1022 || tempUnder < 128)
 		{
-			sim1->setMotorMGRResponse('7');		//change ampere jumper
+			sim1->setMotorMGRResponse('(');		//change ampere jumper
 			return;
 		}
 		else
@@ -557,14 +557,49 @@ void Motor_MGR::speakAmpere()
 	{
 		unsigned short tempCr = getCurrentConsumed();
 		unsigned short cVolt = sim1->getBatVolt();
-		cVolt = cVolt / 10;
-		tempCr = tempCr * cVolt / 1024;
+		// cVolt = cVolt / 10;
+
+		float jumperVal=2.785F;
+		// float correctionFactor=3;
+		if(eeprom1->JUMPER==1)
+		{
+			jumperVal=1;
+		}
+		else if(eeprom1->JUMPER==2)
+		{
+			jumperVal=2;
+			// correctionFactor=3.5;
+		}
+		// else if(eeprom1->JUMPER==3)
+		// {
+		// 	jumperVal=2.785F;
+		// 	// jumperVal=2.785F;
+		// 	// correctionFactor=2.513;
+		// }
+
+		tempCr = ((tempCr * (cVolt) / 10240.0)* jumperVal) + 3;
+
 		// String tempStr = "";
-		char cTemp[5];
-		itoa(tempCr, cTemp, 10);
+		char cTemp[8];
+		utoa(tempCr, cTemp, 10);
 		// tempStr.concat(tempCr);
-		cTemp[0] = cTemp[0] + 49;
-		cTemp[1] = cTemp[1] + 49;
+		// if(tempCr>99)
+		// {
+		// 	cTemp[0] = cTemp[0] + 49;
+		// 	cTemp[1] = cTemp[1] + 49;
+		// 	cTemp[2] = cTemp[2] + 49;
+		// }
+		// if(tempCr>9)
+		// {
+		// 	cTemp[0] = cTemp[0] + 49;
+		// 	cTemp[1] = cTemp[1] + 49;
+		// }
+		// else
+		// {
+		// 	cTemp[1] = cTemp[0] + 49;
+		// 	cTemp[0] = 49;
+		// 	cTemp[2] = '\0';
+		// }
 		sim1->playRepeatedFiles(cTemp);
 		// return tempCr;
 
@@ -1058,7 +1093,7 @@ void Motor_MGR::startMotor(bool commanded)
 	else
 	{
 	  if (commanded)
-		sim1->setMotorMGRResponse('1');		//motor is already on
+		sim1->setMotorMGRResponse('+');		//motor is already on
 	}
   }
   else
@@ -1101,7 +1136,7 @@ void Motor_MGR::stopMotor(bool commanded, bool forceStop,bool offButton)
   else
   {
 	if (commanded)
-	  sim1->setMotorMGRResponse('2');	//motor is already off
+	  sim1->setMotorMGRResponse('-');	//motor is already off
   }
 }
 
@@ -1220,11 +1255,11 @@ void Motor_MGR::statusOnCall()
 		bool temp = getMotorState();
 	  	if (temp)
 	  	{
-			sim1->setMotorMGRResponse('1');	//motor is on
+			sim1->setMotorMGRResponse('+');	//motor is on
 	  	}
 		else
 		{
-		  	sim1->setMotorMGRResponse('3');	//motor off, light on
+		  	sim1->setMotorMGRResponse('_');	//motor off, light on
 		}
 	}
 }
@@ -1407,9 +1442,9 @@ inline void Motor_MGR::buttonFilter()
 	    	eeprom1->saveAutoStartSettings(!eeprom1->AUTOSTART);  //set AutoStart to True in EEPROM
 			resetAutoStart(true);
 			if(eeprom1->AUTOSTART)
-				simEventTemp[10] = sim1->registerEvent('8');
+				simEventTemp[10] = sim1->registerEvent(')');
 			else
-				simEventTemp[11] = sim1->registerEvent('9');
+				simEventTemp[11] = sim1->registerEvent('[');
 		}
 		#endif
 	}

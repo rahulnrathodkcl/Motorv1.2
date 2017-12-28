@@ -6,6 +6,8 @@
 #include <avr/wdt.h>
 #include <avr/sleep.h>
 #include <avr/power.h>
+#include <string.h>
+
 
 #define TURN_ON true
 #define TURN_OFF false
@@ -17,8 +19,7 @@
 #define BTNEVENTAUTO 3
 
 
-#define adminNumber "7041196959"
-// #define adminNumber F("7041196959")
+#define adminNumber F("7041196959")
 #define adminNumber1 F("7698439201")
 #define adminNumber2 F("7383614214")
 #define adminNumber3 F("7383622678")
@@ -182,6 +183,7 @@
 	#define underloadAddress 176
 	#define underloadPerAddress 180
 	#define overloadPerAddress 184
+	#define jumperSettingAddress 188
 #endif
 
 #define numbersCountAddress 300

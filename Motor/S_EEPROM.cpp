@@ -14,15 +14,15 @@ String S_EEPROM::getNumbers()
 }
 // #endif
 
-void S_EEPROM::getIndexedNumber(char *retStr,byte index)
-{
-  // String str="";
-  if(numbersCount>index)
-  {
-    read_StringEE(retStr,mobileNumberAddress + (index*11),10);
-  }
-  // return str;
-}
+// void S_EEPROM::getIndexedNumber(char *retStr,byte index)
+// {
+//   // String str="";
+//   if(numbersCount>index)
+//   {
+//     read_StringEE(retStr,mobileNumberAddress + (index*11),10);
+//   }
+//   // return str;
+// }
 
 
 String S_EEPROM::getIndexedNumber(byte index)
@@ -163,12 +163,12 @@ bool S_EEPROM::isPrimaryNumber(String number)
   return false;
 }
 
-void S_EEPROM::getM2MNumber(char *num)
-{
-  if(m2mPresent)
-    read_StringEE(num,m2mNumberAddress,10);
-  // return "";
-}
+// void S_EEPROM::getM2MNumber(char *num)
+// {
+//   if(m2mPresent)
+//     read_StringEE(num,m2mNumberAddress,10);
+//   // return "";
+// }
 
 String S_EEPROM::getM2MNumber()
 {
@@ -178,16 +178,16 @@ String S_EEPROM::getM2MNumber()
   return "";
 }
 
-void S_EEPROM::getActiveNumber(char *num)
-{
-  if (numbersCount > 0)
-  {
-    read_StringEE(num,(!alterNumberSetting ? mobileNumberAddress : alterNumberAddress),10);
-  }
-  else
-    strcpy_P(num,PSTR(adminNumber));
-    // return (adminNumber); //="AT+CMGS=\"+917698439201\"";
-}
+// void S_EEPROM::getActiveNumber(char *num)
+// {
+//   if (numbersCount > 0)
+//   {
+//     read_StringEE(num,(!alterNumberSetting ? mobileNumberAddress : alterNumberAddress),10);
+//   }
+//   else
+//     strcpy_P(num,PSTR(adminNumber));
+//     // return (adminNumber); //="AT+CMGS=\"+917698439201\"";
+// }
 
 String S_EEPROM::getActiveNumber()
 {
@@ -331,9 +331,7 @@ void S_EEPROM::saveAutoStartSettings(bool temp)
   AUTOSTART = (byte)temp;
   EEPROM.put(autoStartAddress, AUTOSTART);
   #ifndef ENABLE_GP
-    #ifndef ENABLE_CURRENT
     setAutoLed();
-    #endif
   #endif
 }
 
@@ -493,11 +491,11 @@ void S_EEPROM::loadBypassSettings()
 
 #ifdef ENABLE_M2M
 
-void S_EEPROM::getM2MRemoteNumber(char *num)
-{
-  if(m2mRemotePresent)
-    read_StringEE(num,m2mRemoteNumberAddress,10);
-}
+// void S_EEPROM::getM2MRemoteNumber(char *num)
+// {
+//   if(m2mRemotePresent)
+//     read_StringEE(num,m2mRemoteNumberAddress,10);
+// }
 
 
 String S_EEPROM::getM2MRemoteNumber()
@@ -559,6 +557,12 @@ void S_EEPROM::loadM2MSettings()
 #endif
 
 #ifdef ENABLE_CURRENT
+inline void S_EEPROM::setJumperSettings(byte jumperVal)
+{
+  JUMPER = jumperVal;
+  EEPROM.put(jumperSettingAddress, JUMPER);
+}
+
 void S_EEPROM::loadCurrentSettings()
 {
   EEPROM.get(currentDetectionAddress, CURRENTDETECTION);
@@ -572,6 +576,10 @@ void S_EEPROM::loadCurrentSettings()
   EEPROM.get(overloadPerAddress,OVERLOADPER);
   if(OVERLOADPER==0xFF)
     setOverloadPer(125);
+
+  EEPROM.get(jumperSettingAddress, JUMPER);
+  if(JUMPER = 0xFF)
+    setJumperSettings(1);
 
   EEPROM.get(normalLoadAddress,NORMALVALUE);
   EEPROM.get(overloadAddress,OVERLOADVALUE);
@@ -826,12 +834,12 @@ String S_EEPROM::read_StringEE(unsigned short int Addr, byte length)
   return stemp;
 }
 
-void S_EEPROM::read_StringEE(char *cbuff,unsigned short int Addr, byte length)
-{
-  // char cbuff[length + 1];
-  eeprom_read_string(Addr, cbuff, length + 1);
-  // return cbuff;
-}
+// void S_EEPROM::read_StringEE(char *cbuff,unsigned short int Addr, byte length)
+// {
+//   // char cbuff[length + 1];
+//   eeprom_read_string(Addr, cbuff, length + 1);
+//   // return cbuff;
+// }
 
 bool S_EEPROM::eeprom_read_string(unsigned short int addr, char* buffer, byte bufSize) {
   byte ch; // byte read from eeprom
