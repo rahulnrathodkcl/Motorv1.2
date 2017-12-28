@@ -125,11 +125,11 @@ class SIM
     bool setFile(const char *);
     // bool setFile(String);
     bool getProgramSize();      //***** half***
-    bool downloadFirmware();
-    bool isGPRSConnected();
-    bool prepareForFirmwareUpdate(String &);
+    bool downloadFirmware();    //*** half ****
+    bool isGPRSConnected();     //*** half ****
+    bool prepareForFirmwareUpdate(String &);    //**** half ****
 
-    bool getBlockingResponse(String &cmd,bool (SIM::*func)(String &));
+    bool getBlockingResponse(String &cmd,bool (SIM::*func)(String &));  //*****************************
     
     #ifdef ENABLE_M2M
        void verifyRemoteNumber();
@@ -187,7 +187,7 @@ class SIM
     // void __attribute__((noinline)) watchdogConfig(uint8_t x);
     // static inline void watchdogReset();
 
-    bool checkPrgReq(String,bool nomsg);
+    bool checkPrgReq(String,bool nomsg);    //*** half ***
     void initRestartSeq();
     void jumpToBootloader() __attribute__ ((naked));
     void setObtainEvent();

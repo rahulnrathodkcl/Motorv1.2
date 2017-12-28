@@ -684,9 +684,12 @@ bool SIM::downloadFirmware()
     // v1.concat("\r");
 
     char buf2[30];
-    strcpy_P(buf2,"+FTPGETTOFS")
+    char prgSize[7];
+    itoa(size,prgSize,10);
+
+    strcpy_P(buf2,"+FTPGETTOFS");
     strcat_P(buf2,PSTR(": 0,"));
-    strcat(buf2,itoa(size));
+    strcat(buf2,prgSize);
     strcat_P(buf2,PSTR("\r"));
     // v1 = v1 + size;
     // v1 = v1 + "\r";
@@ -698,11 +701,11 @@ bool SIM::downloadFirmware()
     // cmd.concat("=0,\"m.hex\"\r\n");
 
     // cmd=cmd+m1;
-    // cmd=cmd+ "=0,\"m.hex\"\r\n";
+    // cmd=cmd+ "=0,\"m.hex\"\r\n";                                        
     unsigned long int temp = millis();
-    char buf[30];
-    strcpy_P(buf,PSTR("AT+FTPGETTOFS=0,\"m.hex\"\r\n"));
-    sendCommand_P(buf,false);
+    // char buf[30];
+    // strcpy_P(buf,);
+    sendCommand_P(PSTR("AT+FTPGETTOFS=0,\"m.hex\"\r\n"),false);
     // sendCommand(cmd,false);
     while(millis()-temp<120000L)
     {
@@ -712,8 +715,10 @@ bool SIM::downloadFirmware()
             #ifndef disable_debug
                 _NSerial->println(cmd);
             #endif
-          cmd.toCharArray();
-            if(cmd==v1)
+          char buf[30];
+          cmd.toCharArray(buf,30);
+            // if(cmd==v1)
+            if(strcmp(buf,buf2)==0)
             {
               #ifndef disable_debug
                 _NSerial->println("DC");
@@ -729,7 +734,8 @@ bool SIM::isGPRSConnected()
 {
     
   //+SAPBR: 1,1,"0.0.0.0"
-  sendCommand("AT+SAPBR=2,1\r\n",false);
+  // sendCommand("AT+SAPBR=2,1\r\n",false);
+  sendCommand_P(PSTR("AT+SAPBR=2,1\r\n"),false);
   unsigned long int temp =millis();
   while(millis()-temp<5000)
 	{
@@ -855,7 +861,10 @@ bool SIM::checkPrgReq(String str,bool noMsg)
   {
       if(currentStatus=='N')
         endCall();
-      if(!noMsg) sendSMS(F("SUP"),true);
+      //////// if(!noMsg) sendSMS(F("SUP"),true);
+      if(!noMsg) sendSMS(PSTR("SUP"),true);
+
+      
       // bool verify=false;
       // if(stringContains(str,"V",1,str.length()-1))
       //   verify=true;
@@ -863,7 +872,8 @@ bool SIM::checkPrgReq(String str,bool noMsg)
       if(prepareForFirmwareUpdate(str))
       {
           isMsgFromAdmin=true;
-          if(!noMsg) sendSMS(F("DC"),true);
+          //////// if(!noMsg) sendSMS(F("DC"),true);
+          if(!noMsg) sendSMS(PSTR("DC"),true);
           stopGPRS();
           initRestartSeq();
       }
@@ -876,7 +886,8 @@ bool SIM::checkPrgReq(String str,bool noMsg)
             _NSerial->println("ED");
           #endif
           isMsgFromAdmin=true;
-          if(!noMsg) sendSMS("ED",true);
+          //////// if(!noMsg) sendSMS("ED",true);
+          if(!noMsg) sendSMS(PSTR("ED"),true);
       }
           return true;
   }
@@ -970,7 +981,8 @@ bool SIM::getBlockingResponse(String &cmd,bool (SIM::*func)(String &))
 
 inline void SIM::verifyRemoteNumber()
 {
-    sendSMS(F("VMM01"),true,SEND_TO_M2M_REMOTE);
+    // sendSMS(F("VMM01"),true,SEND_TO_M2M_REMOTE);
+    sendSMS(PSTR("VMM01"),true,SEND_TO_M2M_REMOTE);
 }
      
 // void SIM::operateOnStagedM2MEvent()
@@ -1080,11 +1092,14 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
     }
     else if (str.startsWith(F("NUM")))
     {
-      processed=true; 
+      processed=true;
+      // char resp[eeprom1->numbersCount*11 + eeprom1->numbersCount];
+      // eeprom1->getNumbers(resp);
       String resp = eeprom1->getNumbers();
       if(resp=="")
       {
         resp=F("No Number");
+        // strcpy_P(resp,PSTR("No Number"));
       }
       sendSMS(resp,true);
     }

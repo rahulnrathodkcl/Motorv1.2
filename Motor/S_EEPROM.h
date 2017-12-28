@@ -119,6 +119,7 @@ class S_EEPROM
 
     // #ifndef disable_debug
     String getNumbers();
+    // void getNumbers(char *);
     // #endif
 
     byte checkExists(String &number);

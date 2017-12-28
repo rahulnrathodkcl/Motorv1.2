@@ -13,6 +13,18 @@ String S_EEPROM::getNumbers()
   return str;
 }
 // #endif
+// void S_EEPROM::getNumbers(char *num)
+// {
+//   strcpy_P(num,PSTR(""));
+//   for(byte i=0;i<numbersCount;i++)
+//   {
+//     char tempNum[12];
+//     read_StringEE(tempNum,mobileNumberAddress + (i*11),10);
+//     strcpy(num,tempNum);
+//     strcpy_P(num,PSTR("\n"));
+//   }
+//   // return str;
+// }
 
 void S_EEPROM::getIndexedNumber(char *retStr,byte index)
 {
