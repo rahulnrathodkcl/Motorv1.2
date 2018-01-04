@@ -83,6 +83,8 @@ void SIM::anotherConstructor()
   stagedEventType = 'N'; 
   isRegisteredNumber=false;
   retries=0;
+
+  // strcpy_P(APN,PSTR("www"));
   // retryOn=false;
 
   #ifdef ENABLE_CURRENT
@@ -109,14 +111,19 @@ void SIM::startSIMAfterUpdate()
   // sendBlockingATCommand(F("AT+CFUN=1,1\r\n"));
 }
 
-void SIM::sendUpdateStatus(byte updateStatus)
+bool SIM::sendUpdateStatus(byte updateStatus)
 {
   if(!initialized)
-    return;
+    return false;
 
     if(updateStatus>0 && updateStatus!=0xFF)
     {
-      String promptStr=F("UPDSUCC");;
+      // char buf[18];
+      // strcpy_P(buf,PSTR("FTP.DRIVEHQ.COM"));
+      // prepareForFirmwareUpdate(buf,true);
+
+      String promptStr=F("UPDSUCC");
+      // promptStr=F("UPDSUCC");
       // char promptStr[9];
       // strcpy_P(promptStr,PSTR("UPDSUCC"));
       
@@ -132,7 +139,9 @@ void SIM::sendUpdateStatus(byte updateStatus)
       #endif
       isMsgFromAdmin=true;
       sendSMS(promptStr,true);
+      return true;
     }
+    return false;
 }
 
 inline void SIM::delAllMsg()
@@ -374,7 +383,7 @@ bool SIM::extendedSendCommand(char *cmd,byte timeout)
 //   return false;
 // }
 
-bool SIM::startGPRS(const char *apn)
+bool SIM::startGPRS(char *apn)
 {
     //AT+SAPBR=3,1,"ConType","GPRS"
     // String m1="AT+SAPBR=3,1,\"";
@@ -398,7 +407,8 @@ bool SIM::startGPRS(const char *apn)
     {
         strcpy_P(buf,PSTR(STR_SAPBR_PARAM));
         strcat_P(buf,PSTR(STR_SAPBR_APN));
-        strcat_P(buf,apn);
+        strcat(buf,apn);
+        // strcat_P(buf,apn);
         strcat_P(buf,PSTR("\"\r\n"));
 
         // cmd = F(STR_SAPBR_PARAM);
@@ -475,7 +485,8 @@ inline bool SIM::stopGPRS()
 		// return(sendBlockingATCommand(F(STR_SAPBR_STOP),true));
 }
 
-bool SIM::connectToFTP(String ipaddress)
+// bool SIM::connectToFTP(String ipaddress)
+bool SIM::connectToFTP(char *ipaddress)
 {
   //AT+FTPCID=1
   // if(sendBlockingATCommand(F("AT+FTPCID=1\r\n"),true))
@@ -483,14 +494,24 @@ bool SIM::connectToFTP(String ipaddress)
   {
     //AT+FTPSERV="43.252.117.34"
     
-    String cmd=F("AT+FTPSERV=\"");
-    cmd.concat(ipaddress);
-    cmd.concat("\"\r\n");
+    // String cmd=F("AT+FTPSERV=\"");
+    // cmd.concat(ipaddress);
+    // cmd.concat("\"\r\n");
+    
+
     char tempCmd[40];
-    cmd.toCharArray(tempCmd,40);
+    strcpy_P(tempCmd,PSTR("AT+FTPSERV=\""));
+    strcat(tempCmd,ipaddress);
+    strcat_P(tempCmd,PSTR("\"\r\n"));
+
+
+    // char tempCmd[40];
+    // cmd.toCharArray(tempCmd,40);
 
     // cmd=cmd+ipaddress;
     // cmd=cmd+"\"\r\n";
+
+    // if(sendBlockingATCommand(cmd.c_str(),true))
     if(sendBlockingATCommand(tempCmd,true))
     {
       // AT+FTPUN="FTP-User"
@@ -532,23 +553,23 @@ bool SIM::connectToFTP(String ipaddress)
 //     return false;
 // }
 
-bool SIM::setFile(const char *filename)
+bool SIM::setFile(const char *fileName)
 {
     char buf[40];
     strcpy_P(buf,PSTR("AT+FTPGET"));
     strcat_P(buf,PSTR("NAME=\""));
-    strcat_P(buf,filename);
+    strcat_P(buf,fileName);
     strcat_P(buf,PSTR("\"\r\n"));
 
     // String m1=F("AT+FTPGET");
     // String cmd=m1;
     // cmd.concat("NAME=\"");
-    // cmd.concat(filename);
+    // cmd.concat(fileName);
     // cmd.concat("\"\r\n");
 
 
     // cmd=cmd + "NAME=\"";   //m.bin\"\r\n;
-    // cmd=cmd + filename;
+    // cmd=cmd + fileName;
     // cmd= cmd + "\"\r\n";
 
     // if(sendBlockingATCommand(cmd,true))
@@ -570,7 +591,11 @@ bool SIM::getProgramSize()
 {
 
   // if(setFile("m.hex"))
-  if(setFile(PSTR("m.hex")))
+  #if SWVer>=155
+    if(setFile(PSTR("m.bin")))
+  #else
+    if(setFile(PSTR("m.hex")))
+  #endif
   {
   	if(eeprom1->programSizeSet)
   		return true;
@@ -646,8 +671,7 @@ bool SIM::downloadFirmware()
     char v1[30];
     char charSize[7];
     itoa(size,charSize,10);
-    strcpy_P(v1,PSTR("+FTPGETTOFS"));
-    strcat_P(v1,PSTR(": 0,"));
+    strcpy_P(v1,PSTR("+FTPGETTOFS: 0,"));
     strcat(v1,charSize);
     strcat_P(v1,PSTR("\r"));
 
@@ -661,9 +685,20 @@ bool SIM::downloadFirmware()
 
     // cmd=cmd+m1;
     // cmd=cmd+ "=0,\"m.hex\"\r\n";
+
+    // strcpy_P(v1,PSTR("AT+FTPGETTOFS=0,\""));
+    // strcat(v1,fileName);
+    // strcat_P(v1,PSTR("\"\r\n"));
+    // sendCommand(v1,false);
+
     unsigned long int temp = millis();
-    sendCommand_P(PSTR("AT+FTPGETTOFS=0,\"m.hex\"\r\n"),false);
+    #if SWVer>=155
+      sendCommand_P(PSTR("AT+FTPGETTOFS=0,\"m.bin\"\r\n"),false);
+    #else
+      sendCommand_P(PSTR("AT+FTPGETTOFS=0,\"m.hex\"\r\n"),false);
+    #endif
     // sendCommand(cmd,false);
+
     while(millis()-temp<120000L)
     {
         if(_SSerial->available())
@@ -672,10 +707,11 @@ bool SIM::downloadFirmware()
             #ifndef disable_debug
                 _NSerial->println(cmd);
             #endif
-            char tempBuf[30];
-            cmd.toCharArray(tempBuf,30);
+            // char tempBuf[30];
+            // cmd.toCharArray(tempBuf,30);
+
             // if(cmd==v1)
-            if(strcmp(tempBuf,v1)==0)
+            if(strcmp(cmd.c_str(),v1)==0)
             {
               #ifndef disable_debug
                 _NSerial->println("DC");
@@ -722,12 +758,18 @@ bool SIM::isGPRSConnected()
   // return extendedSendCommand(str,str2,11,5000);
 }
 
-bool SIM::prepareForFirmwareUpdate(String &ipaddress)
+// bool SIM::prepareForFirmwareUpdate(String &ipaddress,bool downloadAudioFiles=false)
+bool SIM::prepareForFirmwareUpdate(char *ipaddress)
 {
 	bool gprs=false;
-	if(!(gprs=isGPRSConnected()))
+	char *webaddress;
+
+  if(!(gprs=isGPRSConnected()))
 	{	
-    if(startGPRS(PSTR("bsnlnet")))
+    char *apn = strtok(ipaddress,",");
+    webaddress = strtok(NULL,"");
+    // if(startGPRS(PSTR("www")))
+    if(startGPRS(apn))
     {
       byte cnt = 12;
       while(--cnt)
@@ -744,15 +786,15 @@ bool SIM::prepareForFirmwareUpdate(String &ipaddress)
 
 	if(gprs)
 	{
-		if(connectToFTP(ipaddress))
+		if(connectToFTP(webaddress))
 		{
-				if(getProgramSize())
-				{
-					if(downloadFirmware())
-					{
-						return true;
-					}
-				}
+      if(getProgramSize())
+      {
+        if(downloadFirmware())
+        {
+          return true;
+        }
+      }
 		}
 	}
 	return false;
@@ -809,6 +851,37 @@ inline void SIM::initRestartSeq()
     jumpToBootloader();
 }
 
+// void SIM::delFTPFiles()
+// {
+//   #ifdef ENABLE_WATER
+//     #ifdef ENABLE_GP
+//     byte i=19;
+//     #else
+//     byte i=17;
+//     #endif
+//   #else
+//     #ifdef ENABLE_CURRENT
+//       byte i=14;
+//     #else
+//       byte i=12;
+//     #endif
+//   #endif
+  
+//   char buf[32];
+//   char f[2];
+//   while(i--)
+//   {
+//     f[0]=motor1->simEvent[i];
+//     f[1] = '\0';
+//     strcpy_P(buf,PSTR("AT+FSDEL=C:\\User\\FTP\\"));
+//     strcat(buf,f);
+//     strcat_P(buf,PSTR(".amr\r\n"));
+//     sendBlockingATCommand(buf,false);
+//     // if (!msimEventTemp[i])
+//     //   simEventTemp[i] = sim1->registerEvent(simEvent[i]);
+//   }
+// }
+
 bool SIM::checkPrgReq(String str,bool noMsg)
 {
   byte p=0;
@@ -823,7 +896,10 @@ bool SIM::checkPrgReq(String str,bool noMsg)
       // if(stringContains(str,"V",1,str.length()-1))
       //   verify=true;
       // str.toLowerCase();
-      if(prepareForFirmwareUpdate(str))
+
+      //delete existign files...
+      // delFTPFiles();
+      if(prepareForFirmwareUpdate(str.c_str()))
       {
           isMsgFromAdmin=true;
           if(!noMsg) sendSMS(F("DC"),true);
@@ -869,7 +945,7 @@ bool SIM::checkPrgReq(String str,bool noMsg)
 
 void SIM::stopCallWaiting()
 {
-    sendBlockingATCommand_P(PSTR("AT+CCWA=0,0\r\n"));
+    sendBlockingATCommand_P(PSTR("AT+CCWA=0,0\r\n"),true);
     // sendBlockingATCommand(F("AT+CCWA=0,0\r\n"));
 }
 
@@ -1060,6 +1136,12 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       processed=true;
       registerWithAdmin();
     }
+    // else if (str.startsWith(F("SVER")))
+    // {
+    //   processed=true;
+    //   str=SWVer;
+    //   sendSMS(str,true);
+    // }
     else if (str.startsWith(F("AUTOON")))// stringContains(str, F("AUTOON"), 6, str.length() - 1))
     {
       eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
@@ -1105,12 +1187,11 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       }
     }
     #ifdef ENABLE_CURRENT
-    // else if(str.startsWith("OVR"))
     else if(str.startsWith(F("SJMP")))
     {
       if(str.length()>4)
       {
-          byte c = (unsigned short int)str.charAt(4);
+          byte c = str.charAt(4) - '0';
           if(c>0 && c<4)
           {
              eeprom1->setJumperSettings(c);
@@ -1281,6 +1362,11 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
     }
     #endif
     #endif
+    // else if (stringContains(str, F("APN"), 3, str.length() - 1))
+    // {
+    //   strcpy(APN,str.c_str());
+    //   done=true;
+    // }
     else if (stringContains(str, F("STAGE"), 5, str.length() - 1))
     {
       if (isNumeric(str))
@@ -1411,10 +1497,35 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       // s2.concat("\"");
       // sendCommand(s2, true);
 // }
+
+bool SIM::checkCREG()
+{
+      String str = F("AT+CREG?");
+      //+CREG: 1,1
+
+      //+CREG: n,<stat>[,<lac>,<ci>]
+      if(getBlockingResponse(str,&SIM::isCREG))
+      {
+        if(str.length()>3)
+        {
+          char c=str.charAt(3);
+          if(c=='1' || c=='5')      //registered home or roaming
+            return true;
+        }
+      }
+      return false;
+}
+
 inline bool SIM::isCCID(String &str)
 {
   return(str.length()>15 && isDigit(str.charAt(0)));
   // return stringContains(str, "+CSQ", 5, str.length() - 3);
+}
+
+inline bool SIM::isCREG(String &str)
+{
+  //+CREG: 1,1
+  return(stringContains(str,F("+CREG:"),6,str.length()-1));
 }
 
 inline bool SIM::isCBC(String &str)
@@ -1544,6 +1655,7 @@ bool SIM::initialize()
         // if (sendBlockingATCommand(F("AT+CLIP=1\r\n")))
         if (sendBlockingATCommand_P(PSTR("AT+CLIP=1\r\n")))
         {
+ 
           // if (sendBlockingATCommand(F("AT+CLCC=1\r\n")) && sendBlockingATCommand(F("AT+CMGF=1\r\n")) &&  sendBlockingATCommand(F("AT+CNMI=2,1,0,0,0\r\n")))
           if (sendBlockingATCommand_P(PSTR("AT+CLCC=1\r\n")) && sendBlockingATCommand_P(PSTR("AT+CMGF=1\r\n")) &&  sendBlockingATCommand_P(PSTR("AT+CNMI=2,1,0,0,0\r\n")))
           {
@@ -1574,10 +1686,10 @@ bool SIM::initialize()
                 {
                     registerWithAdmin();
                     // delay(20);    //wait for 2 secs.
-                    stopCallWaiting();
                     eeprom1->setCCID(tempStr);
                 }
             }
+            // stopCallWaiting();
             return true;
           }
         }
@@ -2351,23 +2463,13 @@ void SIM::operateDTMF(String s)
       }
         zeroPressed=true;
     }
+    #ifdef AMPERE_SPEAK
     else if (str == '7') //Speak Current Ampere On Call
     {
       subDTMF();
       motor1->speakAmpere();
-      // eeprom1->saveAutoStartSettings(true);  //set AutoStart to True in EEPROM
-      // motor1->resetAutoStart(true);
-        // responseToAction = true;
-        // playSound('8');     // playFile AutoStart is On
     }
-    // else if(str=='7')   // increase overload per by 10
-    // {
-    //     eeprom1->setOverloadPer(eeprom1->OVERLOADPER+10);
-    // }
-    // else if(str=='8')   // decrease overload per by 10
-    // {
-    //     eeprom1->setOverloadPer(eeprom1->OVERLOADPER-10);
-    // }
+    #endif
   #endif
     else if(str=='D')
     {
@@ -2500,13 +2602,12 @@ void SIM::playSoundAgain(String str)
 {
   if (!bplaySound && isSoundStop(str))
   {
-    if(maxPlayingFiles>1 && currentPlayingFileIndex<maxPlayingFiles-1)
+    if(maxPlayingFiles>1)
     {
-      playSound(playFilesList[++currentPlayingFileIndex],false);
-    }
-    else
-    {
-      playSound('M');
+        if(currentPlayingFileIndex<maxPlayingFiles-1)
+          playSound(playFilesList[++currentPlayingFileIndex],false);
+        else
+          playSound('M');
     }
 // //       if (starPresent)
 //       {
@@ -2572,7 +2673,7 @@ void SIM::playRepeatedFiles(char *fileList)
   // }
 }
 
-void SIM::playSound(char actionType, bool newAction=false)
+void SIM::playSound(char actionType, bool newAction=true)
 {
   _SSerial->flush();
   stopSound();
@@ -3005,6 +3106,14 @@ void SIM::update()
        sendSMS(str,true);
        sendCUSDResponse=false;
     }
+    // else if(isCREG(str))
+    // {
+    //   char c= str.charAt(0);
+    //   if(c!='1' || c!='5')
+    //   {
+    //     startSIMAfterUpdate();
+    //   }
+    // }
 
     if (isNewMsg(str))
     {
@@ -3048,6 +3157,10 @@ void SIM::update()
       {
         operateDTMF(str);
       }
+      else 
+      {
+        playSoundAgain(str);
+      }
     }
     else if ((currentStatus == 'N' || currentStatus == 'R') && currentCallStatus == 'O') // OUTGOING CALL
     {
@@ -3087,9 +3200,9 @@ void SIM::update()
         callAccepted = true;
         #ifdef ENABLE_M2M
           if (!m2mEvent)
-            playSound(actionType,true);
+            playSound(actionType);
         #else
-          playSound(actionType,true);
+          playSound(actionType);
         #endif
       }
     }

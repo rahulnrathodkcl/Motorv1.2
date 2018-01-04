@@ -21,29 +21,7 @@ class Motor_MGR
     S_EEPROM* eeprom1;
     SIM* sim1;
 
-    #ifdef ENABLE_WATER
-        #ifdef ENABLE_GP
-            bool simEventTemp[19];
-            char simEvent[19];
-        #else
-            bool simEventTemp[17];
-            char simEvent[17];
-        #endif
 
-        #ifdef ENABLE_M2M
-            byte m2mEvent[2];
-            byte mapTable[2];
-        #endif
-    #else
-        #ifdef ENABLE_CURRENT
-            bool simEventTemp[14];
-            char simEvent[14];
-        #else
-        bool simEventTemp[12];
-        char simEvent[12];
-        #endif
-
-    #endif
     
     #ifdef ENABLE_CURRENT
         unsigned long int lastCurrentReadingTime;
@@ -176,6 +154,30 @@ class Motor_MGR
 
   public:
 
+
+    #ifdef ENABLE_WATER
+        #ifdef ENABLE_GP
+            bool simEventTemp[19];
+            char simEvent[19];
+        #else
+            bool simEventTemp[17];
+            char simEvent[17];
+        #endif
+
+        #ifdef ENABLE_M2M
+            byte m2mEvent[2];
+            byte mapTable[2];
+        #endif
+    #else
+        #ifdef ENABLE_CURRENT
+            bool simEventTemp[14];
+            char simEvent[14];
+        #else
+        bool simEventTemp[12];
+        char simEvent[12];
+        #endif
+    #endif
+        
 #ifndef disable_debug
 #ifdef software_SIM
     Motor_MGR(HardwareSerial *s, SIM* sim1, S_EEPROM* eeprom1);

@@ -514,7 +514,7 @@ void Motor_MGR::autoSetCurrent()
 	if(motorState() && !startSequenceOn && !starDeltaTimerOn && !stopSequenceOn && AllPhaseState())
 	{
 		unsigned short int temp = analogRead(PIN_CURRENT);
-		if(temp<160)
+		if(temp<50)
 		{
 			eeprom1->setCurrentDetection(false);
 			sim1->setMotorMGRResponse('Y');		//ampere cleared
@@ -524,7 +524,7 @@ void Motor_MGR::autoSetCurrent()
 		unsigned short int tempOver = temp * (float)eeprom1->OVERLOADPER / 100.0;
 		
 		// temp = temp * (float)eeprom1->OVERLOADPER /100.0;
-		if(tempOver>1022 || tempUnder < 128)
+		if(tempOver>1022 || tempUnder < 64)
 		{
 			sim1->setMotorMGRResponse('(');		//change ampere jumper
 			return;
@@ -557,10 +557,7 @@ void Motor_MGR::speakAmpere()
 	{
 		unsigned short tempCr = getCurrentConsumed();
 		unsigned short cVolt = sim1->getBatVolt();
-		// cVolt = cVolt / 10;
-
 		float jumperVal=2.785F;
-		// float correctionFactor=3;
 		if(eeprom1->JUMPER==1)
 		{
 			jumperVal=1;
@@ -568,49 +565,23 @@ void Motor_MGR::speakAmpere()
 		else if(eeprom1->JUMPER==2)
 		{
 			jumperVal=2;
-			// correctionFactor=3.5;
 		}
-		// else if(eeprom1->JUMPER==3)
-		// {
-		// 	jumperVal=2.785F;
-		// 	// jumperVal=2.785F;
-		// 	// correctionFactor=2.513;
-		// }
 
-		tempCr = ((tempCr * (cVolt) / 10240.0)* jumperVal) + 3;
+		jumperVal = (((float)tempCr * cVolt / 10240.0)* jumperVal);
+		if(jumperVal<12 && eeprom1->JUMPER==1)
+		{
+			jumperVal = jumperVal + ((12-jumperVal)*0.272);
+		}
+		jumperVal=jumperVal+0.5;
+		tempCr = jumperVal;
 
-		// String tempStr = "";
 		char cTemp[8];
 		utoa(tempCr, cTemp, 10);
-		// tempStr.concat(tempCr);
-		// if(tempCr>99)
-		// {
-		// 	cTemp[0] = cTemp[0] + 49;
-		// 	cTemp[1] = cTemp[1] + 49;
-		// 	cTemp[2] = cTemp[2] + 49;
-		// }
-		// if(tempCr>9)
-		// {
-		// 	cTemp[0] = cTemp[0] + 49;
-		// 	cTemp[1] = cTemp[1] + 49;
-		// }
-		// else
-		// {
-		// 	cTemp[1] = cTemp[0] + 49;
-		// 	cTemp[0] = 49;
-		// 	cTemp[2] = '\0';
-		// }
-		sim1->playRepeatedFiles(cTemp);
-		// return tempCr;
 
-		// tempStr.concat(tempCr);
-		// tempStr[0] = (char)tempStr.charAt(0) + 49;
-		// tempStr[1] = (char)tempStr.charAt(1) + 49;
-		// sim1->playRepeatedFiles(tempStr);
-		// return tempCr;
+		sim1->playRepeatedFiles(cTemp);
+		return;
 	}
-	// sim1->playRepeatedFiles("0");
-	return;
+	sim1->setMotorMGRResponse('-');
 }
 
 void Motor_MGR::checkCurrentConsumption()
@@ -1048,7 +1019,7 @@ void Motor_MGR::startMotor(bool commanded)
 	{
 	  // if (!(bool)eeprom1->AUTOSTART)
 		// stopSequenceOn=false;
-
+		noInterrupts();
 	#ifdef ENABLE_WATER
 		if(getWaterSensorState()==CRITICALLEVEL)
 		{
@@ -1193,6 +1164,7 @@ void Motor_MGR::terminateStarDeltaTimer()
 
 void Motor_MGR::terminateStartRelay()
 {
+ 	interrupts();
   if (startSequenceOn &&  millis() - tempStartSequenceTimer > (startSequenceTimerTime * 100))
   {
   	if(((unsigned int)eeprom1->starDeltaTimerTime *10) <= startSequenceTimerTime)
@@ -1241,27 +1213,41 @@ void Motor_MGR::terminateStartRelay()
 
 void Motor_MGR::statusOnCall()
 {
+	char status[3];
+
 	byte b = checkLineSensors();
 	if (b == AC_OFF)
 	{
-	  sim1->setMotorMGRResponse('L');	//motor off, no light
+		status[0]='L';
+	  // sim1->setMotorMGRResponse('L');	//motor off, no light
 	}
 	else if (b == AC_2PH)	//power only in 2 phase
 	{
-	  sim1->setMotorMGRResponse('A');
+		status[0]='A';
+	  // sim1->setMotorMGRResponse('A');
 	}
 	else if (b == AC_3PH)
 	{
 		bool temp = getMotorState();
 	  	if (temp)
 	  	{
-			sim1->setMotorMGRResponse('+');	//motor is on
+	  		status[0]='+';
+			// sim1->setMotorMGRResponse('+');	//motor is on
 	  	}
 		else
 		{
-		  	sim1->setMotorMGRResponse('_');	//motor off, light on
+			status[0]='_';
+		  	// sim1->setMotorMGRResponse('_');	//motor off, light on
 		}
 	}
+
+	if(eeprom1->AUTOSTART)
+		status[1]=')';
+	else
+		status[1]='[';
+
+	status[2]='\0';
+	sim1->playRepeatedFiles(status);
 }
 
 #ifdef ENABLE_M2M

@@ -578,7 +578,7 @@ void S_EEPROM::loadCurrentSettings()
     setOverloadPer(125);
 
   EEPROM.get(jumperSettingAddress, JUMPER);
-  if(JUMPER = 0xFF)
+  if(JUMPER == 0xFF)
     setJumperSettings(1);
 
   EEPROM.get(normalLoadAddress,NORMALVALUE);
@@ -733,7 +733,9 @@ void S_EEPROM::setCCID(String &ccid)
 
 String S_EEPROM::getDeviceId()
 {
-  String str= F("ID:");
+  String str = "";
+  str.concat(SWVer);
+  str.concat(F("\nID:"));
   unsigned long int temp;
   EEPROM.get(deviceIdAddress,temp);
   str.concat(temp);

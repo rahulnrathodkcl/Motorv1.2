@@ -15,6 +15,7 @@ bool simDebugMode = false;
 bool initialized = false;
 // bool checkedUpdate=false;
 bool initCFUN=false;
+bool CREGcheck = false;
 
 unsigned long lastBatCheckTime;
 byte batSignals;
@@ -219,6 +220,7 @@ ISR(WDT_vect)
   wdtovr++;         //add 8 seconds to the wdt run time
   if(wdtovr>45)       // wdt run for more than 5 minutes than
   {
+    CREGcheck=true;
     if(!motor1.ACPowerState())
       checkBat=true;
     wdtovr=0;
@@ -409,7 +411,19 @@ inline void stopCheckBattery()
 void loop() {
   // put your main code here, to run repeatedly:
   // if(digitalRead(PIN_BATLEVEL)==HIGH)
-  // digitalWrite(PIN_TURNOFF,HIGH);
+  // digitalWrite(PIN_TURNOFF,HIGHs
+  if(CREGcheck)
+  {
+    if(!sim1.busy())
+    {
+      if(!sim1.checkCREG())
+      {
+        sim1.startSIMAfterUpdate();
+      }
+      CREGcheck=false;
+    }
+  }
+
   if(checkBat)
   {
       if(sim1.checkNotInCall() && !sim1.busy())
@@ -529,7 +543,10 @@ void loop() {
         USART1->println(F("NOSIM"));
 #endif
       }
-      sim1.sendUpdateStatus(eeprom1.getUpdateStatus());
+      if(!sim1.sendUpdateStatus(eeprom1.getUpdateStatus()))
+      {
+          sim1.stopCallWaiting();
+      }
       eeprom1.discardUpdateStatus();
 
       motor1.eventOccured = true;

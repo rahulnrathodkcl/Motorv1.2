@@ -111,24 +111,26 @@ class SIM
     bool isNumber(String &str);
     bool checkNumber(String);
 
-    void stopCallWaiting();
+
     void acceptCommands();
     void rejectCommands();
     bool extendedSendCommand(char *,byte timeout);
     // bool extendedSendCommand(String cmd,byte timeout);
 
-    bool startGPRS(const char *);
+    bool startGPRS(char *);
     // bool startGPRS(String);
     bool stopGPRS();
     // bool extendedSendCommand(String &cmd,String vstr,unsigned short int len,unsigned short int timeout);
-    bool connectToFTP(String);
+    bool connectToFTP(char *);
+    // bool connectToFTP(String);
     bool setFile(const char *);
     bool setFile(String);
     bool getProgramSize();
     bool downloadFirmware();
     bool isGPRSConnected();
-    bool prepareForFirmwareUpdate(String &);
-
+    // bool prepareForFirmwareUpdate(String &,bool =false);
+    bool prepareForFirmwareUpdate(char *);
+    // void delFTPFiles();
     bool getBlockingResponse(String &cmd,bool (SIM::*func)(String &));
     
     #ifdef ENABLE_M2M
@@ -137,6 +139,7 @@ class SIM
 
 
     bool isCCID(String &str);
+    bool isCREG(String &str);
     bool isCUSD(String &str);
 
     bool isCCLK(String &Str);
@@ -171,7 +174,7 @@ class SIM
     void triggerPlaySound();
     
     void playSoundAgain(String);
-    void playSound(char c, bool x = false);
+    void playSound(char c, bool x = true);
     void stopSound();
     void delay(byte);
 
@@ -244,11 +247,12 @@ class SIM
     SIM(HardwareSerial* serial);
 #endif
 #endif
+    bool checkCREG();
     void playRepeatedFiles(char *fileList);
     // void playRepeatedFiles(String &);
     unsigned short int getBatVolt();
     void startSIMAfterUpdate();
-    void sendUpdateStatus(byte);
+    bool sendUpdateStatus(byte);
     void sendCommand_P(const char *cmd, bool newline);
     void sendCommand(char *cmd, bool newline);
     void sendCommand(char cmd, bool newline);
@@ -256,6 +260,7 @@ class SIM
 
     void setClassReference(S_EEPROM* e1, Motor_MGR* m1);
     bool initialize();
+    void stopCallWaiting();
 
     #ifdef ENABLE_M2M
         void registerM2MEvent(byte);

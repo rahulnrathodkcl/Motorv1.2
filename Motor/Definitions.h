@@ -8,6 +8,9 @@
 #include <avr/power.h>
 #include <string.h>
 
+#define SWVer 155
+
+#define AMPERE_SPEAK
 
 #define TURN_ON true
 #define TURN_OFF false
