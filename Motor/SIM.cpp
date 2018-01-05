@@ -2146,7 +2146,9 @@ void SIM::endCall()
   // sendCommand("", true);
   _SSerial->flush();
   freezeIncomingCalls = false;
-  zeroPressed=false;
+  #ifdef ENABLE_CURRENT
+    zeroPressed=false;
+  #endif
 
   // if(retryOn)
   // {

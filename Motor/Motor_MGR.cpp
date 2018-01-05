@@ -1054,9 +1054,9 @@ void Motor_MGR::startMotor(bool commanded)
 	  setLED(TURN_ON);
 	  tempStartSequenceTimer = millis();
 	  startSequenceOn = true;
-	  enableCurrentBuffer=false;
 	  motorState(true);
   	#ifdef ENABLE_CURRENT
+	  	enableCurrentBuffer=false;
 		lastCurrentReading=CR_NORMAL;
   	#endif
 	  gotOnCommand = commanded;
@@ -1170,8 +1170,10 @@ void Motor_MGR::terminateStartRelay()
   	if(((unsigned int)eeprom1->starDeltaTimerTime *10) <= startSequenceTimerTime)
   	{
 		digitalWrite(PIN_MSTART, HIGH);
-		enableCurrentBuffer=true;
 		tempStartSequenceTimer=millis();
+		#ifdef ENABLE_CURRENT
+			enableCurrentBuffer=true;
+		#endif
   	}
   	else
   	{
@@ -1441,7 +1443,9 @@ void Motor_MGR::update()
 
 	if(!startSequenceOn && !stopSequenceOn)
 	{
-		checkCurrentConsumption();
+		#ifdef ENABLE_CURRENT
+			checkCurrentConsumption();
+		#endif
 
 		noInterrupts();
 			byte tempEventOccured=eventOccured;
