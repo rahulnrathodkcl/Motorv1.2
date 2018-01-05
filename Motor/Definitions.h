@@ -10,7 +10,7 @@
 
 #define SWVer 155
 
-#define AMPERE_SPEAK
+// #define AMPERE_SPEAK
 
 #define TURN_ON true
 #define TURN_OFF false
