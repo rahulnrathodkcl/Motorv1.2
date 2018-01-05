@@ -42,8 +42,8 @@
 #define MAXNUMBERS 15
 
 #define disable_debug
-#define ENABLE_CURRENT 
-// #define ENABLE_WATER
+// #define ENABLE_CURRENT 
+#define ENABLE_WATER
 // #define ENABLE_GP
 // #define ENABLE_M2M
 
