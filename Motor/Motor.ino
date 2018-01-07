@@ -9,10 +9,13 @@ S_EEPROM eeprom1;
 // bool batStatus;
 // bool batLevelChange=false;
 String str;
+#ifndef disable_debug
 bool simDebugMode = false;
+#endif
 bool initialized = false;
 // bool checkedUpdate=false;
 bool initCFUN=false;
+bool CREGcheck = false;
 
 unsigned long lastBatCheckTime;
 byte batSignals;
@@ -74,7 +77,6 @@ void setup() {
   else
     digitalWrite(PIN_TURNOFF,HIGH);     // pull down gate of mosfet to start it
 
-
   eeprom1.loadAllData();
   sim1.setClassReference(&eeprom1, &motor1);
    Serial.begin(19200);
@@ -106,8 +108,9 @@ void setup() {
   // PCMSK0 |= (1 << PCINT1);  // set PCINT1 to trigger an interrupt on state change
   PCMSK1 |= (1 << PCINT8);    //set PCINT8 to trigger interrupt (OFF BUTTON)
   PCMSK1 |= (1 << PCINT9);    //set PCINT9 to trigger interrupt (ON BUTTON)
-  PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)  OR (OVERHEAD LOW SENSOR)
-
+  #ifndef ENABLE_CURRENT
+    PCMSK1 |= (1 << PCINT13);   //set PCINT13 to trigger interrupt (AUTO BUTTON)  OR (OVERHEAD LOW SENSOR)
+  #endif
   // #ifdef ENABLE_WATER
   // PCICR |= (1 << PCIE2);    // set PCIE0 to enable PCMSK2 scan
   // PCMSK2 |= (1 << PCINT21);    //set PCINT21 to trigger interrupt (Low Sensor)
@@ -217,6 +220,7 @@ ISR(WDT_vect)
   wdtovr++;         //add 8 seconds to the wdt run time
   if(wdtovr>45)       // wdt run for more than 5 minutes than
   {
+    CREGcheck=true;
     if(!motor1.ACPowerState())
       checkBat=true;
     wdtovr=0;
@@ -407,7 +411,19 @@ inline void stopCheckBattery()
 void loop() {
   // put your main code here, to run repeatedly:
   // if(digitalRead(PIN_BATLEVEL)==HIGH)
-  // digitalWrite(PIN_TURNOFF,HIGH);
+  // digitalWrite(PIN_TURNOFF,HIGHs
+  if(CREGcheck)
+  {
+    if(!sim1.busy())
+    {
+      if(!sim1.checkCREG())
+      {
+        sim1.startSIMAfterUpdate();
+      }
+      CREGcheck=false;
+    }
+  }
+
   if(checkBat)
   {
       if(sim1.checkNotInCall() && !sim1.busy())
@@ -527,7 +543,10 @@ void loop() {
         USART1->println(F("NOSIM"));
 #endif
       }
-      sim1.sendUpdateStatus(eeprom1.getUpdateStatus());
+      if(!sim1.sendUpdateStatus(eeprom1.getUpdateStatus()))
+      {
+          sim1.stopCallWaiting();
+      }
       eeprom1.discardUpdateStatus();
 
       motor1.eventOccured = true;
@@ -611,11 +630,13 @@ void loop() {
   }
 #endif
 
+  #ifdef ENABLE_WATER
   if(wdtEvent)
   {
     wdtEvent=false;
     motor1.checkWater();
   }
+  #endif
 
   motor1.update();
   sim1.update();

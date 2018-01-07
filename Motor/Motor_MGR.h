@@ -21,24 +21,15 @@ class Motor_MGR
     S_EEPROM* eeprom1;
     SIM* sim1;
 
-    #ifdef ENABLE_WATER
-        #ifdef ENABLE_GP
-            bool simEventTemp[19];
-            char simEvent[19];
-        #else
-            bool simEventTemp[17];
-            char simEvent[17];
-        #endif
 
-        #ifdef ENABLE_M2M
-            byte m2mEvent[2];
-            byte mapTable[2];
-        #endif
-    #else
-        bool simEventTemp[12];
-        char simEvent[12];
-    #endif
     
+    #ifdef ENABLE_CURRENT
+        unsigned long int lastCurrentReadingTime;
+        unsigned long int currentEventFilterTempTime;
+        bool enableCurrentBuffer;
+        byte lastCurrentReading;
+    #endif
+
     bool gotOffCommand;
     bool gotOnCommand;
     bool offButtonPressed;
@@ -113,6 +104,11 @@ class Motor_MGR
         byte getWaterSensorState();
     #endif
 
+
+    #ifdef ENABLE_CURRENT
+        void checkCurrentConsumption();
+    #endif
+
     void anotherConstructor(SIM* sim1, S_EEPROM* eeprom1);
     void readSensorState(bool &p1, bool &p2, bool &p3);
     void updateSensorState(bool &p1, bool &p2, bool &p3);
@@ -158,6 +154,30 @@ class Motor_MGR
 
   public:
 
+
+    #ifdef ENABLE_WATER
+        #ifdef ENABLE_GP
+            bool simEventTemp[19];
+            char simEvent[19];
+        #else
+            bool simEventTemp[17];
+            char simEvent[17];
+        #endif
+
+        #ifdef ENABLE_M2M
+            byte m2mEvent[2];
+            byte mapTable[2];
+        #endif
+    #else
+        #ifdef ENABLE_CURRENT
+            bool simEventTemp[14];
+            char simEvent[14];
+        #else
+        bool simEventTemp[12];
+        char simEvent[12];
+        #endif
+    #endif
+        
 #ifndef disable_debug
 #ifdef software_SIM
     Motor_MGR(HardwareSerial *s, SIM* sim1, S_EEPROM* eeprom1);
@@ -192,6 +212,11 @@ class Motor_MGR
         #endif
     #endif
 
+    #ifdef ENABLE_CURRENT
+        unsigned short int getCurrentConsumed();
+        void autoSetCurrent();
+        void Motor_MGR::speakAmpere();
+    #endif
 
     void resetAutoStart(bool setChange = false);
     // void waterEvent();

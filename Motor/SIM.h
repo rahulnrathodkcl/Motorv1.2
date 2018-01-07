@@ -27,7 +27,7 @@ class SIM
     // #endif
 
     bool isRegisteredNumber;
-    bool responseToAction;
+    // bool responseToAction;
     // String adminNumber;
     byte soundWaitTime; //x100 = mSec
     unsigned long soundWait;
@@ -35,6 +35,11 @@ class SIM
     char playFile;
     bool inCall;
     // String balStr;
+
+    #ifdef ENABLE_CURRENT
+        bool zeroPressed;
+    #endif
+
 
     unsigned short int callCutWaitTime;  //x100 = mSec
     unsigned long callCutWait;
@@ -84,10 +89,14 @@ class SIM
 
     bool freezeIncomingCalls;
 
-    char currentOperation;
+    // char currentOperation;
     bool obtainNewEvent;
     unsigned long obtainEventTimer;
 
+    byte currentPlayingFileIndex;
+    byte maxPlayingFiles;
+    char playFilesList[8];
+    
     void anotherConstructor();
 
     void delAllMsg();
@@ -95,28 +104,33 @@ class SIM
     void sendReadMsg(String str);
     bool isMsgBody(String &str);
     bool isAdmin(String str);
-    bool isPrimaryNumber(String str);
+    // static bool isPrimaryNumber(String str);
     void gotMsgBody(String &str);
     bool isNewMsg(String &str);
 
     bool isNumber(String &str);
     bool checkNumber(String);
 
-    void stopCallWaiting();
+
     void acceptCommands();
     void rejectCommands();
-    bool extendedSendCommand(String cmd,byte timeout);
+    bool extendedSendCommand(char *,byte timeout);
+    // bool extendedSendCommand(String cmd,byte timeout);
 
-    bool startGPRS(String);
+    bool startGPRS(char *);
+    // bool startGPRS(String);
     bool stopGPRS();
     // bool extendedSendCommand(String &cmd,String vstr,unsigned short int len,unsigned short int timeout);
-    bool connectToFTP(String);
+    bool connectToFTP(char *);
+    // bool connectToFTP(String);
+    bool setFile(const char *);
     bool setFile(String);
     bool getProgramSize();
     bool downloadFirmware();
     bool isGPRSConnected();
-    bool prepareForFirmwareUpdate(String &);
-
+    // bool prepareForFirmwareUpdate(String &,bool =false);
+    bool prepareForFirmwareUpdate(char *);
+    // void delFTPFiles();
     bool getBlockingResponse(String &cmd,bool (SIM::*func)(String &));
     
     #ifdef ENABLE_M2M
@@ -125,25 +139,31 @@ class SIM
 
 
     bool isCCID(String &str);
+    bool isCREG(String &str);
     bool isCUSD(String &str);
 
     bool isCCLK(String &Str);
 
     bool isCBC(String &);
     bool isCSQ(String &);
-    bool sendBlockingATCommand(String,bool =false);
+    bool sendBlockingATCommand_P(const char *,bool =false);
+    bool sendBlockingATCommand(char *,bool =false);
+    // bool sendBlockingATCommand(String,bool =false);
     String readString();
     // bool matchString(String, String);
+    
+    bool stringContains(char *chr,String &sstr, String mstr, byte sstart, byte sstop);
     bool stringContains(String &sstr, String mstr, byte sstart, byte sstop);
     bool isRinging(String);
     bool isDTMF(String &s);
     bool isCut(String);
     bool isSoundStop(String);
     char callState(String);
-    String getActiveNumber();
+    // static String getActiveNumber();
     void makeCall();
     void endCall();
     void acceptCall();
+    // void sendSMS(char *, bool ,byte isM2m= 0x00);
     void sendSMS(String, bool ,byte isM2m= 0x00);
     
     // void operateM2MDTMF(String str);
@@ -152,6 +172,7 @@ class SIM
     void operateRing();
     bool playSoundElligible();
     void triggerPlaySound();
+    
     void playSoundAgain(String);
     void playSound(char c, bool x = true);
     void stopSound();
@@ -226,14 +247,20 @@ class SIM
     SIM(HardwareSerial* serial);
 #endif
 #endif
+    bool checkCREG();
+    void playRepeatedFiles(char *fileList);
+    // void playRepeatedFiles(String &);
     unsigned short int getBatVolt();
     void startSIMAfterUpdate();
-    void sendUpdateStatus(byte);
+    bool sendUpdateStatus(byte);
+    void sendCommand_P(const char *cmd, bool newline);
+    void sendCommand(char *cmd, bool newline);
     void sendCommand(char cmd, bool newline);
     void sendCommand(String cmd, bool newline);
 
     void setClassReference(S_EEPROM* e1, Motor_MGR* m1);
     bool initialize();
+    void stopCallWaiting();
 
     #ifdef ENABLE_M2M
         void registerM2MEvent(byte);

@@ -1,11 +1,16 @@
 #ifndef DEF_h
 #define DEF_h
 
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 #include <HardwareSerial.h>
 #include <avr/wdt.h>
 #include <avr/sleep.h>
 #include <avr/power.h>
+#include <string.h>
+
+#define SWVer 155
+
+// #define AMPERE_SPEAK
 
 #define TURN_ON true
 #define TURN_OFF false
@@ -15,6 +20,7 @@
 #define BTNEVENTSTART 1
 #define BTNEVENTSTOP 2
 #define BTNEVENTAUTO 3
+
 
 #define adminNumber F("7041196959")
 #define adminNumber1 F("7698439201")
@@ -35,17 +41,31 @@
 
 #define MAXNUMBERS 15
 
+<<<<<<< HEAD
 #define DUAL_LEVEL
 #define disable_debug 
 #define ENABLE_WATER
 #define ENABLE_GP
 #define ENABLE_M2M
+=======
+#define disable_debug
+// #define ENABLE_CURRENT 
+#define ENABLE_WATER
+// #define ENABLE_GP
+// #define ENABLE_M2M
+>>>>>>> Ampere
 
 #ifdef ENABLE_M2M
 	#ifndef ENABLE_WATER
 		#undef ENABLE_M2M
 	#endif
 #endif
+
+// #ifdef ENABLE_CURRENT
+// 	#ifdef ENABLE_GP
+// 		#undef ENABLE_GP
+// 	#endif
+// #endif
 
 // #define software_SIM
 // #ifdef disable_debug
@@ -99,6 +119,23 @@
 	#endif
 #endif
 
+#ifdef ENABLE_CURRENT
+		// #undef PIN_AUTOLED
+		#undef PIN_AUTOBUTTON
+
+	#ifdef ENABLE_GP
+		#undef PIN_OLOWSENSOR
+		#undef PIN_OHIGHSENSOR
+		#undef ENABLE_GP
+	#endif
+
+	#define PIN_CURRENT A5
+	#define CR_OVER2 2
+	#define CR_OVER 1
+	#define CR_UNDER 2
+	#define CR_NORMAL 0
+
+#endif
 // #define PIN_PHASE1 9
 // #define PIN_PHASE2 10
 // #define PIN_ACPHASE 11
@@ -148,6 +185,17 @@
 #define noCallStopTimeHourAddress 156
 #define noCallStopTimeMinuteAddress 158
 #define lowVoltAddress 160
+
+#ifdef ENABLE_CURRENT
+	// #define STARTINGCURRENT 800
+	#define currentDetectionAddress 164
+	#define normalLoadAddress 168
+	#define overloadAddress 172
+	#define underloadAddress 176
+	#define underloadPerAddress 180
+	#define overloadPerAddress 184
+	#define jumperSettingAddress 188
+#endif
 
 #define numbersCountAddress 300
 #define mobileNumberAddress 304

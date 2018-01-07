@@ -17,6 +17,11 @@ class S_EEPROM
         #endif
     #endif
 
+    #ifdef ENABLE_CURRENT
+        void loadCurrentSettings();
+        void calcCurrentValues();
+    #endif
+
     void loadM2MClientSettings();
 
     void loadEventStageSettings();
@@ -24,12 +29,17 @@ class S_EEPROM
     void loadDNDSettings();
     void loadBypassSettings();
     void loadResponseSettings();
-    void loadNoCallSettings();
     void loadCCID();
     void loadStarDeltaTimer();
 
+    #ifndef ENABLE_CURRENT
+    #ifndef ENABLE_M2M
+        void loadNoCallSettings();
+    #endif
+    #endif
+
     #ifndef ENABLE_GP
-    void setAutoLed();
+        void setAutoLed();
     #endif
     
 
@@ -39,6 +49,7 @@ class S_EEPROM
 
     // void updateNumberChanges();
     bool write_StringEE(unsigned short int Addr, String input);
+    void read_StringEE(char *,unsigned short int Addr, byte length);
     String read_StringEE(unsigned short int Addr, byte length);
     bool eeprom_read_string(unsigned short int addr, char* buffer, byte bufSize);
     bool eeprom_write_string(unsigned short int addr, const char* str);
@@ -67,11 +78,15 @@ class S_EEPROM
     byte AUTOSTART;
     byte BYPASS;
 
-    byte NCSTARTHOUR;
-    byte NCSTARTMINUTE;
-    byte NCSTOPHOUR;
-    byte NCSTOPMINUTE;
-    byte NOCALL;
+    #ifndef ENABLE_CURRENT
+    #ifndef ENABLE_M2M
+        byte NCSTARTHOUR;
+        byte NCSTARTMINUTE;
+        byte NCSTOPHOUR;
+        byte NCSTOPMINUTE;
+        byte NOCALL;
+    #endif
+    #endif
 
     byte EVENTSTAGE;
     
@@ -85,6 +100,15 @@ class S_EEPROM
         #endif
     #endif
 
+    #ifdef ENABLE_CURRENT
+        bool CURRENTDETECTION;
+        byte JUMPER;
+        unsigned short int OVERLOADVALUE;
+        unsigned short int UNDERLOADVALUE;
+        unsigned short int NORMALVALUE;
+        byte UNDERLOADPER;
+        byte OVERLOADPER;
+    #endif
 
     unsigned short int AUTOSTARTTIME;
     unsigned short int starDeltaTimerTime;
@@ -116,6 +140,15 @@ class S_EEPROM
         #endif
     #endif
 
+    #ifdef ENABLE_CURRENT
+        void setJumperSettings(byte jumperVal);
+        void setNormalLoadValue(unsigned short val);
+        void setOverloadValue(unsigned short val);
+        void setUnderloadValue(unsigned short val);
+        void setCurrentDetection(bool value);
+        bool setOverloadPer(byte);
+        bool setUnderloadPer(byte);
+    #endif
 
     void addM2MNumber(String &number);      //for client
     void setM2MVerify(bool temp);           //for client
@@ -126,7 +159,12 @@ class S_EEPROM
     void saveBypassSettings(bool);
     void saveDNDSettings(bool);
     void saveResponseSettings(char);
-    void saveNoCallSettings(bool value,byte startHour=0,byte startMinute=0, byte stopHour=0, byte stopMinute=0);
+    
+    #ifndef ENABLE_CURRENT
+    #ifndef ENABLE_M2M
+        void saveNoCallSettings(bool value,byte startHour=0,byte startMinute=0, byte stopHour=0, byte stopMinute=0);
+    #endif
+    #endif
     unsigned long int getProgramSize();
     byte getUpdateStatus();
     void discardUpdateStatus();
@@ -148,6 +186,8 @@ class S_EEPROM
     bool isAlterNumber(String str);
     bool isM2MNumber(String str);
 
+    void getActiveNumber(char *);
+    void  getM2MNumber(char *);
     String getActiveNumber();
     String getM2MNumber();
 
@@ -156,6 +196,7 @@ class S_EEPROM
     bool addAlternateNumber(String &number);
     bool removeNumber(String &number);
     void clearNumbers(bool admin);
+    void getIndexedNumber(char *,byte index);
     String getIndexedNumber(byte index);
 };
 #endif
