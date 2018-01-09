@@ -709,6 +709,19 @@ void S_EEPROM::loadCCID()
    }
 }
 
+bool S_EEPROM::getCCID(char *ccid)
+{
+  if (!simCCIDPresent)
+    return false;
+  else
+  {
+    byte length;
+    EEPROM.get(simCCIDLengthAddress,length);
+    read_StringEE(ccid,simCCIDAddress,length);
+    return true;
+  }
+}
+
 bool S_EEPROM::getCCID(String &ccid)
 {
   if (!simCCIDPresent)
@@ -720,6 +733,15 @@ bool S_EEPROM::getCCID(String &ccid)
     ccid = read_StringEE(simCCIDAddress,length);
     return true;
   }
+}
+
+void S_EEPROM::setCCID(char *ccid)
+{
+  simCCIDPresent=true;
+  EEPROM.put(simCCIDPresentAddress, simCCIDPresent);
+  byte length = strlen(ccid);
+  EEPROM.put(simCCIDLengthAddress,length);
+  write_StringEE(simCCIDAddress, ccid);
 }
 
 void S_EEPROM::setCCID(String &ccid)
@@ -820,11 +842,26 @@ void S_EEPROM::clearNumbers(bool admin = false)
   EEPROM.put(alterNumberPresentAddress, alterNumberPresent);
 }
 
+bool S_EEPROM::write_StringEE(unsigned short int Addr, char *input)
+{
+  // char cbuff[input.length() + 1]; //Finds length of string to make a buffer
+  // input.toCharArray(cbuff, input.length() + 1); //Converts String into character array
+  return eeprom_write_string(Addr, input); //Saves String
+}
+
 bool S_EEPROM::write_StringEE(unsigned short int Addr, String input)
 {
   char cbuff[input.length() + 1]; //Finds length of string to make a buffer
   input.toCharArray(cbuff, input.length() + 1); //Converts String into character array
   return eeprom_write_string(Addr, cbuff); //Saves String
+}
+
+void S_EEPROM::read_StringEE(char *ccid,unsigned short int Addr, byte length)
+{
+  // char cbuff[length + 1];
+  eeprom_read_string(Addr, ccid, length + 1);
+  // String stemp(cbuff);
+  // return stemp;
 }
 
 String S_EEPROM::read_StringEE(unsigned short int Addr, byte length)

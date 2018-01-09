@@ -10,7 +10,7 @@
 
 #define SWVer 155
 
-// #define AMPERE_SPEAK
+#define AMPERE_SPEAK
 
 #define TURN_ON true
 #define TURN_OFF false
@@ -41,19 +41,12 @@
 
 #define MAXNUMBERS 15
 
-<<<<<<< HEAD
-#define DUAL_LEVEL
-#define disable_debug 
-#define ENABLE_WATER
-#define ENABLE_GP
-#define ENABLE_M2M
-=======
 #define disable_debug
-// #define ENABLE_CURRENT 
-#define ENABLE_WATER
+#define ENABLE_CURRENT 
+// #define DUAL_LEVEL
+// #define ENABLE_WATER
 // #define ENABLE_GP
 // #define ENABLE_M2M
->>>>>>> Ampere
 
 #ifdef ENABLE_M2M
 	#ifndef ENABLE_WATER

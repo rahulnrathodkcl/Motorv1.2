@@ -986,6 +986,26 @@ bool SIM::checkNoCallTime()
 #endif
 #endif
 
+bool SIM::getBlockingResponse(const char *cmd, char *retStr,bool (SIM::*func)(String &))
+{
+  unsigned long temp = millis();
+  sendCommand_P(cmd,true);
+  while(millis() - temp <4000)
+  {
+    if(_SSerial->available())
+    {
+      String str = readString();
+      if((this->*func)(str))
+      {
+          // cmd=str;
+          strcpy(retStr,str.c_str());
+          return true;
+      }
+    }
+  }
+  return false;
+}
+
 bool SIM::getBlockingResponse(String &cmd,bool (SIM::*func)(String &))
 {
   unsigned long temp = millis();
@@ -1276,19 +1296,23 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       byte batPer = 0xFF;
       byte net = 0xFF;
       // batPer = net = 0xFF;
-      
-      str = F("AT+CSQ");
-      if(getBlockingResponse(str,&SIM::isCSQ))
+      // str = F("AT+CSQ");
+      // if(getBlockingResponse(str,&SIM::isCSQ))
+      char tempString[12];
+      if(getBlockingResponse(PSTR("AT+CSQ"),tempString,&SIM::isCSQ))
       {
-        net = str.toInt()*3;
+        // net = str.toInt()*3;
+        net = atoi(tempString)*3;
       }
       delay(5);
-      str = F("AT+CBC");
-      if(getBlockingResponse(str,&SIM::isCBC))
+      // str = F("AT+CBC");
+      // if(getBlockingResponse(str,&SIM::isCBC))
+      if(getBlockingResponse(PSTR("AT+CBC"),tempString,&SIM::isCBC))
       {
-        batPer = (str.substring(0,str.lastIndexOf(","))).toInt();
+        // char cbPer[3] = strtok(tempString)
+        // batPer = (str.substring(0,str.lastIndexOf(","))).toInt();
+        batPer = atoi(strtok(tempString,","));
       }
-      
       sendSMS(makeStatusMsg(batPer,net),true);
     }
     else if (str.startsWith(F("AMON")) && (admin || alterNumber))//stringContains(str, "AMON", 4, str.length() - 1))
@@ -1500,15 +1524,18 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
 
 bool SIM::checkCREG()
 {
-      String str = F("AT+CREG?");
       //+CREG: 1,1
 
       //+CREG: n,<stat>[,<lac>,<ci>]
-      if(getBlockingResponse(str,&SIM::isCREG))
+      // String str = F("AT+CREG?");
+      // if(getBlockingResponse(str,&SIM::isCREG))
+      char retStr[10];
+      if(getBlockingResponse(PSTR("AT+CREG?"),retStr,&SIM::isCREG))
       {
-        if(str.length()>3)
+        // if(str.length()>3)
+        if(strlen(retStr)>3)
         {
-          char c=str.charAt(3);
+          char c=retStr[3];
           if(c=='1' || c=='5')      //registered home or roaming
             return true;
         }
@@ -1678,15 +1705,19 @@ bool SIM::initialize()
             // sendBlockingATCommand(F("AT+DDET=1\r\n"));
             sendBlockingATCommand_P(PSTR("AT+DDET=1\r\n"));
 
-            String tempStr  = F("AT+CCID");
-            if(getBlockingResponse(tempStr,&SIM::isCCID))
+            // String tempStr  = F("AT+CCID");
+            // if(getBlockingResponse(tempStr,&SIM::isCCID))
+            char ccidString[24];
+            if(getBlockingResponse(PSTR("AT+CCID"),ccidString,&SIM::isCCID))
             {
-                String tempStr2="";
-                if(!eeprom1->getCCID(tempStr2) || tempStr2!=tempStr)
+                char savedCCID[24];
+                // String tempStr2="";
+                // if(!eeprom1->getCCID(savedCCID) || tempStr2!=tempStr)
+                if(!eeprom1->getCCID(savedCCID) || strcmp(ccidString,savedCCID)!=0)
                 {
                     registerWithAdmin();
+                    eeprom1->setCCID(ccidString);
                     // delay(20);    //wait for 2 secs.
-                    eeprom1->setCCID(tempStr);
                 }
             }
             // stopCallWaiting();
@@ -3008,14 +3039,18 @@ void SIM::sendDTMFTone(byte eventNo)
 unsigned short int SIM::getBatVolt()
 {
   unsigned short int retVal=0;
-  String str = F("AT+CBC");
+  // String str = F("AT+CBC");
   // +CBC: 0,76,4010
         // batPer = (str.substring(0,str.lastIndexOf(","))).toInt();
 
-  if(getBlockingResponse(str,&SIM::isCBC))
+  // if(getBlockingResponse(str,&SIM::isCBC))
+  char retStr[10];
+  if(getBlockingResponse(PSTR("AT+CBC"),retStr,&SIM::isCBC))
   {
-    byte temp2 = str.lastIndexOf(",");
-    retVal = (str.substring(temp2+1,temp2+4)).toInt();
+    strtok(retStr,",");
+    // byte temp2 = str.lastIndexOf(",");
+    // retVal = (str.substring(temp2+1,temp2+4)).toInt();
+    retVal = atoi(strtok(NULL,"")) / 10;
   }
   return retVal;
 }
@@ -3032,13 +3067,16 @@ unsigned short int SIM::getBatVolt()
 
 void SIM::getSystemTime(byte &Hours, byte &Minutes)
 {
-  String time = F("AT+CCLK?");
-  if(getBlockingResponse(time,&SIM::isCCLK))
+  // String time = F("AT+CCLK?");
+  // if(getBlockingResponse(time,&SIM::isCCLK))
+  char time[8];
+  if(getBlockingResponse(PSTR("AT+CCLK?"),time,&SIM::isCCLK))
   {
     // +CCLK: "17/10/17,15:12:50+22"
-    Hours=(time.substring(0,2)).toInt();
-    Minutes=(time.substring(3,5)).toInt();
-    // globalSeconds=0;
+    // Hours=(time.substring(0,2)).toInt();
+    // Minutes=(time.substring(3,5)).toInt();
+    Hours=atoi(strtok(time,":"));
+    Minutes=atoi(strtok(NULL,""));
   }
 }
 #endif

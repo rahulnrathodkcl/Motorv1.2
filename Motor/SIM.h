@@ -131,6 +131,7 @@ class SIM
     // bool prepareForFirmwareUpdate(String &,bool =false);
     bool prepareForFirmwareUpdate(char *);
     // void delFTPFiles();
+    bool getBlockingResponse(const char *, char *,bool (SIM::*func)(String &));
     bool getBlockingResponse(String &cmd,bool (SIM::*func)(String &));
     
     #ifdef ENABLE_M2M

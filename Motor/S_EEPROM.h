@@ -48,8 +48,9 @@ class S_EEPROM
     // void clearLoadedNumbers();
 
     // void updateNumberChanges();
+    bool write_StringEE(unsigned short int Addr, char *input);
     bool write_StringEE(unsigned short int Addr, String input);
-    void read_StringEE(char *,unsigned short int Addr, byte length);
+    void read_StringEE(char *ccid,unsigned short int Addr, byte length);
     String read_StringEE(unsigned short int Addr, byte length);
     bool eeprom_read_string(unsigned short int addr, char* buffer, byte bufSize);
     bool eeprom_write_string(unsigned short int addr, const char* str);
@@ -175,7 +176,9 @@ class S_EEPROM
     bool getLowVolt();
     void setLowVolt(bool);
 
+    void setCCID(char *);
     void setCCID(String &);
+    bool getCCID(char *);
     bool getCCID(String &);
 
     void loadAllData();
