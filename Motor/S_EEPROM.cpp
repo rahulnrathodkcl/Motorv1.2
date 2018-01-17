@@ -583,11 +583,11 @@ void S_EEPROM::loadCurrentSettings()
 
   EEPROM.get(underloadPerAddress,UNDERLOADPER);
   if(UNDERLOADPER==0xFF)
-    setUnderloadPer(75);
+    setUnderloadPer(85);
 
   EEPROM.get(overloadPerAddress,OVERLOADPER);
   if(OVERLOADPER==0xFF)
-    setOverloadPer(125);
+    setOverloadPer(120);
 
   EEPROM.get(jumperSettingAddress, JUMPER);
   if(JUMPER == 0xFF)

@@ -946,6 +946,7 @@ bool SIM::checkPrgReq(String str,bool noMsg)
 void SIM::stopCallWaiting()
 {
   // char str[14];
+  // String str="";
   // if(getBlockingResponse(PSTR("AT+CCWA=0,2\r\n"),str,&isCCWA))
   {
     sendBlockingATCommand_P(PSTR("AT+CCWA=0,0\r\n"),true);
