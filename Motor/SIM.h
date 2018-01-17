@@ -139,6 +139,7 @@ class SIM
     #endif
 
 
+    bool isCCWA(String &str);
     bool isCCID(String &str);
     bool isCREG(String &str);
     bool isCUSD(String &str);

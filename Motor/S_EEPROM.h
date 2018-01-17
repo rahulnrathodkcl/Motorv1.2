@@ -12,6 +12,7 @@ class S_EEPROM
     void loadAutoStartSettings();
     #ifdef ENABLE_WATER
         void loadPreventOverFlowSettings();
+        void loadWaterBypassSettings();
         #ifdef ENABLE_M2M
             void loadM2MSettings();
         #endif
@@ -66,7 +67,6 @@ class S_EEPROM
     byte alterNumberSetting;
     byte alterNumberPresent;
 
-
     byte m2mPresent;
     byte m2mVerified;
 
@@ -92,6 +92,8 @@ class S_EEPROM
     byte EVENTSTAGE;
     
     #ifdef ENABLE_WATER
+        byte BYPASSWATER;
+
         #ifndef ENABLE_M2M 
             byte PREVENTOVERFLOW;
         #else
@@ -102,7 +104,7 @@ class S_EEPROM
     #endif
 
     #ifdef ENABLE_CURRENT
-        bool CURRENTDETECTION;
+        byte CURRENTDETECTION;
         byte JUMPER;
         unsigned short int OVERLOADVALUE;
         unsigned short int UNDERLOADVALUE;
@@ -129,6 +131,7 @@ class S_EEPROM
     void saveAutoStartSettings(bool);
 
     #ifdef ENABLE_WATER
+        void saveWaterBypassSettings(bool);
         #ifndef ENABLE_M2M
             void savePreventOverFlowSettings(bool);
         #else

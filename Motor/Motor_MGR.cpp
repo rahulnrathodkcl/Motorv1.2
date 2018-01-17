@@ -76,7 +76,7 @@ void Motor_MGR::anotherConstructor(SIM* sim1, S_EEPROM* eeprom1)
   // waitCheckACTime = 20;
   // waitCheckACTimerOn = false;
 
-  singlePhasingTime = 15;
+  singlePhasingTime = 30;
   singlePhasingTimerOn = false;
 
   startSequenceTimerTime = 20;
@@ -323,6 +323,10 @@ void Motor_MGR::waterStatusOnCall(bool current)
 bool Motor_MGR::checkWater()
 {
 	bool result=false;
+	if(eeprom1->BYPASSWATER)
+	{
+		return result;
+	}
 
 	byte uLevel = getWaterSensorState();
 	#ifdef ENABLE_GP
@@ -422,16 +426,22 @@ void Motor_MGR::operateOnWaterEvent()
 			}
 			else
 			{
+				#ifndef NOLEVELCHANGECALL
 				simEventTemp[13] = sim1->registerEvent('D'); //report To SIM water level is decrease..
+				#endif
 			}
   			#else
-			simEventTemp[13] = sim1->registerEvent('D'); //report To SIM water level is decrease..
+				#ifndef NOLEVELCHANGECALL
+					simEventTemp[13] = sim1->registerEvent('D'); //report To SIM water level is decrease..
+				#endif
 			#endif
 		}
+		#ifndef NOLEVELCHANGECALL
 		else if (uLevel==MIDLEVEL && undergroundLevel<MIDLEVEL)		// increase in water level
 		{
 			simEventTemp[16] = sim1->registerEvent('Z'); //report To SIM water level is increasing..
 		}
+		#endif
 
   	#ifdef ENABLE_GP
 	  	if(oLevel!=overheadLevel)
@@ -590,7 +600,7 @@ void Motor_MGR::speakAmpere()
 
 void Motor_MGR::checkCurrentConsumption()
 {
-	if(!motorState() || !eeprom1->CURRENTDETECTION || starDeltaTimerOn
+	if(startSequenceOn || stopSequenceOn || !motorState() || !eeprom1->CURRENTDETECTION || starDeltaTimerOn
 		|| millis()-lastCurrentReadingTime<500)
 		return;
 
@@ -1025,7 +1035,7 @@ void Motor_MGR::startMotor(bool commanded)
 		// stopSequenceOn=false;
 		noInterrupts();
 	#ifdef ENABLE_WATER
-		if(getWaterSensorState()==CRITICALLEVEL)
+		if(!eeprom1->BYPASSWATER && getWaterSensorState()==CRITICALLEVEL)
 		{
 			if (commanded)
 			{
@@ -1039,7 +1049,7 @@ void Motor_MGR::startMotor(bool commanded)
 		}
 
 		#ifdef ENABLE_GP
-		if(getOverHeadWaterSensorState()==OVERHEADHIGHLEVEL)
+		if(!eeprom1->BYPASSWATER && getOverHeadWaterSensorState()==OVERHEADHIGHLEVEL)
 		{
 				if(commanded)
 				{
@@ -1445,11 +1455,12 @@ inline void Motor_MGR::buttonFilter()
 void Motor_MGR::update()
 {
 
+#ifdef ENABLE_CURRENT
+	checkCurrentConsumption();
+#endif
+
 	if(!startSequenceOn && !stopSequenceOn)
 	{
-		#ifdef ENABLE_CURRENT
-			checkCurrentConsumption();
-		#endif
 
 		noInterrupts();
 			byte tempEventOccured=eventOccured;

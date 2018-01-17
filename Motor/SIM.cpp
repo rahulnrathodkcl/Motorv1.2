@@ -945,8 +945,12 @@ bool SIM::checkPrgReq(String str,bool noMsg)
 
 void SIM::stopCallWaiting()
 {
+  // char str[14];
+  // if(getBlockingResponse(PSTR("AT+CCWA=0,2\r\n"),str,&isCCWA))
+  {
     sendBlockingATCommand_P(PSTR("AT+CCWA=0,0\r\n"),true);
     // sendBlockingATCommand(F("AT+CCWA=0,0\r\n"));
+  }
 }
 
 #ifndef ENABLE_M2M
@@ -1118,6 +1122,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
     {
       eeprom1->saveAutoStartSettings(false);
       #ifdef ENABLE_WATER
+        eeprom1->saveBypassWaterSettings(false);
         #ifdef ENABLE_M2M
           eeprom1->saveM2MSettings(false);
         #else
@@ -1174,6 +1179,18 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       motor1->resetAutoStart(true);
       done=true;
     }
+    #ifdef ENABLE_WATER
+    else if (str.startsWith(F("WBYPON")))
+    {
+      eeprom1->saveBypassWaterSettings(true);  //set W BYPASS to true in EEPROM
+      done=true;
+    }
+    else if (str.startsWith(F("WBYPOFF")))
+    {
+      eeprom1->saveBypassWaterSettings(false);  //set W BYPASS to false in EEPROM
+      done=true;
+    }
+    #endif
     else if (str.startsWith(F("BYPON")))
     {
       eeprom1->saveBypassSettings(true);  //set BYPASS to true in EEPROM
@@ -1541,6 +1558,11 @@ bool SIM::checkCREG()
         }
       }
       return false;
+}
+
+inline bool SIM::isCCWA(String &str)
+{
+  return (str.startsWith(F("+CCWA: 0,7")));
 }
 
 inline bool SIM::isCCID(String &str)
@@ -1974,6 +1996,30 @@ String SIM::readString()
   
 //   return false;
 
+// }
+
+
+// bool SIM::stringContains(char *sstr, const char *mstr, byte sstart, byte sstop)
+// {
+//   byte temp=strlen_P(mstr);
+  
+//   while(temp--)
+//   {
+//     if(*sstr != pgm_read_byte(mstr++))
+//       return false;
+//     sstr++;
+//   }
+
+//   sstr=sstr + (sstart - strlen_P(mstr))
+//   strncpy(pstr,sstr,sstop-sstart);
+
+  
+//   if (sstr.startsWith(mstr))
+//   {
+//     sstr = sstr.substring(sstart, sstop);
+//     return true;
+//   }
+//   return false;
 // }
 
 bool SIM::stringContains(String &sstr, String mstr, byte sstart, byte sstop)

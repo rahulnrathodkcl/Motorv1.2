@@ -433,6 +433,18 @@ void S_EEPROM::loadAutoStartSettings()
 }
 
 #ifdef ENABLE_WATER
+void S_EEPROM::saveWaterBypassSettings(bool cValue)
+{
+  WATERBYPASS = cValue;
+  EEPROM.put(waterBypassAddress,WATERBYPASS);
+}
+
+void S_EEPROM::loadWaterBypassSettings()
+{
+  EEPROM.get(waterBypassAddress, WATERBYPASS);
+  if (WATERBYPASS == 0xFF)
+    saveWaterBypassSettings(false);
+}
 
 #ifndef ENABLE_M2M
 void S_EEPROM::loadPreventOverFlowSettings()
@@ -566,7 +578,7 @@ inline void S_EEPROM::setJumperSettings(byte jumperVal)
 void S_EEPROM::loadCurrentSettings()
 {
   EEPROM.get(currentDetectionAddress, CURRENTDETECTION);
-  if(CURRENTDETECTION = 0xFF)
+  if(CURRENTDETECTION == 0xFF)
     setCurrentDetection(false);
 
   EEPROM.get(underloadPerAddress,UNDERLOADPER);
@@ -755,7 +767,29 @@ void S_EEPROM::setCCID(String &ccid)
 
 String S_EEPROM::getDeviceId()
 {
-  String str = "";
+  #ifdef ENABLE_CURRENT
+    #ifdef AMPERE_SPEAK
+      String str = F("03\n");
+    #else
+      String str = F("02\n");
+    #endif
+  #elif ENABLE_WATER
+      #ifdef ENABLE_GP
+        #ifdef ENABLE_M2M
+          String str = F("07\n");
+        #else
+          String str = F("06\n");
+        #endif
+      #else
+        #ifdef ENABLE_M2M
+          String str = F("05\n");
+        #else
+          String str = F("04\n");
+        #endif
+      #endif
+  #else
+    String str = F("01\n");
+  #endif
   str.concat(SWVer);
   str.concat(F("\nID:"));
   unsigned long int temp;

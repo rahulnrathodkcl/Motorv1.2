@@ -8,7 +8,7 @@
 #include <avr/power.h>
 #include <string.h>
 
-#define SWVer 155
+#define SWVer 157
 
 #define AMPERE_SPEAK
 
@@ -47,6 +47,8 @@
 // #define ENABLE_WATER
 // #define ENABLE_GP
 // #define ENABLE_M2M
+
+#define NOLEVELCHANGECALL
 
 #ifdef ENABLE_M2M
 	#ifndef ENABLE_WATER
@@ -100,6 +102,7 @@
 	#define LOWLEVEL 0x01
 	#define CRITICALLEVEL 0x00
 	#define preventOverFlowAddress 50
+	#define waterBypassAddress 164
 
 	#ifdef ENABLE_GP
 		#undef PIN_AUTOLED
