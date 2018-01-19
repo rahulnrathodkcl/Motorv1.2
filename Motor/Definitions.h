@@ -10,7 +10,6 @@
 
 #define SWVer 158
 
-#define AMPERE_SPEAK
 
 #define TURN_ON true
 #define TURN_OFF false
@@ -42,6 +41,7 @@
 #define MAXNUMBERS 15
 
 #define disable_debug
+#define AMPERE_SPEAK
 // #define ENABLE_CURRENT 
 // #define DUAL_LEVEL
 #define ENABLE_WATER
@@ -54,6 +54,10 @@
 	#ifndef ENABLE_WATER
 		#undef ENABLE_M2M
 	#endif
+#endif
+
+#ifndef ENABLE_CURRENT
+	#undef AMPERE_SPEAK
 #endif
 
 // #ifdef ENABLE_CURRENT
