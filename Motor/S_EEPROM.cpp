@@ -773,7 +773,7 @@ String S_EEPROM::getDeviceId()
     #else
       String str = F("02\n");
     #endif
-  #elif ENABLE_WATER
+  #elif defined(ENABLE_WATER)
       #ifdef ENABLE_GP
         #ifdef ENABLE_M2M
           String str = F("07\n");

@@ -323,7 +323,7 @@ void Motor_MGR::waterStatusOnCall(bool current)
 bool Motor_MGR::checkWater()
 {
 	bool result=false;
-	if(eeprom1->BYPASSWATER)
+	if(eeprom1->WATERBYPASS)
 	{
 		return result;
 	}
@@ -336,9 +336,17 @@ bool Motor_MGR::checkWater()
 		if(uLevel!=undergroundLevel && uLevel==tempUndergroundLevel)
 	#endif
 	{
+		tempWaterEventCount++;
+		if(tempWaterEventCount>9)
+		{
 			operateOnWaterEvent();
 			result=true;
-			// undergroundLevel=uLevel;			// it will be done by operateOnWaterEvent()
+		}
+		// undergroundLevel=uLevel;			// it will be done by operateOnWaterEvent()
+	}
+	else
+	{
+		tempWaterEventCount=0;
 	}
 	tempUndergroundLevel=uLevel;
 	#ifdef ENABLE_GP
@@ -1035,7 +1043,7 @@ void Motor_MGR::startMotor(bool commanded)
 		// stopSequenceOn=false;
 		noInterrupts();
 	#ifdef ENABLE_WATER
-		if(!eeprom1->BYPASSWATER && getWaterSensorState()==CRITICALLEVEL)
+		if(!eeprom1->WATERBYPASS && getWaterSensorState()==CRITICALLEVEL)
 		{
 			if (commanded)
 			{
@@ -1049,7 +1057,7 @@ void Motor_MGR::startMotor(bool commanded)
 		}
 
 		#ifdef ENABLE_GP
-		if(!eeprom1->BYPASSWATER && getOverHeadWaterSensorState()==OVERHEADHIGHLEVEL)
+		if(!eeprom1->WATERBYPASS && getOverHeadWaterSensorState()==OVERHEADHIGHLEVEL)
 		{
 				if(commanded)
 				{

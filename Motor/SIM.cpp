@@ -1123,7 +1123,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
     {
       eeprom1->saveAutoStartSettings(false);
       #ifdef ENABLE_WATER
-        eeprom1->saveBypassWaterSettings(false);
+        eeprom1->saveWaterBypassSettings(false);
         #ifdef ENABLE_M2M
           eeprom1->saveM2MSettings(false);
         #else
@@ -1183,12 +1183,12 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
     #ifdef ENABLE_WATER
     else if (str.startsWith(F("WBYPON")))
     {
-      eeprom1->saveBypassWaterSettings(true);  //set W BYPASS to true in EEPROM
+      eeprom1->saveWaterBypassSettings(true);  //set W BYPASS to true in EEPROM
       done=true;
     }
     else if (str.startsWith(F("WBYPOFF")))
     {
-      eeprom1->saveBypassWaterSettings(false);  //set W BYPASS to false in EEPROM
+      eeprom1->saveWaterBypassSettings(false);  //set W BYPASS to false in EEPROM
       done=true;
     }
     #endif

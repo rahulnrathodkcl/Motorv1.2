@@ -92,7 +92,7 @@ class S_EEPROM
     byte EVENTSTAGE;
     
     #ifdef ENABLE_WATER
-        byte BYPASSWATER;
+        byte WATERBYPASS;
 
         #ifndef ENABLE_M2M 
             byte PREVENTOVERFLOW;

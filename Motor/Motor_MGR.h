@@ -70,6 +70,7 @@ class Motor_MGR
     byte lastButtonEvent;
     
     #ifdef ENABLE_WATER
+        byte tempWaterEventCount;
         byte undergroundLevel;
         byte tempUndergroundLevel;
         // bool lowLevelSensor;

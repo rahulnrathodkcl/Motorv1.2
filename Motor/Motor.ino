@@ -551,7 +551,7 @@ void loop() {
 
       motor1.eventOccured = true;
       #ifdef ENABLE_WATER
-        if(!eeprom1->BYPASSWATER)
+        if(!eeprom1.WATERBYPASS)
           motor1.operateOnWaterEvent();
       // motor1.waterEventOccured=true;
       // noInterrupts();

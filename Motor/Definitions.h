@@ -42,13 +42,13 @@
 #define MAXNUMBERS 15
 
 #define disable_debug
-#define ENABLE_CURRENT 
+// #define ENABLE_CURRENT 
 // #define DUAL_LEVEL
-// #define ENABLE_WATER
+#define ENABLE_WATER
 // #define ENABLE_GP
 // #define ENABLE_M2M
 
-#define NOLEVELCHANGECALL
+// #define NOLEVELCHANGECALL
 
 #ifdef ENABLE_M2M
 	#ifndef ENABLE_WATER
