@@ -8,7 +8,7 @@
 #include <avr/power.h>
 #include <string.h>
 
-#define SWVer 157
+#define SWVer 158
 
 #define AMPERE_SPEAK
 
