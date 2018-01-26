@@ -650,6 +650,7 @@ void Motor_MGR::checkCurrentConsumption()
 	else if(temp < eeprom1->UNDERLOADVALUE && !enableCurrentBuffer)		// only consider noLoad after 30 secs
 	{
 		temp2 = CR_UNDER;
+		overLoadDetectValue=overLoadDetectValue>>2;
 	}
 	else 
 	{

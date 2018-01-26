@@ -1242,7 +1242,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       if (isNumeric(str))
       {
         data = str.toInt();
-        if(data>110)
+        if(data>104)
         {
           eeprom1->setOverloadPer(data);
           done=true;
@@ -1254,7 +1254,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       if (isNumeric(str))
       {
         data = str.toInt();
-        if(data<95 && data>0)
+        if(data<98 && data>0)
         {
           eeprom1->setUnderloadPer(data);
           done=true;

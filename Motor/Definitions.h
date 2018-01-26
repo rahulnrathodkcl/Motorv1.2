@@ -8,7 +8,7 @@
 #include <avr/power.h>
 #include <string.h>
 
-#define SWVer 158
+#define SWVer 1581
 
 
 #define TURN_ON true
@@ -42,9 +42,9 @@
 
 #define disable_debug
 #define AMPERE_SPEAK
-// #define ENABLE_CURRENT 
+#define ENABLE_CURRENT 
 // #define DUAL_LEVEL
-#define ENABLE_WATER
+// #define ENABLE_WATER
 // #define ENABLE_GP
 // #define ENABLE_M2M
 
