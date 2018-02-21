@@ -609,7 +609,7 @@ void Motor_MGR::speakAmpere()
 void Motor_MGR::checkCurrentConsumption()
 {
 	if(startSequenceOn || stopSequenceOn || !motorState() || !eeprom1->CURRENTDETECTION || starDeltaTimerOn
-		|| millis()-lastCurrentReadingTime<500)
+		|| ((millis()-lastCurrentReadingTime)<500))
 		return;
 
 	// if(enableCurrentBuffer)
@@ -1174,7 +1174,7 @@ void Motor_MGR::terminateStopRelay()
 
 void Motor_MGR::terminateStarDeltaTimer()
 {
-	if(starDeltaTimerOn && millis() - tempStartSequenceTimer > ((unsigned int)eeprom1->starDeltaTimerTime *1000))
+	if(starDeltaTimerOn && millis() - tempStartSequenceTimer > ((unsigned long int)eeprom1->starDeltaTimerTime *1000))
 	{
 		digitalWrite(PIN_MSTART,HIGH);
 		starDeltaTimerOn=false;
