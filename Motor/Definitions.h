@@ -41,8 +41,8 @@
 #define MAXNUMBERS 15
 
 #define disable_debug
-#define AMPERE_SPEAK
-#define ENABLE_CURRENT 
+// #define AMPERE_SPEAK
+// #define ENABLE_CURRENT 
 // #define DUAL_LEVEL
 // #define ENABLE_WATER
 // #define ENABLE_GP
