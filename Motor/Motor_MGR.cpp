@@ -1174,7 +1174,7 @@ void Motor_MGR::terminateStopRelay()
 
 void Motor_MGR::terminateStarDeltaTimer()
 {
-	if(starDeltaTimerOn && millis() - tempStartSequenceTimer > ((unsigned long int)eeprom1->starDeltaTimerTime *1000))
+	if(starDeltaTimerOn && millis() - tempStartSequenceTimer > ((unsigned long int)eeprom1->starDeltaTimerTime *1000L))
 	{
 		digitalWrite(PIN_MSTART,HIGH);
 		starDeltaTimerOn=false;

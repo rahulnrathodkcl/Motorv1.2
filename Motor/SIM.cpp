@@ -1105,7 +1105,7 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
     //       String temp2=readString();
     //         t2=t2+temp2;
     //         if(temp2=="OK\r" || temp2=="ERROR\r")
-    //           break;
+    //           break;                                         
     //     }
     //     sendSMS(t2,true);
     // }
@@ -1131,8 +1131,8 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
         #endif
       #endif
       #ifdef ENABLE_CURRENT
-          eeprom1->setOverloadPer(125);
-          eeprom1->setUnderloadPer(75);
+          eeprom1->setOverloadPer(120);
+          eeprom1->setUnderloadPer(85);
           eeprom1->setCurrentDetection(false);
       #endif
       eeprom1->saveEventStageSettings(0);
@@ -1540,26 +1540,26 @@ void SIM::operateOnMsg(String str, bool admin = false,bool noMsg=false,bool alte
       // sendCommand(s2, true);
 // }
 
-bool SIM::checkCREG()
-{
-      //+CREG: 1,1
+// bool SIM::checkCREG()
+// {
+//       //+CREG: 1,1
 
-      //+CREG: n,<stat>[,<lac>,<ci>]
-      // String str = F("AT+CREG?");
-      // if(getBlockingResponse(str,&SIM::isCREG))
-      char retStr[10];
-      if(getBlockingResponse(PSTR("AT+CREG?"),retStr,&SIM::isCREG))
-      {
-        // if(str.length()>3)
-        if(strlen(retStr)>3)
-        {
-          char c=retStr[3];
-          if(c=='1' || c=='5')      //registered home or roaming
-            return true;
-        }
-      }
-      return false;
-}
+//       //+CREG: n,<stat>[,<lac>,<ci>]
+//       // String str = F("AT+CREG?");
+//       // if(getBlockingResponse(str,&SIM::isCREG))
+//       char retStr[10];
+//       if(getBlockingResponse(PSTR("AT+CREG?"),retStr,&SIM::isCREG))
+//       {
+//         // if(str.length()>3)
+//         if(strlen(retStr)>3)
+//         {
+//           char c=retStr[3];
+//           if(c=='1' || c=='5')      //registered home or roaming
+//             return true;
+//         }
+//       }
+//       return false;
+// }
 
 inline bool SIM::isCCWA(String &str)
 {
@@ -1572,11 +1572,11 @@ inline bool SIM::isCCID(String &str)
   // return stringContains(str, "+CSQ", 5, str.length() - 3);
 }
 
-inline bool SIM::isCREG(String &str)
-{
-  //+CREG: 1,1
-  return(stringContains(str,F("+CREG:"),6,str.length()-1));
-}
+// inline bool SIM::isCREG(String &str)
+// {
+//   //+CREG: 1,1
+//   return(stringContains(str,F("+CREG:"),6,str.length()-1));
+// }
 
 inline bool SIM::isCBC(String &str)
 {

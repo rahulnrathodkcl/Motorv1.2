@@ -141,7 +141,7 @@ class SIM
 
     bool isCCWA(String &str);
     bool isCCID(String &str);
-    bool isCREG(String &str);
+    // bool isCREG(String &str);
     bool isCUSD(String &str);
 
     bool isCCLK(String &Str);
@@ -249,7 +249,7 @@ class SIM
     SIM(HardwareSerial* serial);
 #endif
 #endif
-    bool checkCREG();
+    // bool checkCREG();
     void playRepeatedFiles(char *fileList);
     // void playRepeatedFiles(String &);
     unsigned short int getBatVolt();
