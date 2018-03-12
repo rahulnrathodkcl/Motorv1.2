@@ -26,6 +26,9 @@ class SIM
     // byte globalSeconds;
     // #endif
 
+    bool simReInit;
+    unsigned long int lastSIMResetTime;
+
     bool isRegisteredNumber;
     // bool responseToAction;
     // String adminNumber;
@@ -123,6 +126,9 @@ class SIM
     // bool extendedSendCommand(String &cmd,String vstr,unsigned short int len,unsigned short int timeout);
     bool connectToFTP(char *);
     // bool connectToFTP(String);
+
+    bool isSIMReset();
+    
     bool setFile(const char *);
     bool setFile(String);
     bool getProgramSize();

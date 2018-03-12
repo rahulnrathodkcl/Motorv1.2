@@ -53,7 +53,7 @@ void SIM::anotherConstructor()
   initialized = false;
   inCall=false;
   // balStr.reserve(12);
-
+  simReInit=false;
   acceptCommandsTime = 150;
   commandsAccepted = false;
 
@@ -107,6 +107,8 @@ void SIM::anotherConstructor()
 
 void SIM::startSIMAfterUpdate()
 {
+  simReInit=true;
+  lastSIMResetTime=millis();  
   sendBlockingATCommand_P(PSTR("AT+CFUN=1,1\r\n"));
   // sendBlockingATCommand(F("AT+CFUN=1,1\r\n"));
 }
@@ -2797,8 +2799,23 @@ inline void SIM::makeResponseAction()
   // if (eeprom1->RESPONSE == 'A' || eeprom1->RESPONSE == 'C' || eeprom1->RESPONSE == 'T' || (m2mEvent && eeprom1->RESPONSE=='N'))
 }
 
+inline bool SIM::isSIMReset()
+{
+    if(simReInit && millis()-lastSIMResetTime<20000L)
+    {
+        return true;
+    }
+    simReInit=false;
+    return false;
+}
+
 bool SIM::registerEvent(char eventType)
 {
+  if(isSIMReset())
+  {
+    return false;
+  }
+
   if(eeprom1->numbersCount==0 || eeprom1->RESPONSE=='N')
   {
     return true;
