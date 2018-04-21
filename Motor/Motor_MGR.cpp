@@ -987,7 +987,7 @@ void Motor_MGR::operateOnStableLine()
 
 bool Motor_MGR::startMotorTimerOver()
 {
-  return (millis() - tempStartTimer >= (((unsigned long int)eeprom1->AUTOSTARTTIME * 1000)));
+  return ((millis() - tempStartTimer) >= ((unsigned long int)eeprom1->AUTOSTARTTIME * 1000L));
 }
 
 // bool Motor_MGR::stopMotorTimerOver()
@@ -1174,7 +1174,7 @@ void Motor_MGR::terminateStopRelay()
 
 void Motor_MGR::terminateStarDeltaTimer()
 {
-	if(starDeltaTimerOn && millis() - tempStartSequenceTimer > ((unsigned long int)eeprom1->starDeltaTimerTime *1000L))
+	if(starDeltaTimerOn && ((millis() - tempStartSequenceTimer) > ((unsigned long int)eeprom1->starDeltaTimerTime *1000L)))
 	{
 		digitalWrite(PIN_MSTART,HIGH);
 		starDeltaTimerOn=false;
@@ -1188,9 +1188,9 @@ void Motor_MGR::terminateStarDeltaTimer()
 void Motor_MGR::terminateStartRelay()
 {
  	interrupts();
-  if (startSequenceOn &&  millis() - tempStartSequenceTimer > (startSequenceTimerTime * 100))
+  if (startSequenceOn &&  ((millis() - tempStartSequenceTimer) > (startSequenceTimerTime * 100)))
   {
-  	if(((unsigned int)eeprom1->starDeltaTimerTime *10) <= startSequenceTimerTime)
+  	if(((unsigned long int)eeprom1->starDeltaTimerTime *1000L) <= (startSequenceTimerTime *100))
   	{
 		digitalWrite(PIN_MSTART, HIGH);
 		tempStartSequenceTimer=millis();
