@@ -166,6 +166,8 @@ class SIM
     bool isDTMF(String &s);
     bool isCut(String);
     bool isSoundStop(String);
+    bool getSoundStatus(String &str);
+
     char callState(String);
     // static String getActiveNumber();
     void makeCall();

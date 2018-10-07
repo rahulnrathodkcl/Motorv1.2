@@ -8,7 +8,7 @@
 #include <avr/power.h>
 #include <string.h>
 
-#define SWVer 1583
+#define SWVer 1584
 
 
 #define TURN_ON true

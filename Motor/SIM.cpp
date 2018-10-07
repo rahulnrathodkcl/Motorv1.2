@@ -1005,7 +1005,10 @@ bool SIM::getBlockingResponse(const char *cmd, char *retStr,bool (SIM::*func)(St
       if((this->*func)(str))
       {
           // cmd=str;
-          strcpy(retStr,str.c_str());
+          if(retStr != NULL)
+          {
+            strcpy(retStr,str.c_str());            
+          }
           return true;
       }
     }
@@ -1772,6 +1775,7 @@ inline void SIM::registerWithAdmin()
 
 inline bool SIM::isNumber(String &str)
 {
+  // +CLIP: "+917041196959",145,"",0,"",0
   return (stringContains(str, "+CLIP: \"", 11, 21));
 }
 
@@ -2069,7 +2073,13 @@ bool SIM::isCut(String str)
 
 inline bool SIM::isSoundStop(String str)
 {
-  return (str == "+CREC: 0\r");
+  return (str == F("+CREC: 0\r"));
+}
+
+inline bool SIM::getSoundStatus(String &str)
+{
+  return(stringContains(str,"+CREC",7,8));
+  // return(str==PSTR("+CREC: 2\r"));
 }
 
 char SIM::callState(String str)
@@ -2252,7 +2262,7 @@ void SIM::endCall()
     }
 
     #ifdef ENABLE_M2M
-    if(currentStatus == 'I' && currentCallStatus == 'O' && m2mEvent && eeprom1->M2M)
+    if((currentStatus == 'I' || currentStatus=='R') && currentCallStatus == 'O' && m2mEvent && eeprom1->M2M)
     {
       m2mEventCalls++;
       if(m2mAck)
@@ -2539,11 +2549,14 @@ void SIM::operateDTMF(String s)
     {
       if(zeroPressed)
       {
-        motor1->autoSetCurrent();   //to enable or disable current detection
         subDTMF();
+        motor1->autoSetCurrent();   //to enable or disable current detection
         zeroPressed=false;
       }
+      else
+      {
         zeroPressed=true;
+      }
     }
     #ifdef AMPERE_SPEAK
     else if (str == '7') //Speak Current Ampere On Call
@@ -2775,7 +2788,14 @@ void SIM::playSound(char actionType, bool newAction=true)
 inline void SIM::stopSound()
 {
   _SSerial->flush();
-  sendCommand_P(PSTR("AT+CREC=5\r"), true);
+  char retStr[3];
+  if(getBlockingResponse(PSTR("AT+CREC?"),retStr,&SIM::getSoundStatus))
+  {
+    if(retStr[0]!='0')
+    {
+      sendCommand_P(PSTR("AT+CREC=5\r"), true);  
+    }
+  }
   _SSerial->flush();
 }
 
@@ -2905,6 +2925,7 @@ void SIM::setMotorMGRResponse(char response)
 
   // responseToAction = true;
   { 
+    // stopSound();
     playSound(response);
   }
   // if (currentOperation == 'S') //start Motor

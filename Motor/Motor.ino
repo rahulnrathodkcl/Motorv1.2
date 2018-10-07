@@ -414,7 +414,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   // if(digitalRead(PIN_BATLEVEL)==HIGH)
   // digitalWrite(PIN_TURNOFF,HIGHs
-  if(tempCREGCounter>=50)
+  if(tempCREGCounter>=2)
   {
     if(!sim1.busy())
     {
